@@ -1,0 +1,29 @@
+.claude/*
+.specify/*
+.venv/
+
+# Local environment
+.DS_Store
+.python-version
+.env
+.env.*
+!.env.example
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Test and coverage output
+.coverage
+.coverage.*
+htmlcov/
+
+# Packaging artifacts
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+python/arc-guardrails/analysis/*
