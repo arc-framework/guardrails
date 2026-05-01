@@ -3,6 +3,111 @@
     "fields": [
       {
         "default": null,
+        "name": "suggested_rephrase",
+        "type": "str"
+      },
+      {
+        "default": "<factory:tuple>",
+        "name": "next_steps",
+        "type": "tuple[str, ...]"
+      },
+      {
+        "default": "None",
+        "name": "triggering_rule_id",
+        "type": "str | None"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "ClarificationRequest",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "DEFAULT_PLACEHOLDERS",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "DEFAULT_REFUSAL_TEMPLATES",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "correlation_id",
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "name": "phase",
+        "type": "Literal['pre_process', 'post_process']"
+      },
+      {
+        "default": null,
+        "name": "aggregate_action",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "aggregate_band",
+        "type": "RiskBand"
+      },
+      {
+        "default": null,
+        "name": "findings",
+        "type": "tuple[FindingSummary, ...]"
+      },
+      {
+        "default": null,
+        "name": "transforms",
+        "type": "tuple[TransformSummary, ...]"
+      },
+      {
+        "default": null,
+        "name": "fired_rules",
+        "type": "tuple[str, ...]"
+      },
+      {
+        "default": null,
+        "name": "refusal_code",
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "name": "clarification_present",
+        "type": "bool"
+      },
+      {
+        "default": null,
+        "name": "latency_ms",
+        "type": "float"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.decision",
+    "name": "DecisionRecord",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
         "name": "name",
         "type": "str"
       },
@@ -111,6 +216,51 @@
     "stability": "stable"
   },
   {
+    "fields": [
+      {
+        "default": null,
+        "name": "entity_type",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "start",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "end",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "length",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "risk_level",
+        "type": "RiskLevel"
+      },
+      {
+        "default": null,
+        "name": "inspector",
+        "type": "str"
+      },
+      {
+        "default": "None",
+        "name": "score",
+        "type": "float | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.decision",
+    "name": "FindingSummary",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
     "extra": "forbid",
     "fields": [
       {
@@ -154,6 +304,12 @@
         "name": "metrics",
         "required": false,
         "type": "MetricSink"
+      },
+      {
+        "default": "None",
+        "name": "policy",
+        "required": false,
+        "type": "arc_guard_core.policy.PolicyRuleSet | None"
       }
     ],
     "frozen": true,
@@ -290,6 +446,11 @@
       },
       {
         "default": "None",
+        "name": "clarification",
+        "type": "ClarificationRequest | None"
+      },
+      {
+        "default": "None",
         "name": "bypass_reason",
         "type": "Literal['disabled', 'error', None]"
       },
@@ -398,6 +559,110 @@
     "stability": "stable"
   },
   {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "id",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "match",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "strategy",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": "<RiskLevel.LOW: 1>",
+        "name": "severity_floor",
+        "required": false,
+        "type": "RiskLevel"
+      },
+      {
+        "default": "''",
+        "name": "rationale_template",
+        "required": false,
+        "type": "str"
+      },
+      {
+        "default": "None",
+        "name": "refusal_human_message",
+        "required": false,
+        "type": "str | None"
+      },
+      {
+        "default": "None",
+        "name": "refusal_next_steps",
+        "required": false,
+        "type": "tuple[str, ...] | None"
+      },
+      {
+        "default": "<factory>",
+        "name": "metadata",
+        "required": false,
+        "type": "dict[str, typing.Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.policy",
+    "name": "PolicyRule",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "<factory>",
+        "name": "rules",
+        "required": false,
+        "type": "tuple[arc_guard_core.policy.PolicyRule, ...]"
+      },
+      {
+        "default": "<factory>",
+        "name": "risk_thresholds",
+        "required": false,
+        "type": "RiskThresholds"
+      },
+      {
+        "default": "False",
+        "name": "clarification_enabled",
+        "required": false,
+        "type": "bool"
+      },
+      {
+        "default": "<RiskBand.MEDIUM: 'medium'>",
+        "name": "ambiguous_threshold",
+        "required": false,
+        "type": "RiskBand"
+      },
+      {
+        "default": "'pass'",
+        "name": "default_action_when_no_rules_fire",
+        "required": false,
+        "type": "typing.Literal['pass', 'block']"
+      },
+      {
+        "default": "<factory>",
+        "name": "metadata",
+        "required": false,
+        "type": "dict[str, typing.Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.policy",
+    "name": "PolicyRuleSet",
+    "stability": "stable"
+  },
+  {
     "base": "StrEnum",
     "kind": "enum",
     "module": "arc_guard_core.refusal.codes",
@@ -472,6 +737,51 @@
     "stability": "stable"
   },
   {
+    "fields": [
+      {
+        "default": null,
+        "name": "human_message",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "next_steps",
+        "type": "tuple[str, ...]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.refusal.templates",
+    "name": "RefusalTemplate",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "base": "StrEnum",
+    "kind": "enum",
+    "module": "arc_guard_core.policy",
+    "name": "RiskBand",
+    "stability": "stable",
+    "values": [
+      {
+        "name": "LOW",
+        "value": "low"
+      },
+      {
+        "name": "MEDIUM",
+        "value": "medium"
+      },
+      {
+        "name": "HIGH",
+        "value": "high"
+      },
+      {
+        "name": "CRITICAL",
+        "value": "critical"
+      }
+    ]
+  },
+  {
     "base": "IntEnum",
     "kind": "enum",
     "module": "arc_guard_core.types",
@@ -501,10 +811,175 @@
     ]
   },
   {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "2",
+        "name": "low_max_count",
+        "required": false,
+        "type": "int"
+      },
+      {
+        "default": "4",
+        "name": "medium_max_count",
+        "required": false,
+        "type": "int"
+      },
+      {
+        "default": "1",
+        "name": "high_escalates_at",
+        "required": false,
+        "type": "int"
+      },
+      {
+        "default": "1",
+        "name": "critical_escalates_at",
+        "required": false,
+        "type": "int"
+      },
+      {
+        "default": "3",
+        "name": "soft_pii_aggregation",
+        "required": false,
+        "type": "int"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.policy",
+    "name": "RiskThresholds",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "transformed_text",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "decisions",
+        "type": "tuple[PolicyDecision, ...]"
+      },
+      {
+        "default": null,
+        "name": "aggregate_action",
+        "type": "Literal['pass', 'redact', 'hash', 'block', 'tokenize']"
+      },
+      {
+        "default": null,
+        "name": "aggregate_band",
+        "type": "RiskBand"
+      },
+      {
+        "default": "None",
+        "name": "refusal",
+        "type": "RefusalEnvelope | None"
+      },
+      {
+        "default": "None",
+        "name": "clarification",
+        "type": "ClarificationRequest | None"
+      },
+      {
+        "default": "()",
+        "name": "fired_rule_ids",
+        "type": "tuple[str, ...]"
+      },
+      {
+        "default": "()",
+        "name": "transforms",
+        "type": "tuple[TransformSummary, ...]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.policy",
+    "name": "RoutedOutcome",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "strategy",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "target_finding_index",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "before_length",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "after_length",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "replacement_kind",
+        "type": "Literal['placeholder', 'hash', 'token', 'removed', 'warn', 'passed']"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.policy",
+    "name": "TransformSummary",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.placeholders",
+    "name": "format_placeholder",
+    "signature": "(entity_type: 'str', occurrence: 'int', total: 'int') -> 'str'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.placeholders",
+    "name": "get_placeholder",
+    "signature": "(entity_type: 'str') -> 'str'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.refusal.templates",
+    "name": "get_refusal_template",
+    "signature": "(code: 'RefusalCode') -> 'RefusalTemplate'",
+    "stability": "stable"
+  },
+  {
     "kind": "function",
     "module": "arc_guard_core.registry",
     "name": "register_entity",
     "signature": "(name: 'str', category: 'str', pattern: 're.Pattern[str] | None' = None, recognizer: 'Any | None' = None) -> 'None'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.placeholders",
+    "name": "register_placeholder",
+    "signature": "(entity_type: 'str', label: 'str') -> 'None'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.refusal.templates",
+    "name": "register_refusal_template",
+    "signature": "(code: 'RefusalCode', template: 'RefusalTemplate') -> 'None'",
     "stability": "stable"
   }
 ]

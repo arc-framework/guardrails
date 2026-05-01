@@ -5,12 +5,13 @@ test suite under ``tests/contract/``. Adding a new public symbol requires a
 CHANGELOG entry; renaming or removing one requires the deprecation flow.
 
 See ``specs/002-rewrite-foundation/contracts/public-types.md`` and
-``specs/002-rewrite-foundation/contracts/protocols.md``.
+``specs/003-sanitization-policy-core/contracts/public-types.md``.
 """
 
 from __future__ import annotations
 
 from arc_guard_core.config import GuardConfig
+from arc_guard_core.decision import DecisionRecord, FindingSummary
 from arc_guard_core.exceptions import (
     AdapterBoundaryValidationError,
     AdapterError,
@@ -40,6 +41,20 @@ from arc_guard_core.observability import (
     Tracer,
 )
 from arc_guard_core.pipeline import GuardPipeline
+from arc_guard_core.placeholders import (
+    DEFAULT_PLACEHOLDERS,
+    format_placeholder,
+    get_placeholder,
+    register_placeholder,
+)
+from arc_guard_core.policy import (
+    PolicyRule,
+    PolicyRuleSet,
+    RiskBand,
+    RiskThresholds,
+    RoutedOutcome,
+    TransformSummary,
+)
 from arc_guard_core.protocols import (
     ActionStrategy,
     EntityProvider,
@@ -47,11 +62,19 @@ from arc_guard_core.protocols import (
     Guard,
     Inspector,
     Middleware,
+    PolicyRouter,
     Reporter,
 )
 from arc_guard_core.refusal.codes import RefusalCode
+from arc_guard_core.refusal.templates import (
+    DEFAULT_REFUSAL_TEMPLATES,
+    RefusalTemplate,
+    get_refusal_template,
+    register_refusal_template,
+)
 from arc_guard_core.registry import EntityRegistry, register_entity
 from arc_guard_core.types import (
+    ClarificationRequest,
     EntityDefinition,
     Finding,
     GuardContext,
@@ -62,7 +85,7 @@ from arc_guard_core.types import (
     RiskLevel,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     # version
@@ -74,6 +97,7 @@ __all__ = [
     "Finding",
     "PolicyDecision",
     "RefusalEnvelope",
+    "ClarificationRequest",
     "GuardResult",
     "EntityDefinition",
     # config
@@ -85,6 +109,25 @@ __all__ = [
     "register_entity",
     # refusal
     "RefusalCode",
+    "RefusalTemplate",
+    "DEFAULT_REFUSAL_TEMPLATES",
+    "register_refusal_template",
+    "get_refusal_template",
+    # policy (Spec 003)
+    "RiskBand",
+    "RiskThresholds",
+    "PolicyRule",
+    "PolicyRuleSet",
+    "RoutedOutcome",
+    "TransformSummary",
+    # decision (Spec 003)
+    "DecisionRecord",
+    "FindingSummary",
+    # placeholders (Spec 003)
+    "DEFAULT_PLACEHOLDERS",
+    "register_placeholder",
+    "get_placeholder",
+    "format_placeholder",
     # protocols
     "Guard",
     "Inspector",
@@ -93,6 +136,7 @@ __all__ = [
     "FlagProvider",
     "Middleware",
     "EntityProvider",
+    "PolicyRouter",
     # observability hooks
     "Tracer",
     "Logger",

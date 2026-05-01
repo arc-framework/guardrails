@@ -2,6 +2,18 @@
 
 All notable changes to the `arc-guard` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.3.0] — 2026-05-01
+
+### Added
+- (Spec 003) New built-in strategies `warn` and `tokenize` registered in the strategy registry by default.
+- (Spec 003) `RuleBasedPolicyRouter` — default `PolicyRouter` implementation that resolves per-finding routing decisions, applies the configured precedence (`block > redact > tokenize > hash > warn > pass`), and emits a `DecisionRecord` per pipeline run.
+- (Spec 003) `StrategyRegistry` thread-safe in-memory mapping with `register_strategy`, `get_strategy`, `is_registered`, `list_registered`, and a `@strategy("name")` decorator.
+- (Spec 003) `RefusalBuilder` and decision `Emitter` modules wiring Spec 002 observability hooks.
+- (Spec 003) Pipeline now branches on `GuardConfig.policy is None`: `None` preserves Spec 001/002 behavior; otherwise the policy router runs.
+
+### Changed
+- (Spec 003) `redact` strategy emits typed placeholders per the typed-placeholder registry (`[<TYPE>]` for single occurrences, `[<TYPE>_1]`/`[<TYPE>_2]`/… for multiple).
+
 ## [0.2.0] — 2026-05-01
 
 ### Added

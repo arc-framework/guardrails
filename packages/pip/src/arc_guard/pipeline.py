@@ -20,18 +20,24 @@ import asyncio
 import logging
 from typing import Any
 
+from arc_guard_core.observability import Logger, MetricSink, NullLogger, NullMetricSink
+from arc_guard_core.policy import PolicyRuleSet
 from arc_guard_core.protocols.flag_provider import FlagProvider
 from arc_guard_core.protocols.inspector import Inspector
 from arc_guard_core.protocols.middleware import Middleware
+from arc_guard_core.protocols.policy_router import PolicyRouter
 from arc_guard_core.protocols.reporter import Reporter
 from arc_guard_core.protocols.strategy import ActionStrategy
 from arc_guard_core.types import GuardInput, GuardResult
 
 from arc_guard.config_env import GuardConfig
+from arc_guard.decision.emitter import DecisionEmitter
 from arc_guard.flags.env_provider import EnvFlagProvider
 from arc_guard.flags.static_provider import StaticFlagProvider
 from arc_guard.inspectors.injection import InjectionInspector
 from arc_guard.inspectors.presidio import PresidioInspector
+from arc_guard.policy import validate_strategies_registered
+from arc_guard.policy.router import RuleBasedPolicyRouter
 from arc_guard.reporters.null_reporter import NullReporter
 from arc_guard.strategies.block import BlockStrategy
 from arc_guard.strategies.hash import HashStrategy
@@ -67,6 +73,12 @@ class GuardPipeline:
         middlewares: list[Middleware] | None = None,
         reporter: Reporter | None = None,
         strategies: dict[str, ActionStrategy] | None = None,
+        *,
+        # Spec 003 — opt-in policy routing
+        policy_ruleset: PolicyRuleSet | None = None,
+        policy_router: PolicyRouter | None = None,
+        logger_hook: Logger | None = None,
+        metrics_hook: MetricSink | None = None,
     ) -> None:
         self._config = config or GuardConfig()
         self._flags = flags or EnvFlagProvider()
@@ -74,6 +86,15 @@ class GuardPipeline:
         self._middlewares = middlewares or []
         self._reporter: Reporter = reporter or NullReporter()
         self._strategies = strategies or _STRATEGIES
+        self._policy_ruleset = policy_ruleset
+        self._policy_router: PolicyRouter | None = policy_router
+        self._logger_hook: Logger = logger_hook or NullLogger()
+        self._metrics_hook: MetricSink = metrics_hook or NullMetricSink()
+        self._decision_emitter = DecisionEmitter()
+        self._last_decision: Any = None  # tests / dev tooling read this
+        # Validate at construction so unknown strategies fail eagerly.
+        if self._policy_ruleset is not None:
+            validate_strategies_registered(self._policy_ruleset)
 
     @classmethod
     def default(
@@ -110,6 +131,19 @@ class GuardPipeline:
     def _resolve_strategy(self) -> ActionStrategy:
         name = self._flags.get_string("action_strategy", default="redact")
         return self._strategies.get(name, self._strategies["redact"])
+
+    def _apply_outcome(self, result: GuardResult, outcome: Any) -> GuardResult:
+        """Build the new GuardResult from a RoutedOutcome (Spec 003 T039)."""
+        return GuardResult(
+            text=outcome.transformed_text,
+            action=outcome.aggregate_action,
+            findings=result.findings,
+            decisions=outcome.decisions,
+            refusal=outcome.refusal,
+            clarification=outcome.clarification,
+            bypass_reason=result.bypass_reason,
+            phase=result.phase,
+        )
 
     async def _run_pipeline(
         self, guard_input: GuardInput, phase: str
@@ -168,14 +202,34 @@ class GuardPipeline:
                 phase=result.phase,
             )
 
-        # --- ActionStrategy ---
-        if result.findings:
+        # --- ActionStrategy / PolicyRouter ---
+        if self._policy_ruleset is not None:
+            # Spec 003 — opt-in policy routing path.
+            import time
+
+            router = self._policy_router or RuleBasedPolicyRouter()
+            t0 = time.perf_counter()
+            outcome = router.route(result, self._policy_ruleset)
+            latency_ms = (time.perf_counter() - t0) * 1000.0
+            result = self._apply_outcome(result, outcome)
+            record = self._decision_emitter.build(result, outcome, latency_ms)
+            self._last_decision = record
+            self._decision_emitter.emit(
+                record,
+                logger=self._logger_hook,
+                metrics=self._metrics_hook,
+            )
+        elif result.findings:
+            # Spec 001/002 legacy path — single-strategy chain.
             strategy = self._resolve_strategy()
-            new_text, action = strategy.apply(result.text, result.findings)
+            new_text, decisions = strategy.apply(result.text, result.findings)
+            # Strategy `.name` attribute drives the legacy aggregate action.
+            action = getattr(strategy, "name", "redact")
             result = GuardResult(
                 text=new_text,
                 action=action,
                 findings=result.findings,
+                decisions=tuple(decisions),
                 bypass_reason=result.bypass_reason,
                 phase=result.phase,
             )

@@ -47,7 +47,7 @@ wheels = [
 
 [[package]]
 name = "arc-guard"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "pip" }
 dependencies = [
     { name = "arc-guard-core" },
@@ -64,7 +64,7 @@ requires-dist = [
 
 [[package]]
 name = "arc-guard-core"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "core" }
 dependencies = [
     { name = "pydantic" },

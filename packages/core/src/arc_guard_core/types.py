@@ -139,6 +139,30 @@ class RefusalEnvelope:
 
 
 @dataclass(frozen=True)
+class ClarificationRequest:
+    """Structured ask-for-rephrase returned when the policy classifies a run
+    as ambiguous and ``clarification_enabled=True`` (Spec 003 D1).
+
+    Args:
+        suggested_rephrase: Human-readable rephrase the caller should ask
+            the user for. Non-empty.
+        next_steps: Optional supporting bullets the caller can render.
+        triggering_rule_id: ``PolicyRule.id`` that classified the run as
+            ambiguous, when known.
+        metadata: Extension point.
+    """
+
+    suggested_rephrase: str
+    next_steps: tuple[str, ...] = field(default_factory=tuple)
+    triggering_rule_id: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.suggested_rephrase:
+            raise ValueError("ClarificationRequest.suggested_rephrase must be non-empty")
+
+
+@dataclass(frozen=True)
 class GuardResult:
     """Output from the guard pipeline.
 
@@ -149,6 +173,9 @@ class GuardResult:
         decisions: Per-finding decisions; populated by Spec 003 routers.
         refusal: Set when ``action == "block"`` (and may be set on partial-restrict
             actions in Spec 003).
+        clarification: Set when policy classified the run as ambiguous and
+            ``clarification_enabled=True`` (Spec 003 D1). Mutually exclusive
+            with ``action == "block"``.
         bypass_reason: Set when the pipeline was short-circuited.
             ``"disabled"`` — guard is off.
             ``"error"`` — an inspector raised; the pipeline fell through fail-open.
@@ -161,8 +188,17 @@ class GuardResult:
     findings: tuple[Finding, ...] = field(default_factory=tuple)
     decisions: tuple[PolicyDecision, ...] = field(default_factory=tuple)
     refusal: RefusalEnvelope | None = None
+    clarification: ClarificationRequest | None = None
     bypass_reason: Literal["disabled", "error", None] = None
     phase: Literal["pre_process", "post_process"] = "pre_process"
+
+    def __post_init__(self) -> None:
+        # Spec 003 contract invariant: clarification is a recovery path,
+        # never paired with a hard block.
+        if self.clarification is not None and self.action == "block":
+            raise ValueError(
+                "GuardResult.clarification cannot be set when action='block'"
+            )
 
     @property
     def is_clean(self) -> bool:
@@ -203,6 +239,7 @@ __all__ = [
     "Finding",
     "PolicyDecision",
     "RefusalEnvelope",
+    "ClarificationRequest",
     "GuardResult",
     "EntityDefinition",
 ]

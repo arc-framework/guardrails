@@ -33,11 +33,11 @@ The `packages/{core,pip,api}` workspace established by Spec 002 is unchanged. Sp
 
 **Purpose**: version bumps, new directory skeletons, CHANGELOG headers. Spec 002 already established the workspace; nothing structural is created.
 
-- [ ] T001 Bump `packages/core/pyproject.toml` version `0.1.0` → `0.2.0` (additive contract change for Spec 003)
-- [ ] T002 Bump `packages/pip/pyproject.toml` version `0.2.0` → `0.3.0` (Spec 001 deprecation removal release coordinated with Spec 003 router landing)
-- [ ] T003 [P] Add Spec 003 changelog stub block to `packages/core/CHANGELOG.md` under a new `## [0.2.0] — 2026-05-01` section with empty `### Added` / `### Changed` lists; subsequent tasks fill them in
-- [ ] T004 [P] Add Spec 003 changelog stub block to `packages/pip/CHANGELOG.md` under a new `## [0.3.0] — 2026-05-01` section
-- [ ] T005 [P] Create new directories: `packages/core/src/arc_guard_core/refusal/` (already exists from Spec 002 — verify), `packages/pip/src/arc_guard/policy/`, `packages/pip/src/arc_guard/refusal/`, `packages/pip/src/arc_guard/decision/`. Create empty `__init__.py` in each new directory.
+- [x] T001 Bump `packages/core/pyproject.toml` version `0.1.0` → `0.2.0` (additive contract change for Spec 003)
+- [x] T002 Bump `packages/pip/pyproject.toml` version `0.2.0` → `0.3.0` (Spec 001 deprecation removal release coordinated with Spec 003 router landing)
+- [x] T003 [P] Add Spec 003 changelog stub block to `packages/core/CHANGELOG.md` under a new `## [0.2.0] — 2026-05-01` section with empty `### Added` / `### Changed` lists; subsequent tasks fill them in
+- [x] T004 [P] Add Spec 003 changelog stub block to `packages/pip/CHANGELOG.md` under a new `## [0.3.0] — 2026-05-01` section
+- [x] T005 [P] Create new directories: `packages/core/src/arc_guard_core/refusal/` (already exists from Spec 002 — verify), `packages/pip/src/arc_guard/policy/`, `packages/pip/src/arc_guard/refusal/`, `packages/pip/src/arc_guard/decision/`. Create empty `__init__.py` in each new directory.
 
 ---
 
@@ -49,45 +49,45 @@ The `packages/{core,pip,api}` workspace established by Spec 002 is unchanged. Sp
 
 ### Core typed models — additive contract surface (data-model §1–§7, §9–§12)
 
-- [ ] T006 Add `ClarificationRequest` frozen dataclass to `packages/core/src/arc_guard_core/types.py` with fields `suggested_rephrase: str`, `next_steps: tuple[str, ...]`, `triggering_rule_id: str | None`, `metadata: dict[str, Any]` per data-model §2. Update `__all__`.
-- [ ] T007 Add `GuardResult.clarification: ClarificationRequest | None` field with default `None` to `packages/core/src/arc_guard_core/types.py`. Add a contract invariant in the dataclass: `clarification` may be set only when `action != "block"`.
-- [ ] T008 [P] Create `packages/core/src/arc_guard_core/policy.py` containing `RiskBand` (StrEnum), `RiskThresholds` (pydantic, frozen, extra='forbid'), `PolicyRule` (pydantic, frozen, extra='forbid'), `PolicyRuleSet` (pydantic, frozen, extra='forbid'), and `RoutedOutcome` (frozen dataclass) per data-model §3–§6, §8. Module-level `__all__` exports all five.
-- [ ] T009 [P] Create `packages/core/src/arc_guard_core/decision.py` containing `DecisionRecord`, `FindingSummary`, `TransformSummary` (frozen dataclasses) per data-model §9–§11. Module-level `__all__` exports all three.
-- [ ] T010 [P] Create `packages/core/src/arc_guard_core/placeholders.py` with `DEFAULT_PLACEHOLDERS: dict[str, str]` populated per data-model §7, plus public functions `register_placeholder`, `get_placeholder`, `format_placeholder`, `list_registered`. Validation: label must match `^\[[A-Z][A-Z0-9_]*\]$`. Thread-safe (RLock).
-- [ ] T011 [P] Create `packages/core/src/arc_guard_core/refusal/templates.py` with `RefusalTemplate` frozen dataclass and `DEFAULT_REFUSAL_TEMPLATES: dict[RefusalCode, RefusalTemplate]` covering all five `RefusalCode` values per research §5. Public function `register_refusal_template(code, template)`.
+- [x] T006 Add `ClarificationRequest` frozen dataclass to `packages/core/src/arc_guard_core/types.py` with fields `suggested_rephrase: str`, `next_steps: tuple[str, ...]`, `triggering_rule_id: str | None`, `metadata: dict[str, Any]` per data-model §2. Update `__all__`.
+- [x] T007 Add `GuardResult.clarification: ClarificationRequest | None` field with default `None` to `packages/core/src/arc_guard_core/types.py`. Add a contract invariant in the dataclass: `clarification` may be set only when `action != "block"`.
+- [x] T008 [P] Create `packages/core/src/arc_guard_core/policy.py` containing `RiskBand` (StrEnum), `RiskThresholds` (pydantic, frozen, extra='forbid'), `PolicyRule` (pydantic, frozen, extra='forbid'), `PolicyRuleSet` (pydantic, frozen, extra='forbid'), and `RoutedOutcome` (frozen dataclass) per data-model §3–§6, §8. Module-level `__all__` exports all five.
+- [x] T009 [P] Create `packages/core/src/arc_guard_core/decision.py` containing `DecisionRecord`, `FindingSummary`, `TransformSummary` (frozen dataclasses) per data-model §9–§11. Module-level `__all__` exports all three.
+- [x] T010 [P] Create `packages/core/src/arc_guard_core/placeholders.py` with `DEFAULT_PLACEHOLDERS: dict[str, str]` populated per data-model §7, plus public functions `register_placeholder`, `get_placeholder`, `format_placeholder`, `list_registered`. Validation: label must match `^\[[A-Z][A-Z0-9_]*\]$`. Thread-safe (RLock).
+- [x] T011 [P] Create `packages/core/src/arc_guard_core/refusal/templates.py` with `RefusalTemplate` frozen dataclass and `DEFAULT_REFUSAL_TEMPLATES: dict[RefusalCode, RefusalTemplate]` covering all five `RefusalCode` values per research §5. Public function `register_refusal_template(code, template)`.
 
 ### New Protocol (data-model §8, contracts/policy-router.md)
 
-- [ ] T012 Create `packages/core/src/arc_guard_core/protocols/policy_router.py` defining `PolicyRouter` Protocol with the documented `Concurrency:` / `Failure mode:` / `Thread-safety:` docstring lines. Method: `route(self, result: GuardResult, ruleset: PolicyRuleSet) -> RoutedOutcome`. Mark `@runtime_checkable`.
-- [ ] T013 Update `packages/core/src/arc_guard_core/protocols/__init__.py` to re-export `PolicyRouter`.
+- [x] T012 Create `packages/core/src/arc_guard_core/protocols/policy_router.py` defining `PolicyRouter` Protocol with the documented `Concurrency:` / `Failure mode:` / `Thread-safety:` docstring lines. Method: `route(self, result: GuardResult, ruleset: PolicyRuleSet) -> RoutedOutcome`. Mark `@runtime_checkable`.
+- [x] T013 Update `packages/core/src/arc_guard_core/protocols/__init__.py` to re-export `PolicyRouter`.
 
 ### GuardConfig integration (FR-031)
 
-- [ ] T014 Add `policy: PolicyRuleSet | None` field with default `None` to `packages/core/src/arc_guard_core/config.py` `GuardConfig`. Cross-field validator: when `policy is not None`, every `match` in the ruleset must be a known entity type and every `strategy` must be registered (deferred to runtime registry — see T020).
+- [x] T014 Add `policy: PolicyRuleSet | None` field with default `None` to `packages/core/src/arc_guard_core/config.py` `GuardConfig`. Cross-field validator: when `policy is not None`, every `match` in the ruleset must be a known entity type and every `strategy` must be registered (deferred to runtime registry — see T020).
 
 ### Public surface re-exports
 
-- [ ] T015 Update `packages/core/src/arc_guard_core/__init__.py` `__all__` to export the new symbols: `ClarificationRequest`, `RiskBand`, `RiskThresholds`, `PolicyRule`, `PolicyRuleSet`, `RoutedOutcome`, `DecisionRecord`, `FindingSummary`, `TransformSummary`, `RefusalTemplate`, `PolicyRouter`. Verify the import order doesn't introduce a circular dep.
+- [x] T015 Update `packages/core/src/arc_guard_core/__init__.py` `__all__` to export the new symbols: `ClarificationRequest`, `RiskBand`, `RiskThresholds`, `PolicyRule`, `PolicyRuleSet`, `RoutedOutcome`, `DecisionRecord`, `FindingSummary`, `TransformSummary`, `RefusalTemplate`, `PolicyRouter`. Verify the import order doesn't introduce a circular dep.
 
 ### Spec 002 contract snapshot baseline update
 
-- [ ] T016 Run `cd packages && uv run --package arc-guard-core pytest tests/contract/ -k snapshot --update-snapshot` to refresh `tests/contract/snapshots/{public_types,protocols,exceptions}.json` with the new symbols. Verify the diff is purely additive (every change is "new entry"; nothing removed; nothing narrowed).
-- [ ] T017 [P] Add CHANGELOG entries under `packages/core/CHANGELOG.md` `### Added` enumerating the new public symbols (one bullet per symbol).
+- [x] T016 Run `cd packages && uv run --package arc-guard-core pytest tests/contract/ -k snapshot --update-snapshot` to refresh `tests/contract/snapshots/{public_types,protocols,exceptions}.json` with the new symbols. Verify the diff is purely additive (every change is "new entry"; nothing removed; nothing narrowed).
+- [x] T017 [P] Add CHANGELOG entries under `packages/core/CHANGELOG.md` `### Added` enumerating the new public symbols (one bullet per symbol).
 
 ### Strategy registry (pip)
 
-- [ ] T018 Create `packages/pip/src/arc_guard/strategies/registry.py` with `register_strategy(name, strategy)`, `get_strategy(name)`, `is_registered(name)`, `list_registered()`, and the `@strategy(name)` decorator per contracts/strategy-registry.md. Thread-safe RLock. Raises `StrategyError` for unknown name; raises `ValueError` for empty name; raises `StrategyError` for duplicate registration with a different instance.
-- [ ] T019 [P] Update `packages/pip/src/arc_guard/strategies/__init__.py` to import the existing built-ins (`redact`, `hash`, `block`) and register them via `register_strategy` at module load. Add registration calls for the new `warn` and `tokenize` strategies (modules created in subsequent tasks).
-- [ ] T020 Add a `validate_strategies_registered(ruleset: PolicyRuleSet) -> None` helper in `packages/pip/src/arc_guard/policy/__init__.py` that iterates `ruleset.rules` and asserts each `rule.strategy` is registered, raising `ConfigCrossFieldError` with code `"config.unknown_strategy"` and `details={"rule_id": ..., "strategy": ...}` if not. This is the runtime hook the `GuardConfig.policy` validator from T014 invokes when a pipeline is constructed.
+- [x] T018 Create `packages/pip/src/arc_guard/strategies/registry.py` with `register_strategy(name, strategy)`, `get_strategy(name)`, `is_registered(name)`, `list_registered()`, and the `@strategy(name)` decorator per contracts/strategy-registry.md. Thread-safe RLock. Raises `StrategyError` for unknown name; raises `ValueError` for empty name; raises `StrategyError` for duplicate registration with a different instance.
+- [x] T019 [P] Update `packages/pip/src/arc_guard/strategies/__init__.py` to import the existing built-ins (`redact`, `hash`, `block`) and register them via `register_strategy` at module load. Add registration calls for the new `warn` and `tokenize` strategies (modules created in subsequent tasks).
+- [x] T020 Add a `validate_strategies_registered(ruleset: PolicyRuleSet) -> None` helper in `packages/pip/src/arc_guard/policy/__init__.py` that iterates `ruleset.rules` and asserts each `rule.strategy` is registered, raising `ConfigCrossFieldError` with code `"config.unknown_strategy"` and `details={"rule_id": ..., "strategy": ...}` if not. This is the runtime hook the `GuardConfig.policy` validator from T014 invokes when a pipeline is constructed.
 
 ### Foundational tests
 
-- [ ] T021 [P] Add unit tests in `packages/core/tests/unit/test_policy_models.py` covering `RiskBand` ordering, `RiskThresholds` defaults and validation (non-negative, `low_max ≤ medium_max`), `PolicyRule` required fields, `PolicyRuleSet` empty-rules + default-action edge case, `RoutedOutcome` field defaults.
-- [ ] T022 [P] Add unit tests in `packages/core/tests/unit/test_decision_models.py` covering `DecisionRecord`, `FindingSummary`, `TransformSummary` construction, default values, and `dataclasses.asdict` round-trip (no factory references in the dump).
-- [ ] T023 [P] Add unit tests in `packages/core/tests/unit/test_placeholders.py` covering `DEFAULT_PLACEHOLDERS` registration, `format_placeholder` for `total=1` (unsuffixed), `total=2` (suffixed `_1`/`_2`), `total=N>2`. Validation errors for malformed labels (lowercase, missing brackets).
-- [ ] T024 [P] Add unit tests in `packages/core/tests/unit/test_refusal_templates.py` asserting every `RefusalCode` value has a registered template, every template has non-empty `human_message`, `register_refusal_template` overrides cleanly.
-- [ ] T025 [P] Add unit tests in `packages/core/tests/unit/test_clarification_request.py` covering `ClarificationRequest` field defaults and serialization. Cross-validation: `GuardResult(clarification=ClarificationRequest(...), action="block")` must raise (per T007 invariant).
-- [ ] T026 [P] Add unit tests in `packages/pip/tests/unit/test_strategy_registry.py` covering register / get / list / is_registered, thread-safe concurrent registration (≥4 workers), duplicate-with-same-instance is no-op, duplicate-with-different-instance raises, decorator form works.
+- [x] T021 [P] Add unit tests in `packages/core/tests/unit/test_policy_models.py` covering `RiskBand` ordering, `RiskThresholds` defaults and validation (non-negative, `low_max ≤ medium_max`), `PolicyRule` required fields, `PolicyRuleSet` empty-rules + default-action edge case, `RoutedOutcome` field defaults.
+- [x] T022 [P] Add unit tests in `packages/core/tests/unit/test_decision_models.py` covering `DecisionRecord`, `FindingSummary`, `TransformSummary` construction, default values, and `dataclasses.asdict` round-trip (no factory references in the dump).
+- [x] T023 [P] Add unit tests in `packages/core/tests/unit/test_placeholders.py` covering `DEFAULT_PLACEHOLDERS` registration, `format_placeholder` for `total=1` (unsuffixed), `total=2` (suffixed `_1`/`_2`), `total=N>2`. Validation errors for malformed labels (lowercase, missing brackets).
+- [x] T024 [P] Add unit tests in `packages/core/tests/unit/test_refusal_templates.py` asserting every `RefusalCode` value has a registered template, every template has non-empty `human_message`, `register_refusal_template` overrides cleanly.
+- [x] T025 [P] Add unit tests in `packages/core/tests/unit/test_clarification_request.py` covering `ClarificationRequest` field defaults and serialization. Cross-validation: `GuardResult(clarification=ClarificationRequest(...), action="block")` must raise (per T007 invariant).
+- [x] T026 [P] Add unit tests in `packages/pip/tests/unit/test_strategy_registry.py` covering register / get / list / is_registered, thread-safe concurrent registration (≥4 workers), duplicate-with-same-instance is no-op, duplicate-with-different-instance raises, decorator form works.
 
 **Checkpoint**: All foundational types live in `core`, the strategy registry is in `pip`, the contract snapshot is updated, and all 6 foundational test files pass. User stories can now begin in parallel.
 
@@ -101,13 +101,13 @@ The `packages/{core,pip,api}` workspace established by Spec 002 is unchanged. Sp
 
 ### Redact strategy update (D2)
 
-- [ ] T027 [US1] Update `packages/pip/src/arc_guard/strategies/redact.py` to use the typed-placeholder registry (`arc_guard_core.placeholders.format_placeholder`) and emit `[<TYPE>]` for single occurrences and `[<TYPE>_<N>]` for multiple per D2. Two-pass scan: first count occurrences per entity type, second pass emit replacements in span order. Returns `tuple[str, Sequence[PolicyDecision]]` per Spec 002 `ActionStrategy` Protocol.
-- [ ] T028 [US1] Ensure `arc_guard.strategies.redact.RedactStrategy` registers itself under name `"redact"` via the registry decorator at module load. Update `packages/pip/src/arc_guard/strategies/__init__.py` if not already importing it.
+- [x] T027 [US1] Update `packages/pip/src/arc_guard/strategies/redact.py` to use the typed-placeholder registry (`arc_guard_core.placeholders.format_placeholder`) and emit `[<TYPE>]` for single occurrences and `[<TYPE>_<N>]` for multiple per D2. Two-pass scan: first count occurrences per entity type, second pass emit replacements in span order. Returns `tuple[str, Sequence[PolicyDecision]]` per Spec 002 `ActionStrategy` Protocol.
+- [x] T028 [US1] Ensure `arc_guard.strategies.redact.RedactStrategy` registers itself under name `"redact"` via the registry decorator at module load. Update `packages/pip/src/arc_guard/strategies/__init__.py` if not already importing it.
 
 ### US1 tests
 
-- [ ] T029 [P] [US1] Add unit tests in `packages/pip/tests/unit/test_typed_placeholder_format.py` parametrized over the fixture matrix from contracts/placeholder-registry.md §"Tests": single occurrence unsuffixed, two occurrences suffixed, three occurrences, mixed types in one input, custom-registered type with 1 / 2 occurrences.
-- [ ] T030 [P] [US1] Add an integration test in `packages/pip/tests/integration/test_us1_typed_placeholders.py` that runs the pipeline against User Story 1 acceptance scenarios (1-3) with **at least five distinct entity types per SC-001**: an input combining `EMPLOYEE_NAME` + `EMAIL_ADDRESS` + `INTERNAL_PROJECT` + `CREDIT_CARD` + `US_SSN` yields exactly five typed placeholders; two distinct credit-cards yield distinguishable suffixed placeholders (`[CREDIT_CARD_1]`, `[CREDIT_CARD_2]`) per D2; benign input returns unchanged text. Assert zero raw entity bytes appear in the sanitized output (per SC-001 — substring scan with length ≥ 4).
+- [x] T029 [P] [US1] Add unit tests in `packages/pip/tests/unit/test_typed_placeholder_format.py` parametrized over the fixture matrix from contracts/placeholder-registry.md §"Tests": single occurrence unsuffixed, two occurrences suffixed, three occurrences, mixed types in one input, custom-registered type with 1 / 2 occurrences.
+- [x] T030 [P] [US1] Add an integration test in `packages/pip/tests/integration/test_us1_typed_placeholders.py` that runs the pipeline against User Story 1 acceptance scenarios (1-3) with **at least five distinct entity types per SC-001**: an input combining `EMPLOYEE_NAME` + `EMAIL_ADDRESS` + `INTERNAL_PROJECT` + `CREDIT_CARD` + `US_SSN` yields exactly five typed placeholders; two distinct credit-cards yield distinguishable suffixed placeholders (`[CREDIT_CARD_1]`, `[CREDIT_CARD_2]`) per D2; benign input returns unchanged text. Assert zero raw entity bytes appear in the sanitized output (per SC-001 — substring scan with length ≥ 4).
 
 **Checkpoint**: User Story 1 is fully functional. Typed placeholders are correctly emitted; multi-occurrence suffixing works per D2; `Finding` shape is unchanged.
 
@@ -121,21 +121,21 @@ The `packages/{core,pip,api}` workspace established by Spec 002 is unchanged. Sp
 
 ### RuleBasedPolicyRouter implementation
 
-- [ ] T031 [US2] Create `packages/pip/src/arc_guard/policy/router.py` defining `RuleBasedPolicyRouter` satisfying the `PolicyRouter` Protocol from `arc_guard_core.protocols.policy_router`. Constructor accepts `strategy_registry` (defaults to module-level singleton) and the active `RuleSet` is passed per-call to `route`. Raises `PolicyRouterError` (not unwrapped exceptions).
-- [ ] T032 [US2] Create `packages/pip/src/arc_guard/policy/conflict.py` with `STRATEGY_PRECEDENCE: tuple[str, ...]` listing names highest-to-lowest restrictive (`block`, `redact`, `tokenize`, `hash`, `warn`, `pass`). Function `resolve_conflict(candidate_rules: Sequence[PolicyRule]) -> PolicyRule` returns the most restrictive; if equal precedence, the first declared rule wins. Records the resolution in the returned `PolicyDecision.rationale`.
-- [ ] T033 [US2] Inside `RuleBasedPolicyRouter.route`: for each `Finding`, find all rules whose `match == finding.entity_type` AND `severity_floor <= finding.risk_level`. Resolve conflicts via T032. Apply the resolved strategy through the registry. Build a `PolicyDecision` per fired rule including the conflict-resolution rationale when applicable.
-- [ ] T034 [US2] Apply transforms in span order so multi-strategy outputs compose correctly. The router applies replacements in reverse span order to keep earlier spans stable; the resulting `transformed_text` is exposed on `RoutedOutcome.transformed_text`.
+- [x] T031 [US2] Create `packages/pip/src/arc_guard/policy/router.py` defining `RuleBasedPolicyRouter` satisfying the `PolicyRouter` Protocol from `arc_guard_core.protocols.policy_router`. Constructor accepts `strategy_registry` (defaults to module-level singleton) and the active `RuleSet` is passed per-call to `route`. Raises `PolicyRouterError` (not unwrapped exceptions).
+- [x] T032 [US2] Create `packages/pip/src/arc_guard/policy/conflict.py` with `STRATEGY_PRECEDENCE: tuple[str, ...]` listing names highest-to-lowest restrictive (`block`, `redact`, `tokenize`, `hash`, `warn`, `pass`). Function `resolve_conflict(candidate_rules: Sequence[PolicyRule]) -> PolicyRule` returns the most restrictive; if equal precedence, the first declared rule wins. Records the resolution in the returned `PolicyDecision.rationale`.
+- [x] T033 [US2] Inside `RuleBasedPolicyRouter.route`: for each `Finding`, find all rules whose `match == finding.entity_type` AND `severity_floor <= finding.risk_level`. Resolve conflicts via T032. Apply the resolved strategy through the registry. Build a `PolicyDecision` per fired rule including the conflict-resolution rationale when applicable.
+- [x] T034 [US2] Apply transforms in span order so multi-strategy outputs compose correctly. The router applies replacements in reverse span order to keep earlier spans stable; the resulting `transformed_text` is exposed on `RoutedOutcome.transformed_text`.
 
 ### Strategy implementations needed for US2
 
-- [ ] T035 [P] [US2] Update `packages/pip/src/arc_guard/strategies/hash.py` to register itself as `"hash"` and conform to the `apply(text, findings) -> tuple[str, Sequence[PolicyDecision]]` signature returning `[HASH:<8 hex>]` placeholders.
-- [ ] T036 [P] [US2] Update `packages/pip/src/arc_guard/strategies/block.py` to register itself as `"block"` and return `("", [PolicyDecision(strategy="block", rationale="blocked by policy", ...)])` — the router builds the `RefusalEnvelope` from the firing rule's overrides.
-- [ ] T037 [P] [US2] Create `packages/pip/src/arc_guard/strategies/warn.py` defining `WarnStrategy` registered as `"warn"`. Pass-through transform; emits `PolicyDecision` with `rationale` prefixed `"warn:"` so downstream observers can filter.
+- [x] T035 [P] [US2] Update `packages/pip/src/arc_guard/strategies/hash.py` to register itself as `"hash"` and conform to the `apply(text, findings) -> tuple[str, Sequence[PolicyDecision]]` signature returning `[HASH:<8 hex>]` placeholders.
+- [x] T036 [P] [US2] Update `packages/pip/src/arc_guard/strategies/block.py` to register itself as `"block"` and return `("", [PolicyDecision(strategy="block", rationale="blocked by policy", ...)])` — the router builds the `RefusalEnvelope` from the firing rule's overrides.
+- [x] T037 [P] [US2] Create `packages/pip/src/arc_guard/strategies/warn.py` defining `WarnStrategy` registered as `"warn"`. Pass-through transform; emits `PolicyDecision` with `rationale` prefixed `"warn:"` so downstream observers can filter.
 
 ### Pipeline integration (the policy-on path)
 
-- [ ] T038 [US2] Update `packages/pip/src/arc_guard/pipeline.py` `_run` to branch on `self.config.policy is None`: if `None`, preserve Spec 001 behavior (current code path); if not, resolve the active router via `self._policy_router or RuleBasedPolicyRouter()` (lazily cached) and call `route(result, self.config.policy)` — the optional `policy_router=` constructor kwarg per plan research §6 lets callers (and tests) inject a custom `PolicyRouter` implementation. Apply the resulting `RoutedOutcome.transformed_text`, populate `result.decisions`, set `result.action` from the aggregate. Wire validation: at pipeline construction, if `policy is not None`, call `validate_strategies_registered(policy)` from T020.
-- [ ] T039 [US2] Add `_apply_outcome` helper to `pipeline.py` that builds the new immutable `GuardResult` from the original `findings`, `outcome.transformed_text`, `outcome.decisions`, `outcome.refusal`, `outcome.clarification`, `outcome.aggregate_action`, and the original phase. The pipeline never mutates the original `result`.
+- [x] T038 [US2] Update `packages/pip/src/arc_guard/pipeline.py` `_run` to branch on `self.config.policy is None`: if `None`, preserve Spec 001 behavior (current code path); if not, resolve the active router via `self._policy_router or RuleBasedPolicyRouter()` (lazily cached) and call `route(result, self.config.policy)` — the optional `policy_router=` constructor kwarg per plan research §6 lets callers (and tests) inject a custom `PolicyRouter` implementation. Apply the resulting `RoutedOutcome.transformed_text`, populate `result.decisions`, set `result.action` from the aggregate. Wire validation: at pipeline construction, if `policy is not None`, call `validate_strategies_registered(policy)` from T020.
+- [x] T039 [US2] Add `_apply_outcome` helper to `pipeline.py` that builds the new immutable `GuardResult` from the original `findings`, `outcome.transformed_text`, `outcome.decisions`, `outcome.refusal`, `outcome.clarification`, `outcome.aggregate_action`, and the original phase. The pipeline never mutates the original `result`.
 
 ### US2 tests
 
@@ -157,9 +157,9 @@ The `packages/{core,pip,api}` workspace established by Spec 002 is unchanged. Sp
 
 ### RiskClassifier and aggregation
 
-- [ ] T044 [US3] Create `packages/pip/src/arc_guard/policy/classifier.py` with `RiskClassifier` class. Method `classify(findings: Sequence[Finding], thresholds: RiskThresholds) -> RiskBand`. Pure function. Aggregation: max of (per-finding ceiling, count-based escalation per `low_max_count` / `medium_max_count` / `high_escalates_at` / `critical_escalates_at` / `soft_pii_aggregation`).
-- [ ] T045 [US3] Create `packages/pip/src/arc_guard/policy/aggregation.py` with `aggregate_action_for_band(band: RiskBand, decisions: Sequence[PolicyDecision]) -> Literal["pass","redact","hash","block","tokenize"]`. LOW/MEDIUM → most restrictive among non-block decisions; HIGH → most restrictive non-block (FR-011 D3); CRITICAL → `"block"`.
-- [ ] T046 [US3] Integrate the classifier into `RuleBasedPolicyRouter.route`: after building per-finding decisions, classify the band, derive the aggregate action via T045, and stamp both onto `RoutedOutcome`. When band is HIGH, leave `transformed_text` fully sanitized (D3) and set the refusal builder up (US4); when CRITICAL, set `transformed_text=""` and ensure block strategy applied.
+- [x] T044 [US3] Create `packages/pip/src/arc_guard/policy/classifier.py` with `RiskClassifier` class. Method `classify(findings: Sequence[Finding], thresholds: RiskThresholds) -> RiskBand`. Pure function. Aggregation: max of (per-finding ceiling, count-based escalation per `low_max_count` / `medium_max_count` / `high_escalates_at` / `critical_escalates_at` / `soft_pii_aggregation`).
+- [x] T045 [US3] Create `packages/pip/src/arc_guard/policy/aggregation.py` with `aggregate_action_for_band(band: RiskBand, decisions: Sequence[PolicyDecision]) -> Literal["pass","redact","hash","block","tokenize"]`. LOW/MEDIUM → most restrictive among non-block decisions; HIGH → most restrictive non-block (FR-011 D3); CRITICAL → `"block"`.
+- [x] T046 [US3] Integrate the classifier into `RuleBasedPolicyRouter.route`: after building per-finding decisions, classify the band, derive the aggregate action via T045, and stamp both onto `RoutedOutcome`. When band is HIGH, leave `transformed_text` fully sanitized (D3) and set the refusal builder up (US4); when CRITICAL, set `transformed_text=""` and ensure block strategy applied.
 
 ### US3 tests
 
@@ -179,9 +179,9 @@ The `packages/{core,pip,api}` workspace established by Spec 002 is unchanged. Sp
 
 ### Refusal builder
 
-- [ ] T050 [US4] Create `packages/pip/src/arc_guard/refusal/builder.py` with `RefusalBuilder` class. Method `build(firing_rule: PolicyRule, decisions: Sequence[PolicyDecision], code: RefusalCode, trigger: str, policy_id: str) -> RefusalEnvelope`. Resolves `human_message` and `next_steps` from `firing_rule.refusal_human_message` / `firing_rule.refusal_next_steps` if set; otherwise from the registered `RefusalTemplate`.
-- [ ] T051 [US4] Integrate the builder into `RuleBasedPolicyRouter.route`: when band is HIGH or CRITICAL, build a `RefusalEnvelope` from the highest-severity firing rule. Wire `RefusalCode` selection: `JAILBREAK` for INJECTION-class findings, `PII_CRITICAL` for high-severity PII, `POLICY_BLOCK` as the default fallback when the firing rule doesn't dictate.
-- [ ] T052 [P] [US4] Update `packages/pip/src/arc_guard/strategies/block.py` if needed to surface enough metadata for the builder (e.g. include the `firing_rule.id` in `PolicyDecision.metadata` so the builder can locate it).
+- [x] T050 [US4] Create `packages/pip/src/arc_guard/refusal/builder.py` with `RefusalBuilder` class. Method `build(firing_rule: PolicyRule, decisions: Sequence[PolicyDecision], code: RefusalCode, trigger: str, policy_id: str) -> RefusalEnvelope`. Resolves `human_message` and `next_steps` from `firing_rule.refusal_human_message` / `firing_rule.refusal_next_steps` if set; otherwise from the registered `RefusalTemplate`.
+- [x] T051 [US4] Integrate the builder into `RuleBasedPolicyRouter.route`: when band is HIGH or CRITICAL, build a `RefusalEnvelope` from the highest-severity firing rule. Wire `RefusalCode` selection: `JAILBREAK` for INJECTION-class findings, `PII_CRITICAL` for high-severity PII, `POLICY_BLOCK` as the default fallback when the firing rule doesn't dictate.
+- [x] T052 [P] [US4] Update `packages/pip/src/arc_guard/strategies/block.py` if needed to surface enough metadata for the builder (e.g. include the `firing_rule.id` in `PolicyDecision.metadata` so the builder can locate it).
 
 ### US4 tests
 
@@ -201,9 +201,9 @@ The `packages/{core,pip,api}` workspace established by Spec 002 is unchanged. Sp
 
 ### Ambiguous classification + clarification builder
 
-- [ ] T056 [US5] Add `is_ambiguous(band: RiskBand, ruleset: PolicyRuleSet) -> bool` to `packages/pip/src/arc_guard/policy/classifier.py`. Returns `True` when `ruleset.clarification_enabled` is `True` AND `band == ruleset.ambiguous_threshold`. CRITICAL is never ambiguous.
-- [ ] T057 [US5] Create `packages/pip/src/arc_guard/policy/clarification.py` with `build_clarification(firing_rule: PolicyRule | None, findings: Sequence[Finding]) -> ClarificationRequest`. The suggested rephrase is drawn from the firing rule's `rationale_template` if present, else from a registered default per finding kind. The `triggering_rule_id` is set when known.
-- [ ] T058 [US5] Integrate into `RuleBasedPolicyRouter.route`: after classification, if `is_ambiguous(...)` AND CRITICAL is not present, set `RoutedOutcome.clarification`, leave `transformed_text` set to the sanitized text, set `aggregate_action="pass"`, and skip refusal-envelope construction. The pipeline's `_apply_outcome` populates `GuardResult.clarification` accordingly.
+- [x] T056 [US5] Add `is_ambiguous(band: RiskBand, ruleset: PolicyRuleSet) -> bool` to `packages/pip/src/arc_guard/policy/classifier.py`. Returns `True` when `ruleset.clarification_enabled` is `True` AND `band == ruleset.ambiguous_threshold`. CRITICAL is never ambiguous.
+- [x] T057 [US5] Create `packages/pip/src/arc_guard/policy/clarification.py` with `build_clarification(firing_rule: PolicyRule | None, findings: Sequence[Finding]) -> ClarificationRequest`. The suggested rephrase is drawn from the firing rule's `rationale_template` if present, else from a registered default per finding kind. The `triggering_rule_id` is set when known.
+- [x] T058 [US5] Integrate into `RuleBasedPolicyRouter.route`: after classification, if `is_ambiguous(...)` AND CRITICAL is not present, set `RoutedOutcome.clarification`, leave `transformed_text` set to the sanitized text, set `aggregate_action="pass"`, and skip refusal-envelope construction. The pipeline's `_apply_outcome` populates `GuardResult.clarification` accordingly.
 
 ### US5 tests
 
@@ -222,9 +222,9 @@ The `packages/{core,pip,api}` workspace established by Spec 002 is unchanged. Sp
 
 ### Decision emitter
 
-- [ ] T061 [US6] Create `packages/pip/src/arc_guard/decision/emitter.py` with `DecisionEmitter` class. Method `build(result: GuardResult, outcome: RoutedOutcome, latency_ms: float, phase: str) -> DecisionRecord`. Builds `FindingSummary` per finding (no raw text — span only); builds `TransformSummary` per applied strategy; populates `fired_rules`, `refusal_code`, `clarification_present`, `correlation_id` (from `GuardContext.correlation_id`).
-- [ ] T062 [US6] Method `emit(record: DecisionRecord, *, logger: Logger, metrics: MetricSink) -> None` invokes `logger.event("guard.decision", level="info", **dataclasses.asdict(record))`, `metrics.counter("guard.decisions", attributes={"action": ..., "risk_band": ...})`, and `metrics.histogram("guard.findings_count", float(len(record.findings)))`.
-- [ ] T063 [US6] Update `packages/pip/src/arc_guard/pipeline.py` `_run` to instantiate the emitter (cached on the pipeline), measure run latency, build the record after `_apply_outcome`, store on `pipeline._last_decision` for tests, and call `emit(...)` with the configured logger/metrics from `self.config`.
+- [x] T061 [US6] Create `packages/pip/src/arc_guard/decision/emitter.py` with `DecisionEmitter` class. Method `build(result: GuardResult, outcome: RoutedOutcome, latency_ms: float, phase: str) -> DecisionRecord`. Builds `FindingSummary` per finding (no raw text — span only); builds `TransformSummary` per applied strategy; populates `fired_rules`, `refusal_code`, `clarification_present`, `correlation_id` (from `GuardContext.correlation_id`).
+- [x] T062 [US6] Method `emit(record: DecisionRecord, *, logger: Logger, metrics: MetricSink) -> None` invokes `logger.event("guard.decision", level="info", **dataclasses.asdict(record))`, `metrics.counter("guard.decisions", attributes={"action": ..., "risk_band": ...})`, and `metrics.histogram("guard.findings_count", float(len(record.findings)))`.
+- [x] T063 [US6] Update `packages/pip/src/arc_guard/pipeline.py` `_run` to instantiate the emitter (cached on the pipeline), measure run latency, build the record after `_apply_outcome`, store on `pipeline._last_decision` for tests, and call `emit(...)` with the configured logger/metrics from `self.config`.
 
 ### US6 tests
 
@@ -246,7 +246,7 @@ The `packages/{core,pip,api}` workspace established by Spec 002 is unchanged. Sp
 
 ### Tokenize strategy (built-in reference implementation)
 
-- [ ] T068 [US7] Create `packages/pip/src/arc_guard/strategies/tokenize.py` with `TokenizeStrategy` registered as `"tokenize"` via the `@strategy("tokenize")` decorator. Per-input deterministic format `[<TYPE>_TOK_<N>]` (1-indexed per type). Cross-run determinism is NOT promised by Spec 003 (research §10).
+- [x] T068 [US7] Create `packages/pip/src/arc_guard/strategies/tokenize.py` with `TokenizeStrategy` registered as `"tokenize"` via the `@strategy("tokenize")` decorator. Per-input deterministic format `[<TYPE>_TOK_<N>]` (1-indexed per type). Cross-run determinism is NOT promised by Spec 003 (research §10).
 
 ### US7 tests
 

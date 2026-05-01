@@ -47,17 +47,17 @@ class TestRedactStrategy:
     def test_no_findings_returns_text_unchanged(self) -> None:
         strategy = RedactStrategy()
         text = "hello world"
-        result, label = strategy.apply(text, ())
+        result, decisions = strategy.apply(text, ())
         assert result == text
-        assert label == "redact"
+        assert strategy.name == "redact"
 
     def test_single_finding_replaced(self) -> None:
         strategy = RedactStrategy()
         text = "Call 4111111111111111 now"
         f = _finding("CREDIT_CARD", 5, 21)
-        result, label = strategy.apply(text, (f,))
+        result, decisions = strategy.apply(text, (f,))
         assert result == "Call [CREDIT_CARD] now"
-        assert label == "redact"
+        assert strategy.name == "redact"
 
     def test_multiple_non_overlapping_findings(self) -> None:
         strategy = RedactStrategy()
@@ -66,10 +66,10 @@ class TestRedactStrategy:
             _finding("PERSON", 6, 11),
             _finding("US_SSN", 18, 29),
         )
-        result, label = strategy.apply(text, findings)
+        result, decisions = strategy.apply(text, findings)
         assert "[PERSON]" in result
         assert "[US_SSN]" in result
-        assert label == "redact"
+        assert strategy.name == "redact"
 
     def test_overlapping_findings_handled_right_to_left(self) -> None:
         # Overlapping: outer span [0:10], inner span [2:5]
@@ -81,12 +81,12 @@ class TestRedactStrategy:
             _finding("OUTER", 0, 10),
             _finding("INNER", 2, 5),
         )
-        result, label = strategy.apply(text, findings)
+        result, decisions = strategy.apply(text, findings)
         # Right-to-left: INNER (start=2) replaced first, then OUTER (start=0)
         # After INNER: "01[INNER]56789" — but then OUTER replaces [0:10] in ORIGINAL text
         # Since we do right-to-left on ORIGINAL text, OUTER replaces original [0:10]
         # which overlaps. The net effect: OUTER replaces the whole original span.
-        assert label == "redact"
+        assert strategy.name == "redact"
         assert "[OUTER]" in result
 
     def test_entity_type_used_as_placeholder(self) -> None:
@@ -106,20 +106,23 @@ class TestHashStrategy:
     def test_no_findings_returns_text_unchanged(self) -> None:
         strategy = HashStrategy()
         text = "hello"
-        result, label = strategy.apply(text, ())
+        result, decisions = strategy.apply(text, ())
         assert result == text
-        assert label == "hash"
+        assert strategy.name == "hash"
 
     def test_single_finding_replaced_with_hex_digest(self) -> None:
         strategy = HashStrategy()
         text = "secret data here"
         f = _finding("SECRET", 0, 6)
-        result, label = strategy.apply(text, (f,))
-        assert label == "hash"
-        # Replaced token should be exactly 16 hex chars
+        result, decisions = strategy.apply(text, (f,))
+        assert strategy.name == "hash"
+        # Spec 003: replacement is `[HASH:<8hex>]`
         replaced_token = result.split(" ")[0]
-        assert len(replaced_token) == 16
-        assert all(c in "0123456789abcdef" for c in replaced_token)
+        assert replaced_token.startswith("[HASH:")
+        assert replaced_token.endswith("]")
+        digest_part = replaced_token[len("[HASH:"):-1]
+        assert len(digest_part) == 8
+        assert all(c in "0123456789abcdef" for c in digest_part)
 
     def test_same_span_produces_same_hash(self) -> None:
         strategy = HashStrategy()
@@ -139,8 +142,8 @@ class TestHashStrategy:
         text = "abc"
         f = _finding("X", 0, 3)
         result, _ = strategy.apply(text, (f,))
-        expected = hmac.new(key, b"abc", hashlib.sha256).hexdigest()[:16]
-        assert result == expected
+        expected_digest = hmac.new(key, b"abc", hashlib.sha256).hexdigest()[:8]
+        assert result == f"[HASH:{expected_digest}]"
 
     def test_key_auto_generated_and_written_to_file(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
@@ -168,8 +171,8 @@ class TestHashStrategy:
         text = "test"
         f = _finding("X", 0, 4)
         result, _ = strategy.apply(text, (f,))
-        expected = hmac.new(key, b"test", hashlib.sha256).hexdigest()[:16]
-        assert result == expected
+        expected_digest = hmac.new(key, b"test", hashlib.sha256).hexdigest()[:8]
+        assert result == f"[HASH:{expected_digest}]"
 
     def test_key_never_logged(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
@@ -192,16 +195,16 @@ class TestHashStrategy:
 class TestBlockStrategy:
     def test_always_returns_empty_string(self) -> None:
         strategy = BlockStrategy()
-        result, label = strategy.apply("anything", ())
+        result, decisions = strategy.apply("anything", ())
         assert result == ""
-        assert label == "block"
+        assert strategy.name == "block"
 
     def test_ignores_findings(self) -> None:
         strategy = BlockStrategy()
         findings = (_finding("X", 0, 3),)
-        result, label = strategy.apply("abc", findings)
+        result, decisions = strategy.apply("abc", findings)
         assert result == ""
-        assert label == "block"
+        assert strategy.name == "block"
 
     def test_ignores_text_content(self) -> None:
         strategy = BlockStrategy()

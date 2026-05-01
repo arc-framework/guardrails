@@ -1,13 +1,36 @@
+"""BlockStrategy — empties the text and signals a block decision (Spec 003)."""
+
 from __future__ import annotations
 
-from typing import Literal
+from collections.abc import Sequence
 
-from arc_guard_core.types import Finding
+from arc_guard_core.types import Finding, PolicyDecision, RiskLevel
 
 
 class BlockStrategy:
-    """Blocks all output by returning an empty string regardless of findings."""
+    """Returns empty text. The router builds the RefusalEnvelope."""
 
-    def apply(self, text: str, findings: tuple[Finding, ...]) -> tuple[str, Literal["block"]]:
-        """Return an empty string with action label ``"block"``."""
-        return ("", "block")
+    name: str = "block"
+
+    def apply(
+        self, text: str, findings: Sequence[Finding]
+    ) -> tuple[str, tuple[PolicyDecision, ...]]:
+        if not findings:
+            return "", (
+                PolicyDecision(
+                    finding_ids=(),
+                    strategy=self.name,
+                    severity=RiskLevel.CRITICAL,
+                    rationale="blocked by policy (no findings)",
+                ),
+            )
+        decisions = tuple(
+            PolicyDecision(
+                finding_ids=(idx,),
+                strategy=self.name,
+                severity=f.risk_level,
+                rationale=f"blocked: {f.entity_type}",
+            )
+            for idx, f in enumerate(findings)
+        )
+        return "", decisions

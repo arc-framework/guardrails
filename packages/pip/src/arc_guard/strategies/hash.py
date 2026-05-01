@@ -5,10 +5,10 @@ import hmac
 import logging
 import os
 import secrets
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Literal
 
-from arc_guard_core.types import Finding
+from arc_guard_core.types import Finding, PolicyDecision
 
 logger = logging.getLogger("arc_guard")
 
@@ -32,22 +32,38 @@ def _load_or_create_key() -> bytes:
 
 
 class HashStrategy:
-    """HMAC-SHA256 pseudonymization — replaces each detected span with a 16-char hex digest."""
+    """HMAC-SHA256 pseudonymization. Replaces each span with ``[HASH:<8hex>]``."""
+
+    name: str = "hash"
 
     def __init__(self) -> None:
         self._key = _load_or_create_key()
 
-    def apply(self, text: str, findings: tuple[Finding, ...]) -> tuple[str, Literal["hash"]]:
-        """Replace spans in *text* with truncated HMAC-SHA256 digests.
-
-        Spans are replaced from right to left to preserve earlier offsets.
-        """
+    def apply(
+        self, text: str, findings: Sequence[Finding]
+    ) -> tuple[str, tuple[PolicyDecision, ...]]:
         if not findings:
-            return (text, "hash")
+            return text, ()
 
-        for finding in sorted(findings, key=lambda f: f.start, reverse=True):
+        decisions: list[PolicyDecision] = []
+        # Apply right-to-left so earlier offsets stay stable.
+        for finding_idx, finding in sorted(
+            enumerate(findings), key=lambda pair: -pair[1].start
+        ):
             span = text[finding.start : finding.end]
-            digest = hmac.new(self._key, span.encode("utf-8"), hashlib.sha256).hexdigest()[:16]
-            text = text[: finding.start] + digest + text[finding.end :]
-
-        return (text, "hash")
+            digest = hmac.new(
+                self._key, span.encode("utf-8"), hashlib.sha256
+            ).hexdigest()[:8]
+            replacement = f"[HASH:{digest}]"
+            text = text[: finding.start] + replacement + text[finding.end :]
+            decisions.append(
+                PolicyDecision(
+                    finding_ids=(finding_idx,),
+                    strategy=self.name,
+                    severity=finding.risk_level,
+                    rationale=f"hashed {finding.entity_type}",
+                    metadata={"digest_prefix": digest, "replacement": replacement},
+                )
+            )
+        # Reverse so decisions are in span-order
+        return text, tuple(reversed(decisions))

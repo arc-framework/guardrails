@@ -20,6 +20,7 @@ from arc_guard_core.observability import (
     NullTracer,
     Tracer,
 )
+from arc_guard_core.policy import PolicyRuleSet
 
 
 class GuardConfig(BaseModel):
@@ -42,6 +43,8 @@ class GuardConfig(BaseModel):
     tracer: Tracer = Field(default_factory=NullTracer)
     logger: Logger = Field(default_factory=NullLogger)
     metrics: MetricSink = Field(default_factory=NullMetricSink)
+    # Spec 003 — opt-in policy ruleset. None preserves Spec 001/002 behavior.
+    policy: PolicyRuleSet | None = None
 
     @field_validator("inspector_order", mode="before")
     @classmethod

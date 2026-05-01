@@ -343,6 +343,36 @@
     "kind": "protocol",
     "methods": [
       {
+        "is_async": false,
+        "name": "route",
+        "params": [
+          {
+            "annotation": "GuardResult",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "result"
+          },
+          {
+            "annotation": "PolicyRuleSet",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "ruleset"
+          }
+        ],
+        "return": "RoutedOutcome"
+      }
+    ],
+    "module": "arc_guard_core.protocols.policy_router",
+    "name": "PolicyRouter",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": true,
+    "kind": "protocol",
+    "methods": [
+      {
         "is_async": true,
         "name": "close",
         "params": [],
