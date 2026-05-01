@@ -1,7 +1,7 @@
 """Pytest hooks for the contract test suite.
 
 Adds ``--update-snapshot`` to write the live public surface back to the
-baseline files (T047). Use after intentional additive changes; review the
+baseline files. Use after intentional additive changes; review the
 diff before committing.
 """
 

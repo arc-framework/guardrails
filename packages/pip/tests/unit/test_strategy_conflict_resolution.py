@@ -1,4 +1,4 @@
-"""T041 — Strategy conflict resolution precedence."""
+"""Strategy conflict resolution precedence."""
 
 from __future__ import annotations
 

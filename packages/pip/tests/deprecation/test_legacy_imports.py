@@ -1,4 +1,4 @@
-"""T068 — every Spec 001 public symbol is reachable through the shim with a DeprecationWarning."""
+"""Every legacy public symbol is reachable through the shim with a DeprecationWarning."""
 
 from __future__ import annotations
 

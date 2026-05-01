@@ -1,4 +1,4 @@
-"""Unit tests for the RefusalCode registry (T018)."""
+"""Unit tests for the RefusalCode registry."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""T055 — API boundary request validation."""
+"""API boundary request validation."""
 
 from __future__ import annotations
 

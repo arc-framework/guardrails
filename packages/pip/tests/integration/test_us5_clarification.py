@@ -1,4 +1,4 @@
-"""T060 — US5 integration: clarification mode recovers ≥80% of borderline inputs (SC-006)."""
+"""US5 integration: clarification mode recovers ≥80% of borderline inputs."""
 
 from __future__ import annotations
 
@@ -90,7 +90,7 @@ def test_walkthrough_b5_single_borderline_returns_clarification() -> None:
 
 
 def test_clarification_recovery_rate_at_least_80_percent() -> None:
-    """SC-006 — at least 80% of the 10-input borderline suite returns clarification."""
+    """At least 80% of the 10-input borderline suite returns clarification."""
     recovered = 0
     for case_id, text, findings in BORDERLINE_FIXTURES:
         pipeline = _build_pipeline(findings)
@@ -99,6 +99,6 @@ def test_clarification_recovery_rate_at_least_80_percent() -> None:
             recovered += 1
     rate = recovered / len(BORDERLINE_FIXTURES)
     assert rate >= 0.8, (
-        f"SC-006: clarification recovery rate {rate:.0%} < 80% "
+        f"clarification recovery rate {rate:.0%} < 80% "
         f"({recovered}/{len(BORDERLINE_FIXTURES)} inputs)"
     )

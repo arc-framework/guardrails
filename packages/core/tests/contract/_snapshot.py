@@ -1,4 +1,4 @@
-"""Contract snapshot generator and diff (T038-T041).
+"""Contract snapshot generator and diff.
 
 Walks ``arc_guard_core.__all__`` and produces a JSON snapshot of every public
 type's shape (fields, properties, methods, parents, stability markers). The
@@ -73,7 +73,7 @@ def _stability_for(name: str) -> str:
     """Stability marker — heuristic until explicit @stable annotations land.
 
     The observability hook protocols (Tracer, Logger, MetricSink and their
-    Null counterparts) are experimental until Spec 004 closes; everything
+    Null counterparts) are experimental until the observability implementation lands; everything
     else is stable.
     """
     experimental = {
@@ -206,7 +206,7 @@ def _protocol_entry(name: str, obj: type) -> dict[str, Any]:
         "module": obj.__module__,
         "stability": _stability_for(name),
         "methods": methods,
-        # Concurrency: the contract test (T044) asserts this line exists.
+        # Concurrency: the contract test asserts this line exists.
         "has_concurrency_line": "Concurrency:" in doc,
         "has_failure_mode_line": "Failure mode:" in doc,
         "has_thread_safety_line": "Thread-safety:" in doc,

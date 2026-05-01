@@ -3,9 +3,9 @@
 This is the contract layer's view of the pipeline: an empty harness that
 accepts a ``GuardConfig`` and exposes the four canonical entry points. The
 batteries-included implementation (with the inspector chain, policy router,
-strategies, and reporters) lives in ``arc_guard.pipeline`` (Spec 003 work).
+strategies, and reporters) lives in ``arc_guard.pipeline``.
 
-Spec 002's pipeline shape only routes around the ``enabled`` flag and runs
+This pipeline shape only routes around the ``enabled`` flag and runs
 the configured inspectors (none, by default in ``core``) — it never imports
 adapter or provider code.
 """
@@ -26,7 +26,7 @@ from arc_guard_core.types import (
 
 
 def _validate_finding(finding: Finding) -> None:
-    """Raise ``PipelineContractValidationError`` if *finding* is malformed (FR-018)."""
+    """Raise ``PipelineContractValidationError`` if *finding* is malformed."""
     if finding.start < 0 or finding.end <= finding.start:
         raise PipelineContractValidationError(
             f"Finding has invalid span [{finding.start}:{finding.end}]",
@@ -54,7 +54,7 @@ def _validate_finding(finding: Finding) -> None:
 
 
 def _validate_decision(decision: PolicyDecision) -> None:
-    """Raise ``PipelineContractValidationError`` if *decision* is malformed (FR-018)."""
+    """Raise ``PipelineContractValidationError`` if *decision* is malformed."""
     if not decision.finding_ids:
         raise PipelineContractValidationError(
             "PolicyDecision has empty finding_ids",
@@ -78,13 +78,13 @@ def _validate_decision(decision: PolicyDecision) -> None:
 class GuardPipeline:
     """Empty pipeline shape from ``arc-guard-core``.
 
-    The Spec 002 pipeline supports four entry points (sync + async pre/post)
+    The pipeline shape supports four entry points (sync + async pre/post)
     and the disabled / pass-through flow. With no inspectors registered, the
     pass-through returns the input text unchanged with ``action="pass"``.
 
     This class IS the structural ``Guard`` protocol implementation provided
     by ``core``. ``arc_guard.pipeline`` extends it with the inspector chain,
-    middleware, strategies, and reporters in Spec 003.
+    middleware, strategies, and reporters.
     """
 
     def __init__(self, *, config: GuardConfig | None = None) -> None:
@@ -121,14 +121,15 @@ class GuardPipeline:
                 bypass_reason="disabled",
                 phase=phase,  # type: ignore[arg-type]
             )
-        # Spec 002: no inspectors are wired in `core`. Spec 003 plugs the chain.
+        # No inspectors are wired in this contract layer; the implementation
+        # chain lives in arc_guard.pipeline.
         return GuardResult(
             text=guard_input.text,
             action="pass",
             phase=phase,  # type: ignore[arg-type]
         )
 
-    # -- helpers used by Spec 003+ -------------------------------------------
+    # -- helpers exposed for downstream callers ------------------------------
 
     @staticmethod
     def validate_findings(findings: Sequence[Finding]) -> None:

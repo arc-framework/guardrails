@@ -1,4 +1,4 @@
-"""Spec 001 -> Spec 002 deprecation table.
+"""Historical-to-current deprecation table.
 
 Every entry maps an old ``arc_guard.*`` import path to its new home in
 ``arc_guard_core``. Imports of the old paths emit a ``DeprecationWarning``
@@ -41,10 +41,10 @@ LEGACY_SYMBOLS: dict[str, LegacyEntry] = {
     "Finding": LegacyEntry("arc_guard_core.types", "Finding", "0.3.0"),
     "GuardResult": LegacyEntry("arc_guard_core.types", "GuardResult", "0.3.0"),
     "EntityDefinition": LegacyEntry("arc_guard_core.types", "EntityDefinition", "0.3.0"),
-    # Config — Spec 001 GuardConfig (presidio + model fields) preserved unchanged
-    # under arc_guard.config_env. Spec 002's generic contract is a new class at
-    # arc_guard_core.config.GuardConfig with a different shape; callers that
-    # want the new contract must opt in to the new path.
+    # The legacy GuardConfig (presidio + model-path fields) lives at
+    # arc_guard.config_env unchanged. The generic contract at
+    # arc_guard_core.config.GuardConfig is a separate class with a
+    # different shape; callers that want it must opt in to the new path.
     "GuardConfig": LegacyEntry("arc_guard.config_env", "GuardConfig", "0.3.0"),
     # Registry
     "EntityRegistry": LegacyEntry("arc_guard_core.registry", "EntityRegistry", "0.3.0"),

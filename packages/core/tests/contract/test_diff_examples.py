@@ -1,4 +1,4 @@
-"""T046 — Deliberate-mutation tests for the diff engine (SC-005)."""
+"""Deliberate-mutation tests for the diff engine."""
 
 from __future__ import annotations
 

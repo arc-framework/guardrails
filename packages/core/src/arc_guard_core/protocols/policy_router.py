@@ -1,4 +1,4 @@
-"""PolicyRouter Protocol — routes findings to strategies (Spec 003)."""
+"""PolicyRouter Protocol — routes findings to strategies."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ class PolicyRouter(Protocol):
     may invoke from multiple coroutines / threads simultaneously.
     Thread-safety: thread-safe.
 
-    Declared exceptions: ``PolicyRouterError`` (Spec 002 exception
+    Declared exceptions: ``PolicyRouterError`` (from the typed exception
     hierarchy). Internal failures MUST be caught and converted; the public
     API never propagates a raw ``PolicyRouterError``.
 

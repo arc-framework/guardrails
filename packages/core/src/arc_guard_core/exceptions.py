@@ -46,11 +46,11 @@ class ArcGuardError(Exception):
 
 
 class ConfigError(ArcGuardError):
-    """Configuration load and validation failures (FR-016)."""
+    """Configuration load and validation failures."""
 
 
 class ValidationError(ArcGuardError):
-    """Boundary validation failures (FR-017, FR-018, FR-019)."""
+    """Boundary validation failures (config, API, pipeline contract, adapter)."""
 
 
 class PipelineError(ArcGuardError):

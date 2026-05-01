@@ -113,17 +113,17 @@ __all__ = [
     "DEFAULT_REFUSAL_TEMPLATES",
     "register_refusal_template",
     "get_refusal_template",
-    # policy (Spec 003)
+    # policy
     "RiskBand",
     "RiskThresholds",
     "PolicyRule",
     "PolicyRuleSet",
     "RoutedOutcome",
     "TransformSummary",
-    # decision (Spec 003)
+    # decision
     "DecisionRecord",
     "FindingSummary",
-    # placeholders (Spec 003)
+    # placeholders
     "DEFAULT_PLACEHOLDERS",
     "register_placeholder",
     "get_placeholder",

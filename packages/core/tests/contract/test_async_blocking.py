@@ -1,4 +1,4 @@
-"""T061 — regression test for the async-blocking lint."""
+"""Regression test for the async-blocking lint."""
 
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def test_workspace_has_no_async_blocking_regressions() -> None:
 
 
 def test_asyncio_to_thread_wrapper_is_accepted(tmp_path: Path) -> None:
-    """asyncio.to_thread is an explicit opt-out and must not be flagged."""
+    """Asyncio.to_thread is an explicit opt-out and must not be flagged."""
     src = """
 import asyncio
 import time

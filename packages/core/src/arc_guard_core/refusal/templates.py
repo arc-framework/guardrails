@@ -1,4 +1,4 @@
-"""Refusal-template registry (Spec 003 FR-015, FR-016).
+"""Refusal-template registry.
 
 Maps each ``RefusalCode`` to a default ``RefusalTemplate``. Per-rule
 overrides take precedence at build time; the registry provides the
@@ -53,7 +53,7 @@ DEFAULT_REFUSAL_TEMPLATES: dict[RefusalCode, RefusalTemplate] = {
         next_steps=("Adjust the request and try again.",),
     ),
     RefusalCode.FIDELITY_DROP_PLACEHOLDER: RefusalTemplate(
-        human_message="(reserved for Spec 005 — fidelity-drop refusals)",
+        human_message="(reserved for fidelity-drop refusals — detector not yet implemented)",
         next_steps=(),
     ),
 }

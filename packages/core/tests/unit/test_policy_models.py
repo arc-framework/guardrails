@@ -1,4 +1,4 @@
-"""T021 — Spec 003 policy model unit tests."""
+"""Policy model unit tests."""
 
 from __future__ import annotations
 

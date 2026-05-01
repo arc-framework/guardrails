@@ -1,4 +1,4 @@
-"""T066 — US6 integration: every pipeline run produces a complete DecisionRecord."""
+"""US6 integration: every pipeline run produces a complete DecisionRecord."""
 
 from __future__ import annotations
 
@@ -77,7 +77,7 @@ def test_decision_record_aggregate_band_propagated() -> None:
 
 
 def test_decision_record_skipped_when_policy_is_none() -> None:
-    """Spec 001/002 fallback path — no policy means no DecisionRecord."""
+    """Legacy fallback path — no policy means no DecisionRecord is built."""
     pipeline = GuardPipeline(inspectors=[_StubInspector(())])
     asyncio.run(pipeline.pre_process(GuardInput(text="hi")))
     # With no policy, the emitter is never called.

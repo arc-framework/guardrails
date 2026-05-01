@@ -1,4 +1,4 @@
-"""T043 — public-types snapshot test."""
+"""Public-types snapshot test."""
 
 from __future__ import annotations
 

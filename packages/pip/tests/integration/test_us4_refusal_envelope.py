@@ -1,4 +1,4 @@
-"""T055 — US4 integration: refusal envelope structure end-to-end."""
+"""US4 integration: refusal envelope structure end-to-end."""
 
 from __future__ import annotations
 

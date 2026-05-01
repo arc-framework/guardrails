@@ -1,17 +1,17 @@
-"""T102 — FR-023: no internal exception leaks across the public API boundary.
+"""No internal exception leaks across the public API boundary.
 
 The ``Guard`` Protocol's public methods MUST surface failures as a typed
 ``GuardResult`` (with ``bypass_reason`` for fail-open paths or a
 ``RefusalEnvelope`` for fail-closed paths) — they MUST NOT raise the
 internal exception classes from ``arc_guard_core.exceptions``.
 
-Spec 002's ``GuardPipeline`` shape is the structural ``Guard`` provided by
+The ``GuardPipeline`` shape is the structural ``Guard`` provided by
 ``core``. With no inspectors registered, exceptions cannot originate from
 the inspector chain; this test asserts the *contract* by injecting a stage
 function that raises and confirming the result is a ``GuardResult`` rather
 than a raised exception.
 
-When Spec 003 wires the real inspector chain, the same contract test will
+When the real inspector chain lands, the same contract test will
 extend to cover injection at every documented call site.
 """
 
@@ -49,7 +49,7 @@ def test_pipeline_run_does_not_leak_exception(
     """When the pipeline's internal _run raises a typed exception, the public
     pre/post entry points wrap it into a fail-open or fail-closed GuardResult.
 
-    Spec 002 ships a deliberately permissive shape (no inspector chain), so
+    The shape is deliberately permissive (no inspector chain), so
     we monkey-patch the internal ``_run`` to simulate a downstream failure
     and verify the contract still holds.
     """
@@ -120,13 +120,13 @@ def test_unhandled_internal_exception_does_not_propagate(
         monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Even an unfamiliar Python exception should not leak from the public API
-    once the implementation honors the contract. Spec 002 documents this in
-    contracts/exceptions.university §"No leak rule"; Spec 003 wires the real inspector
-    chain and inherits the contract.
+    once the implementation honors the contract. The empty contract pipeline
+    cannot raise today; this test documents the no-leak rule so a future
+    inspector chain can't regress past it.
     """
     # The spec requires that the public API never surfaces unwrapped internal
     # exceptions. Today the empty pipeline cannot raise; this test simply
-    # documents the requirement so a regression in Spec 003 can't slip past.
+    # documents the requirement so a future regression can't slip past.
     pipeline = GuardPipeline(config=GuardConfig())
     result = pipeline.pre_process_sync(GuardInput(text="ok"))
     assert isinstance(result, GuardResult)

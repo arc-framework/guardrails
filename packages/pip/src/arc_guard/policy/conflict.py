@@ -1,4 +1,4 @@
-"""Strategy conflict resolution (Spec 003 FR-007)."""
+"""Strategy conflict resolution."""
 
 from __future__ import annotations
 

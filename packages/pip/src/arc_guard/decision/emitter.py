@@ -1,4 +1,4 @@
-"""DecisionRecord builder + emitter (Spec 003 FR-021–FR-024)."""
+"""DecisionRecord builder + emitter."""
 
 from __future__ import annotations
 

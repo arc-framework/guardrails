@@ -1,4 +1,4 @@
-"""T064 — DecisionEmitter unit tests."""
+"""DecisionEmitter unit tests."""
 
 from __future__ import annotations
 

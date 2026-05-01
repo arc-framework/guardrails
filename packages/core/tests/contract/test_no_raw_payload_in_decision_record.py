@@ -1,6 +1,6 @@
-"""T065 / SC-005 — DecisionRecord MUST NOT leak raw sensitive payloads.
+"""DecisionRecord MUST NOT leak raw sensitive payloads.
 
-Per FR-023, every emitted DecisionRecord serialized to JSON must contain
+Per every emitted DecisionRecord serialized to JSON must contain
 no substring of the original input of length >= 8 and no portion of any
 raw entity content. This test runs the pipeline against a fixture set and
 scans serialized records for forbidden substrings.

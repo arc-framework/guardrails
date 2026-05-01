@@ -1,4 +1,4 @@
-"""T045 — Exception hierarchy snapshot + failure-mode declarations (FR-022, SC-006)."""
+"""Exception hierarchy snapshot + failure-mode declarations."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ def test_exceptions_match_baseline(update_snapshot: bool) -> None:
 
 
 def test_every_leaf_declares_failure_mode() -> None:
-    """FR-022 / SC-006: every leaf exception declares ``__failure_mode__``."""
+    """every leaf exception declares ``__failure_mode__``."""
     live = snap.build_exceptions_snapshot()
     leaves = [
         entry

@@ -1,6 +1,6 @@
 """Deprecation shim for arc_guard.protocols.entity_provider.
 
-Spec 002 moves this protocol to arc_guard_core.protocols.entity_provider. Removed
+The Protocol moved to arc_guard_core.protocols.entity_provider. Removed
 in arc-guard 0.3.0.
 """
 

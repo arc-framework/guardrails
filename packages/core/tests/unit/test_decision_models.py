@@ -1,4 +1,4 @@
-"""T022 — Spec 003 decision-record model unit tests."""
+"""Decision-record model unit tests."""
 
 from __future__ import annotations
 

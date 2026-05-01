@@ -1,4 +1,4 @@
-"""Integration test for US1 — `core` install closure (T036).
+"""Integration test for US1 — `core` install closure.
 
 A fresh Python interpreter that imports only ``arc_guard_core`` must not
 pull any provider SDK into ``sys.modules``. We run this in a subprocess so

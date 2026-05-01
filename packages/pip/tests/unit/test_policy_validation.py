@@ -1,4 +1,4 @@
-"""T043 — Policy validation rejects unknown strategies and entity types."""
+"""Policy validation rejects unknown strategies and entity types."""
 
 from __future__ import annotations
 

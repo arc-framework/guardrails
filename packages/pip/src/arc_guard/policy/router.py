@@ -1,4 +1,4 @@
-"""RuleBasedPolicyRouter — default PolicyRouter implementation (Spec 003)."""
+"""RuleBasedPolicyRouter — default PolicyRouter implementation."""
 
 from __future__ import annotations
 
@@ -115,7 +115,10 @@ class RuleBasedPolicyRouter:
         # Aggregate band classification
         band, agg_marker = self._classifier.classify(findings, ruleset.risk_thresholds)
         if agg_marker and decisions:
-            # FR-013: record the aggregation marker in the leading decision.
+            # When a count-based aggregation rule (e.g. soft-PII escalation)
+            # changed the band, record that in the leading decision so the
+            # audit trail explains why the band differs from per-finding
+            # severities.
             first = decisions[0]
             decisions[0] = PolicyDecision(
                 finding_ids=first.finding_ids,
@@ -130,7 +133,7 @@ class RuleBasedPolicyRouter:
             result.text, findings, decisions, per_finding_winning_rule
         )
 
-        # Aggregate action selection (D3)
+        # Aggregate action selection driven by the run's risk band.
         aggregate_action = aggregate_action_for_band(band, decisions)
 
         # Refusal + clarification policy
@@ -154,7 +157,8 @@ class RuleBasedPolicyRouter:
                     trigger=findings[0].entity_type if findings else "policy",
                     policy_id=firing.id,
                 )
-        # CRITICAL — empty out the text per FR-011
+        # CRITICAL band: blank the text and force the block action.
+        # The refusal envelope above carries the user-facing explanation.
         if band == RiskBand.CRITICAL:
             transformed_text = ""
             aggregate_action = "block"

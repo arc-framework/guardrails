@@ -1,4 +1,4 @@
-"""Unit tests for the observability hook surface (T016)."""
+"""Unit tests for the observability hook surface."""
 
 from __future__ import annotations
 

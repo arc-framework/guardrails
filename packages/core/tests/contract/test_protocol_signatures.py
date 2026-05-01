@@ -1,4 +1,4 @@
-"""T044 — Protocol signature snapshot + concurrency-declaration assertion (FR-024, SC-007)."""
+"""Protocol signature snapshot + concurrency-declaration assertion."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def test_protocols_match_baseline(update_snapshot: bool) -> None:
 
 
 def test_every_protocol_declares_concurrency_mode() -> None:
-    """FR-024 / SC-007: every public protocol's docstring must contain a
+    """every public protocol's docstring must contain a
     ``Concurrency:`` line declaring sync/async/both."""
     live = snap.build_protocols_snapshot()
     missing = [entry["name"] for entry in live if not entry.get("has_concurrency_line")]

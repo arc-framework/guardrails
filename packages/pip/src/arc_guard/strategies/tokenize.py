@@ -1,4 +1,4 @@
-"""TokenizeStrategy — per-input deterministic tokens (Spec 003)."""
+"""TokenizeStrategy — per-input deterministic tokens."""
 
 from __future__ import annotations
 
@@ -11,9 +11,8 @@ class TokenizeStrategy:
     """Replace each detected span with ``[<TYPE>_TOK_<N>]``.
 
     Per-input deterministic: ``N`` is a per-type sequential index (1-indexed)
-    in span order. Cross-run determinism is NOT promised by Spec 003 —
-    Spec 007 may add per-tenant deterministic tokenization via injected
-    secrets.
+    in span order. Cross-run determinism is not promised; a per-tenant
+    deterministic tokenizer can be added later via an injected secret.
     """
 
     name: str = "tokenize"

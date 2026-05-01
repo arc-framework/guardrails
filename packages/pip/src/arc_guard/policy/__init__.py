@@ -1,7 +1,7 @@
-"""arc_guard.policy — policy router, classifier, conflict resolver.
+"""arc_guard.policy — policy router, classifier, and conflict resolver.
 
-Spec 003 implementation modules. The contract types live in
-``arc_guard_core.policy``; this package provides the runtime behavior.
+The contract types live in ``arc_guard_core.policy``; this package provides
+the runtime behavior.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ def validate_strategies_registered(ruleset: PolicyRuleSet) -> None:
     """Raise ConfigCrossFieldError if any rule references an unknown strategy.
 
     This is the runtime hook that ``GuardConfig.policy`` validation invokes
-    when a pipeline is constructed (Spec 003 FR-009).
+    when a pipeline is constructed.
     """
     from arc_guard.strategies.registry import is_registered
 

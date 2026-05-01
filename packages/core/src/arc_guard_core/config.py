@@ -1,7 +1,7 @@
 """Configuration schema for arc-guard-core.
 
 ``GuardConfig`` is a frozen pydantic v2 model with ``extra='forbid'`` so
-unknown fields fail at load time (FR-016). Environment hydration lives in
+unknown fields fail at load time. Environment hydration lives in
 ``arc_guard.config_env`` (the ``pip`` package); ``core`` does no env IO.
 """
 
@@ -26,8 +26,8 @@ from arc_guard_core.policy import PolicyRuleSet
 class GuardConfig(BaseModel):
     """Structural configuration for the guard pipeline.
 
-    Defaults are deliberately product-neutral (FR-020): no provider names,
-    no transport subjects, no platform-specific paths.
+    Defaults are deliberately product-neutral: no provider names, no
+    transport subjects, no platform-specific paths.
     """
 
     model_config = ConfigDict(
@@ -43,7 +43,8 @@ class GuardConfig(BaseModel):
     tracer: Tracer = Field(default_factory=NullTracer)
     logger: Logger = Field(default_factory=NullLogger)
     metrics: MetricSink = Field(default_factory=NullMetricSink)
-    # Spec 003 — opt-in policy ruleset. None preserves Spec 001/002 behavior.
+    # Optional policy ruleset; None disables routing and the pipeline falls
+    # back to the legacy single-strategy chain.
     policy: PolicyRuleSet | None = None
 
     @field_validator("inspector_order", mode="before")

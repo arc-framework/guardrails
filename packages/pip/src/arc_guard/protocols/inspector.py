@@ -1,6 +1,6 @@
 """Deprecation shim for arc_guard.protocols.inspector.
 
-Spec 002 moves this protocol to arc_guard_core.protocols.inspector. Removed
+The Protocol moved to arc_guard_core.protocols.inspector. Removed
 in arc-guard 0.3.0.
 """
 

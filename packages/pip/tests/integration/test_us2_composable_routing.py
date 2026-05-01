@@ -1,4 +1,4 @@
-"""T042 — US2 integration: 4 rules fire on one input (Walkthrough A.4)."""
+"""US2 integration: 4 rules fire on one input (Walkthrough A.4)."""
 
 from __future__ import annotations
 

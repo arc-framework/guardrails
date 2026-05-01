@@ -1,4 +1,4 @@
-"""T058 — Adapter boundary validators (FR-019)."""
+"""Adapter boundary validators."""
 
 from __future__ import annotations
 

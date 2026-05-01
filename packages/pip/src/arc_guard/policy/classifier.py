@@ -1,4 +1,4 @@
-"""RiskClassifier — aggregate findings into a RiskBand (Spec 003 FR-010, FR-013, FR-018)."""
+"""RiskClassifier — aggregate findings into a RiskBand."""
 
 from __future__ import annotations
 
@@ -21,9 +21,11 @@ class RiskClassifier:
     ) -> tuple[RiskBand, str | None]:
         """Return (band, optional aggregation rationale marker).
 
-        ``aggregation_marker`` is non-None when an aggregation rule changed
-        the band — the router records it in the leading PolicyDecision's
-        rationale (FR-013).
+        ``aggregation_marker`` is non-None when a count-based aggregation
+        rule changed the band (e.g. soft-PII escalation). The router
+        records the marker in the leading ``PolicyDecision.rationale`` so
+        the audit trail explains why the band differs from per-finding
+        severities.
         """
         if not findings:
             return RiskBand.LOW, None
@@ -58,7 +60,9 @@ class RiskClassifier:
 
 
 def is_ambiguous(band: RiskBand, ruleset: PolicyRuleSet) -> bool:
-    """Return True when policy classification kicks into clarification mode (Spec 003 FR-018)."""
+    """Return True when the run lands on the configured ambiguous threshold
+    and clarification is enabled.
+    """
     if not ruleset.clarification_enabled:
         return False
     if band == RiskBand.CRITICAL:

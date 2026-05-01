@@ -1,4 +1,4 @@
-"""Unit tests for the typed exception hierarchy (T014)."""
+"""Unit tests for the typed exception hierarchy."""
 
 from __future__ import annotations
 

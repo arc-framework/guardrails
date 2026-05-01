@@ -18,8 +18,8 @@ class Guard(Protocol):
 
     Declared exceptions: none. Failures MUST surface as a ``GuardResult``
     (with ``bypass_reason="error"`` for fail-open paths or ``action="block"``
-    with a ``RefusalEnvelope`` for fail-closed paths). FR-023 forbids
-    unwrapped exceptions across this boundary.
+    with a ``RefusalEnvelope`` for fail-closed paths). Unwrapped
+    exceptions are forbidden across this boundary.
 
     Failure mode: aggregate fail-open. Each underlying stage carries its
     own per-stage mode (see ``contracts/exceptions.university``).

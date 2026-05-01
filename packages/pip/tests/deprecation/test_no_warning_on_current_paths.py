@@ -1,4 +1,4 @@
-"""T069 — current `arc_guard_core.*` paths fire no DeprecationWarning."""
+"""Current `arc_guard_core.*` paths fire no DeprecationWarning."""
 
 from __future__ import annotations
 

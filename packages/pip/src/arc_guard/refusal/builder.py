@@ -1,4 +1,4 @@
-"""RefusalEnvelope builder (Spec 003 FR-014–FR-017)."""
+"""RefusalEnvelope builder."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ class RefusalBuilder:
     1. ``firing_rule.refusal_human_message`` / ``firing_rule.refusal_next_steps`` if set.
     2. Otherwise the registered ``RefusalTemplate`` for the given ``code``.
 
-    Result: every envelope has non-empty required fields (FR-014, FR-016).
+    Result: every envelope has non-empty required fields.
     """
 
     def build(
@@ -57,8 +57,8 @@ class RefusalBuilder:
                 details={"code": str(code), "rule_id": firing_rule.id},
             )
         if not next_steps:
-            # FR-016: every envelope returned to the user has non-empty next_steps.
-            # Force the registered default if both rule and template are empty.
+            # Every envelope returned to a caller has non-empty next_steps;
+            # force a safe default if both the rule and template are empty.
             next_steps = ("Adjust the request and try again.",)
 
         return RefusalEnvelope(

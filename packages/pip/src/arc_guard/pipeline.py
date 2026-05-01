@@ -74,7 +74,8 @@ class GuardPipeline:
         reporter: Reporter | None = None,
         strategies: dict[str, ActionStrategy] | None = None,
         *,
-        # Spec 003 — opt-in policy routing
+        # Opt-in policy routing. When `policy_ruleset` is None, the pipeline
+        # falls back to the single-strategy chain selected by `flags`.
         policy_ruleset: PolicyRuleSet | None = None,
         policy_router: PolicyRouter | None = None,
         logger_hook: Logger | None = None,
@@ -104,9 +105,9 @@ class GuardPipeline:
     ) -> GuardPipeline:
         """Build a pipeline with default config and inspector chain.
 
-        Spec 002 default chain: ``InjectionInspector`` + ``PresidioInspector``.
-        Spec 005 will reintroduce semantic / fidelity inspectors under the
-        intent-fidelity contract.
+        The default chain is ``InjectionInspector`` + ``PresidioInspector``.
+        A future intent-fidelity contract will reintroduce semantic and
+        fidelity inspectors.
         """
         return cls(
             config=GuardConfig.from_env(),
@@ -133,7 +134,7 @@ class GuardPipeline:
         return self._strategies.get(name, self._strategies["redact"])
 
     def _apply_outcome(self, result: GuardResult, outcome: Any) -> GuardResult:
-        """Build the new GuardResult from a RoutedOutcome (Spec 003 T039)."""
+        """Build the new GuardResult from a RoutedOutcome."""
         return GuardResult(
             text=outcome.transformed_text,
             action=outcome.aggregate_action,
@@ -204,7 +205,8 @@ class GuardPipeline:
 
         # --- ActionStrategy / PolicyRouter ---
         if self._policy_ruleset is not None:
-            # Spec 003 — opt-in policy routing path.
+            # Opt-in policy routing: per-finding decisions, aggregated band,
+            # decision-record emission.
             import time
 
             router = self._policy_router or RuleBasedPolicyRouter()
@@ -220,10 +222,11 @@ class GuardPipeline:
                 metrics=self._metrics_hook,
             )
         elif result.findings:
-            # Spec 001/002 legacy path — single-strategy chain.
+            # Legacy single-strategy chain: pick one strategy from flags
+            # (default ``redact``) and apply it across all findings.
             strategy = self._resolve_strategy()
             new_text, decisions = strategy.apply(result.text, result.findings)
-            # Strategy `.name` attribute drives the legacy aggregate action.
+            # Strategy `.name` attribute drives the aggregate action label.
             action = getattr(strategy, "name", "redact")
             result = GuardResult(
                 text=new_text,

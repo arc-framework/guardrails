@@ -1,4 +1,4 @@
-"""T048 — aggregate_action_for_band tests (D3 + FR-011)."""
+"""Aggregate_action_for_band tests."""
 
 from __future__ import annotations
 
@@ -45,7 +45,8 @@ def test_high_never_block_per_d3() -> None:
 
 
 def test_high_only_block_decisions_falls_back_to_redact() -> None:
-    """Edge case: every fired rule is `block` but band is HIGH — D3 forces non-block."""
+    """Edge case: every fired rule is `block` but band is HIGH — partial-refusal
+    rule forces a non-block aggregate action."""
     decisions = [_d("block")]
     assert aggregate_action_for_band(RiskBand.HIGH, decisions) == "redact"
 

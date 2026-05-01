@@ -37,8 +37,8 @@ class GuardContext:
             Some inspectors only run on ``source="input"``.
         user_id: Optional identifier for per-user audit trails.
         session_id: Optional conversation session identifier.
-        correlation_id: Trace-correlation identifier (Spec 002 addition).
-            Hooked into the ``Tracer`` protocol when provided.
+        correlation_id: Trace-correlation identifier. Hooked into the
+            ``Tracer`` protocol when provided.
         metadata: Arbitrary key-value pairs for downstream use.
     """
 
@@ -57,8 +57,8 @@ class GuardInput:
         text: The text to inspect and potentially transform.
         context: Contextual metadata for the inspection.
         policy_hints: Caller-supplied hints (e.g. ``"strict"``, ``"lite"``)
-            consumed by the policy router in Spec 003. Unrecognized hints
-            are ignored. Frozen to keep the input hashable.
+            consumed by the policy router. Unrecognized hints are ignored.
+            Frozen to keep the input hashable.
     """
 
     text: str
@@ -97,7 +97,7 @@ class Finding:
 
 @dataclass(frozen=True)
 class PolicyDecision:
-    """A routing decision applied to one or more findings (Spec 002 addition).
+    """A routing decision applied to one or more findings.
 
     Args:
         finding_ids: Indices into ``GuardResult.findings`` this decision applies to.
@@ -141,7 +141,7 @@ class RefusalEnvelope:
 @dataclass(frozen=True)
 class ClarificationRequest:
     """Structured ask-for-rephrase returned when the policy classifies a run
-    as ambiguous and ``clarification_enabled=True`` (Spec 003 D1).
+    as ambiguous and ``clarification_enabled=True``.
 
     Args:
         suggested_rephrase: Human-readable rephrase the caller should ask
@@ -170,12 +170,13 @@ class GuardResult:
         text: Possibly transformed text. Empty when ``action == "block"``.
         action: Aggregate action chosen by the pipeline.
         findings: All detections across all inspectors.
-        decisions: Per-finding decisions; populated by Spec 003 routers.
-        refusal: Set when ``action == "block"`` (and may be set on partial-restrict
-            actions in Spec 003).
+        decisions: Per-finding decisions populated by the policy router.
+        refusal: Set when ``action == "block"`` and on HIGH-band partial
+            refusals (sanitized text plus a refusal envelope describing what
+            was withheld).
         clarification: Set when policy classified the run as ambiguous and
-            ``clarification_enabled=True`` (Spec 003 D1). Mutually exclusive
-            with ``action == "block"``.
+            ``clarification_enabled=True``. Mutually exclusive with
+            ``action == "block"``.
         bypass_reason: Set when the pipeline was short-circuited.
             ``"disabled"`` — guard is off.
             ``"error"`` — an inspector raised; the pipeline fell through fail-open.
@@ -193,8 +194,8 @@ class GuardResult:
     phase: Literal["pre_process", "post_process"] = "pre_process"
 
     def __post_init__(self) -> None:
-        # Spec 003 contract invariant: clarification is a recovery path,
-        # never paired with a hard block.
+        # Clarification is a recovery path; it is mutually exclusive with a
+        # hard block. Callers either ask the user to rephrase or refuse.
         if self.clarification is not None and self.action == "block":
             raise ValueError(
                 "GuardResult.clarification cannot be set when action='block'"

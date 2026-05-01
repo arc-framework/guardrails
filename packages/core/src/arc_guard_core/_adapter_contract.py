@@ -1,4 +1,4 @@
-"""Adapter boundary validation helpers (FR-019).
+"""Adapter boundary validation helpers.
 
 Adapters (NATS, Unleash, OTEL, webhook reporters, model-backed inspectors)
 implement Protocols defined in ``arc_guard_core.protocols``. Their inputs and
@@ -6,9 +6,8 @@ outputs MUST be validated against typed models before and after every external
 call. These helpers are the canonical validators.
 
 The functions here are deliberately small and side-effect-free; concrete
-adapters call them at the right moments. The contract test suite asserts
-that any failure surfaces as ``AdapterBoundaryValidationError`` (see
-``contracts/exceptions.university``).
+adapters call them at the right moments. Any failure surfaces as
+``AdapterBoundaryValidationError``.
 """
 
 from __future__ import annotations

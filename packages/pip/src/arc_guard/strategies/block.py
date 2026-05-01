@@ -1,4 +1,4 @@
-"""BlockStrategy — empties the text and signals a block decision (Spec 003)."""
+"""BlockStrategy — empties the text and signals a block decision."""
 
 from __future__ import annotations
 

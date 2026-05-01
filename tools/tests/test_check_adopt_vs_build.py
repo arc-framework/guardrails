@@ -1,4 +1,4 @@
-"""T075 — tests for tools/check_adopt_vs_build.py."""
+"""Tests for tools/check_adopt_vs_build.py."""
 
 from __future__ import annotations
 

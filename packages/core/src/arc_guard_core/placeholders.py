@@ -1,4 +1,4 @@
-"""Typed placeholder registry (Spec 003 FR-001 — FR-004, D2).
+"""Typed placeholder registry.
 
 The single source of truth for the labels emitted by the redact strategy.
 Single-occurrence placeholders are unsuffixed (``[CREDIT_CARD]``); multi-
@@ -68,7 +68,7 @@ def list_registered() -> frozenset[str]:
 
 
 def format_placeholder(entity_type: str, occurrence: int, total: int) -> str:
-    """Per D2: single-occurrence unsuffixed, multi-occurrence suffix ``_<N>``.
+    """Single-occurrence unsuffixed; multi-occurrence suffix ``_<N>``.
 
     ``occurrence`` is 1-indexed. Raises ValueError on bad inputs.
     """

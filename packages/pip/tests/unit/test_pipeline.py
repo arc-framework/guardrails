@@ -213,7 +213,7 @@ async def test_inspector_exception_fail_open_returns_guard_result() -> None:
 
 
 async def test_semantic_inspector_removed_in_spec_002() -> None:
-    """Spec 002 trim: semantic inspector removed (Spec 005 will reintroduce).
+    """Semantic inspector was removed; the future fidelity work will reintroduce it.
 
     Verifies the module is no longer importable and is not present in the
     default inspector chain.

@@ -1,4 +1,4 @@
-"""Unit tests for arc_guard_core.types (T033)."""
+"""Unit tests for arc_guard_core.types."""
 
 from __future__ import annotations
 

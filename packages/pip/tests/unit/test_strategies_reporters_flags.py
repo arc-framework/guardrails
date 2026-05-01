@@ -116,7 +116,7 @@ class TestHashStrategy:
         f = _finding("SECRET", 0, 6)
         result, decisions = strategy.apply(text, (f,))
         assert strategy.name == "hash"
-        # Spec 003: replacement is `[HASH:<8hex>]`
+        # The hash strategy now emits `[HASH:<8hex>]`
         replaced_token = result.split(" ")[0]
         assert replaced_token.startswith("[HASH:")
         assert replaced_token.endswith("]")
@@ -264,8 +264,8 @@ class TestNullReporter:
 
 
 # ---------------------------------------------------------------------------
-# Removed in Spec 002 trim — see CHANGELOG and the pyproject comment.
-# WebhookReporter (httpx-based) is gone; reintroduction tracked under Spec 007.
+# Removed during the package trim — see CHANGELOG and the pyproject comment.
+# WebhookReporter (httpx-based) is gone; reintroduction is a future task.
 # ---------------------------------------------------------------------------
 
 

@@ -1,4 +1,4 @@
-"""T047 — RiskClassifier 16-row matrix (4 bands × 4 entity mixes) + FR-013 marker."""
+"""RiskClassifier 16-row matrix (4 bands × 4 entity mixes) plus the aggregation-marker assertion."""
 
 from __future__ import annotations
 
@@ -96,7 +96,7 @@ class _StubInspector:
 
 
 def test_aggregation_marker_recorded_in_decision_rationale() -> None:
-    """FR-013 — the aggregation marker MUST appear in the rationale when it changes the band."""
+    """The aggregation marker MUST appear in the rationale when it changes the band."""
     policy = PolicyRuleSet(
         rules=(PolicyRule(id="r_email", match="EMAIL_ADDRESS", strategy="redact"),),
     )
@@ -113,4 +113,4 @@ def test_aggregation_marker_recorded_in_decision_rationale() -> None:
     result = asyncio.run(pipeline.pre_process(GuardInput(text="aaaaaaaaaaaaaaaaa")))
     assert any(
         "aggregation:soft_pii" in d.rationale for d in result.decisions
-    ), "FR-013: leading PolicyDecision rationale must record the aggregation marker"
+    ), "leading PolicyDecision rationale must record the aggregation marker"

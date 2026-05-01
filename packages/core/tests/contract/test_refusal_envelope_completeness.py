@@ -1,4 +1,4 @@
-"""T054 — every emitted RefusalEnvelope has all required fields populated (SC-004)."""
+"""Every emitted RefusalEnvelope has all required fields populated."""
 
 from __future__ import annotations
 
@@ -89,7 +89,7 @@ def test_every_envelope_has_required_fields_populated(
 
 
 def test_envelope_serialization_uses_only_public_fields() -> None:
-    """FR-017 — envelope is JSON-serializable; field names match the contract."""
+    """Envelope is JSON-serializable; field names match the contract."""
     import dataclasses
     import json
 

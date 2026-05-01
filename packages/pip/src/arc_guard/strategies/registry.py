@@ -1,12 +1,12 @@
-"""StrategyRegistry — name-to-strategy lookup (Spec 003 FR-025–FR-027).
+"""StrategyRegistry — name-to-strategy lookup.
 
 Module-level singleton, thread-safe RLock. Built-in strategies register
 themselves on import of ``arc_guard.strategies``. User strategies register
 via ``register_strategy(name, strategy)`` or the ``@strategy("name")``
 decorator.
 
-Validation at policy-load time (Spec 003 FR-009) consults this registry —
-unknown names raise ``ConfigCrossFieldError``.
+Policy-load validation consults this registry — unknown names raise
+``ConfigCrossFieldError``.
 """
 
 from __future__ import annotations

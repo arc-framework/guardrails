@@ -1,12 +1,12 @@
 """arc_guard.middleware — pipeline middleware implementations.
 
-Spec 002 trimmed the OTEL middleware out of this package. Spec 004 will
-ship the OTEL implementation that wraps the ``arc_guard_core.observability``
+The OTEL middleware was trimmed out of this package. A future
+observability implementation will wrap the ``arc_guard_core.observability``
 hook surface (``Tracer``, ``Logger``, ``MetricSink``).
 
-Spec 001 callers that imported ``OtelMiddleware`` from this package will
-receive an ``ImportError`` directing them to wait for Spec 004 or to
-provide their own middleware satisfying the ``Middleware`` Protocol.
+Historical callers that imported ``OtelMiddleware`` from this package
+receive an ``ImportError``; they should either wait for the
+observability implementation or supply their own ``Middleware``.
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""T053 — RefusalBuilder unit tests."""
+"""RefusalBuilder unit tests."""
 
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ def test_template_default_when_rule_has_no_overrides() -> None:
 
 
 def test_empty_next_steps_falls_back_to_safe_default() -> None:
-    """FR-016 — every envelope returned to the user has non-empty next_steps."""
+    """Every envelope returned to the user has non-empty next_steps."""
     rule = PolicyRule(
         id="r_x",
         match="X",

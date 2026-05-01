@@ -1,4 +1,4 @@
-"""Unit tests for EntityRegistry (T035, FR-026 concurrent test included)."""
+"""Unit tests for EntityRegistry, including a concurrent-registration smoke test."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ def test_register_and_iterate() -> None:
 
 
 def test_concurrent_registration_no_lost_updates() -> None:
-    """FR-026: thread-safety must be exercised by a concurrent test."""
+    """Thread-safety must be exercised by a concurrent test."""
     reg = EntityRegistry()
     n = 200
 

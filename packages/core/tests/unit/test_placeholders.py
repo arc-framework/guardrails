@@ -1,4 +1,4 @@
-"""T023 — typed-placeholder registry tests."""
+"""Typed-placeholder registry tests."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def test_default_registry_populated() -> None:
 
 
 def test_unknown_entity_synthesises_label() -> None:
-    # Spec 001 backward-compat: unknown types fall back to [<TYPE>]
+    # Backward-compat: unknown types fall back to [<TYPE>]
     assert get_placeholder("MY_CUSTOM") == "[MY_CUSTOM]"
 
 

@@ -1,6 +1,6 @@
 """Deprecation shim for arc_guard.protocols.strategy.
 
-Spec 002 moves this protocol to arc_guard_core.protocols.strategy. Removed
+The Protocol moved to arc_guard_core.protocols.strategy. Removed
 in arc-guard 0.3.0.
 """
 

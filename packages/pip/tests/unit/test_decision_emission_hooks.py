@@ -1,4 +1,4 @@
-"""T067 — DecisionEmitter calls Logger and MetricSink hooks correctly."""
+"""DecisionEmitter calls Logger and MetricSink hooks correctly."""
 
 from __future__ import annotations
 

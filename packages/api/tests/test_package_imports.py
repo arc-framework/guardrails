@@ -1,4 +1,4 @@
-"""T056 — smoke test that arc_guard_service installs and imports cleanly."""
+"""Smoke test that arc_guard_service installs and imports cleanly."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ def test_package_imports() -> None:
     import arc_guard_service.validators  # noqa: F401
     from arc_guard_service._placeholder import HANDOFF_NOTE
 
-    assert "Spec 007" in HANDOFF_NOTE
+    assert "future" in HANDOFF_NOTE.lower()
     assert hasattr(arc_guard_service, "__version__")
 
 

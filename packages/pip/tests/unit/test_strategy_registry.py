@@ -1,4 +1,4 @@
-"""T026 — StrategyRegistry tests."""
+"""StrategyRegistry tests."""
 
 from __future__ import annotations
 
@@ -62,7 +62,7 @@ def test_decorator_registers() -> None:
 
 
 def test_concurrent_registration() -> None:
-    """FR-026 — registry is thread-safe."""
+    """Registry is thread-safe."""
 
     def register(i: int) -> None:
         class S:

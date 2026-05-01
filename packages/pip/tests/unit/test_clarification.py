@@ -1,4 +1,4 @@
-"""T059 — Clarification flow unit tests."""
+"""Clarification flow unit tests."""
 
 from __future__ import annotations
 
@@ -94,7 +94,7 @@ def test_clarification_disabled_falls_back_to_block_or_redact() -> None:
 
 
 def test_clarification_block_invariant_enforced() -> None:
-    """T007 — clarification populated implies action != 'block'."""
+    """Clarification populated implies action != 'block'."""
     from arc_guard_core.types import ClarificationRequest, RefusalEnvelope
 
     cr = ClarificationRequest(suggested_rephrase="ok")

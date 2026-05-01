@@ -1,11 +1,12 @@
 """Observability hook surface for arc-guard-core.
 
 Three Protocol interfaces — ``Tracer``, ``Logger``, ``MetricSink`` — plus
-null-object implementations that can be used as defaults. Spec 004 will
-substitute concrete OTEL-backed implementations from ``arc_guard.middleware``
-without re-shaping these contracts.
+null-object implementations that can be used as defaults. A future
+observability implementation will substitute concrete OTEL-backed
+implementations from ``arc_guard.middleware`` without re-shaping these
+contracts.
 
-Stability: ``@experimental`` until Spec 004 closes.
+Stability: ``@experimental`` until that implementation lands.
 """
 
 from __future__ import annotations

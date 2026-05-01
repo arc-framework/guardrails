@@ -1,4 +1,4 @@
-"""T040 — RuleBasedPolicyRouter unit tests."""
+"""RuleBasedPolicyRouter unit tests."""
 
 from __future__ import annotations
 

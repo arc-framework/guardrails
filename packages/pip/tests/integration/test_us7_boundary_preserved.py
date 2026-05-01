@@ -1,4 +1,4 @@
-"""T071 — Adding a custom strategy preserves the import-graph boundary contracts."""
+"""Adding a custom strategy preserves the import-graph boundary contracts."""
 
 from __future__ import annotations
 

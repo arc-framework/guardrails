@@ -1,4 +1,4 @@
-"""T025 — ClarificationRequest tests + GuardResult.clarification invariant."""
+"""ClarificationRequest tests + GuardResult.clarification invariant."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""ClarificationRequest builder (Spec 003 FR-018–FR-020, D1)."""
+"""ClarificationRequest builder for ambiguous routing outcomes."""
 
 from __future__ import annotations
 

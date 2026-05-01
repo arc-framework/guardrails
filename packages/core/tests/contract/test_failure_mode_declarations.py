@@ -1,4 +1,4 @@
-"""T062 — every public stage's documented exceptions match the hierarchy (FR-022, SC-006)."""
+"""Every public stage's documented exceptions match the hierarchy."""
 
 from __future__ import annotations
 

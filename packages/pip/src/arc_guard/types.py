@@ -1,4 +1,4 @@
-"""Deprecation shim — Spec 001 ``arc_guard.types`` paths now live in
+"""Deprecation shim — the historical ``arc_guard.types`` paths now live in
 ``arc_guard_core.types``. Each access through this module emits a
 ``DeprecationWarning`` naming the new home; the shim is removed in
 ``arc-guard 0.3.0``.

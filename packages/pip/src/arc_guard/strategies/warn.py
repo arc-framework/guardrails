@@ -1,4 +1,4 @@
-"""WarnStrategy — pass-through with a warning rationale (Spec 003)."""
+"""WarnStrategy — pass-through with a warning rationale."""
 
 from __future__ import annotations
 

@@ -16,7 +16,9 @@ class RefusalCode(StrEnum):
     PII_CRITICAL = "pii_critical"
     STRATEGY_FAILED = "strategy_failed"
     POLICY_BLOCK = "policy_block"
-    FIDELITY_DROP_PLACEHOLDER = "fidelity_drop_placeholder"  # reserved for Spec 005
+    # Reserved placeholder for fidelity-drop refusals; the matching detector
+    # is not implemented yet and the registered template is a stub.
+    FIDELITY_DROP_PLACEHOLDER = "fidelity_drop_placeholder"
 
 
 __all__ = ["RefusalCode"]

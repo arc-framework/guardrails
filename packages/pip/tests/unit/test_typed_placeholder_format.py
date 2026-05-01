@@ -1,4 +1,4 @@
-"""T029 — typed-placeholder format suite (D2)."""
+"""Typed-placeholder format suite."""
 
 from __future__ import annotations
 

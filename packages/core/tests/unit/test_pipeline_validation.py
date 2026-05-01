@@ -1,4 +1,4 @@
-"""T051 — Pipeline contract validation (FR-018)."""
+"""Pipeline contract validation."""
 
 from __future__ import annotations
 

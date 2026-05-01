@@ -1,4 +1,4 @@
-"""T024 — refusal-template registry tests."""
+"""Refusal-template registry tests."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ def test_every_code_has_a_default_template() -> None:
 def test_every_default_human_message_non_empty_or_reserved() -> None:
     for code, tmpl in DEFAULT_REFUSAL_TEMPLATES.items():
         if code is RefusalCode.FIDELITY_DROP_PLACEHOLDER:
-            # Reserved for Spec 005; placeholder text is allowed.
+            # Reserved (detector not yet implemented); placeholder text is allowed.
             continue
         assert tmpl.human_message, f"empty human_message for {code}"
 

@@ -1,6 +1,6 @@
 """arc-guard — batteries-included guardrails library.
 
-Spec 001 import paths are kept alive through a PEP 562 ``__getattr__`` shim
+historical import paths are kept alive through a PEP 562 ``__getattr__`` shim
 that consults ``_legacy.LEGACY_SYMBOLS``. Each access of a deprecated name
 emits a ``DeprecationWarning`` naming the replacement and removal version.
 

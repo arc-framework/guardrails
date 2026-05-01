@@ -1,4 +1,4 @@
-"""T101 — Configuration defaults must be product-neutral (FR-020)."""
+"""Configuration defaults must be product-neutral."""
 
 from __future__ import annotations
 
@@ -61,12 +61,12 @@ def test_guard_config_defaults_are_product_neutral() -> None:
         match = FORBIDDEN_RE.search(candidate)
         assert match is None, (
             f"Default config value {candidate!r} contains forbidden token "
-            f"{match.group()!r} (FR-020)"
+            f"{match.group()!r}"
         )
 
 
 def test_inspector_order_default_is_empty() -> None:
-    """`core` registers no inspectors by default — Spec 003 wires them."""
+    """`core` registers no inspectors by default; the implementation package wires them."""
     cfg = GuardConfig()
     assert cfg.inspector_order == ()
 

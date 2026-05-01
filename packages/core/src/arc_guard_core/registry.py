@@ -35,7 +35,7 @@ class EntityRegistry:
         with self._lock:
             return list(self._entities)
 
-    # Spec 001 compatibility alias; preserved through deprecation window.
+    # Compatibility alias for the historical ``get_entities`` accessor.
     def get_entities(self) -> list[EntityDefinition]:
         return list(self.entities())
 

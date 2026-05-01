@@ -1,4 +1,4 @@
-"""T070 — simulating the removal release: shim raises ImportError after removed_in."""
+"""Simulating the removal release: shim raises ImportError after removed_in."""
 
 from __future__ import annotations
 

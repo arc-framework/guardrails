@@ -1,4 +1,4 @@
-"""T049 — US3 integration: risk-adaptive bands drive aggregate behavior (D3)."""
+"""US3 integration: risk-adaptive bands drive aggregate behavior."""
 
 from __future__ import annotations
 
@@ -67,7 +67,8 @@ def test_high_band_partial_refusal_per_d3() -> None:
     findings = (Finding("US_SSN", 0, 11, RiskLevel.HIGH, "stub"),)
     pipeline = _build_pipeline(findings)
     result = asyncio.run(pipeline.pre_process(GuardInput(text="123-45-6789")))
-    # D3: action != block; text is sanitized (not empty); refusal is populated.
+    # Partial-refusal contract: action != block; text is sanitized (not empty);
+    # refusal envelope is populated so the caller can render both.
     assert result.action != "block"
     assert result.text == "[US_SSN]"
     assert result.refusal is not None

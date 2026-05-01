@@ -1,4 +1,4 @@
-"""T049 — Config validation (FR-016)."""
+"""Config validation."""
 
 from __future__ import annotations
 

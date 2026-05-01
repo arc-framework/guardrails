@@ -533,7 +533,7 @@ class TestPresidioInspector:
 
 
 # ---------------------------------------------------------------------------
-# SemanticInspector — removed in Spec 002 trim. Spec 005 (Safe Rehydration
+# SemanticInspector — removed during the package trim. The future fidelity work (Safe Rehydration
 # and Intent Fidelity) will reintroduce semantic inspection under the
 # intent-lock contract, replacing the distilbert classifier with a
 # fidelity-aware design.

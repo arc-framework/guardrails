@@ -1,4 +1,4 @@
-"""RedactStrategy — typed-placeholder replacement (Spec 003 D2)."""
+"""RedactStrategy — typed-placeholder replacement."""
 
 from __future__ import annotations
 

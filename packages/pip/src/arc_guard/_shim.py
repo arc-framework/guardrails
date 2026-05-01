@@ -1,4 +1,4 @@
-"""Helper for per-submodule PEP 562 deprecation shims (T065)."""
+"""Helper for per-submodule PEP 562 deprecation shims."""
 
 from __future__ import annotations
 

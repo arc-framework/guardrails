@@ -1,11 +1,11 @@
-"""API-boundary request validators (FR-017).
+"""API-boundary request validators.
 
-Validates incoming request payloads at the API edge before any pipeline work
-begins. Failures surface as ``ApiBoundaryValidationError`` with the offending
-field listed in ``details``.
+Validates incoming request payloads at the API edge before any pipeline
+work begins. Failures surface as ``ApiBoundaryValidationError`` with the
+offending field listed in ``details``.
 
-Spec 002 ships only the request validator; the response validator and full
-route plumbing are Spec 007 work.
+This module ships only the request validator; the response validator and
+full route plumbing land in the future deployment-surface implementation.
 """
 
 from __future__ import annotations

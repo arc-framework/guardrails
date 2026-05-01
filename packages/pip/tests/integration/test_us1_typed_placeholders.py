@@ -1,8 +1,8 @@
-"""T030 — US1 integration test (≥5 entity types per SC-001).
+"""US1 integration test (≥5 entity types).
 
 Validates that an input with five distinct entity types yields exactly five
 typed placeholders, that two distinct credit-card numbers yield distinguishable
-suffixed placeholders per D2, and that benign input passes through.
+suffixed placeholders, and that benign input passes through.
 Asserts zero raw entity bytes (substring length ≥ 4) appear in the output.
 """
 
@@ -24,7 +24,7 @@ def _f(entity_type: str, start: int, end: int, risk: RiskLevel = RiskLevel.LOW) 
 
 
 # ---------------------------------------------------------------------------
-# US1 acceptance scenario 1 — 5 distinct entity types per SC-001
+# US1 acceptance scenario 1 — 5 distinct entity types
 # ---------------------------------------------------------------------------
 
 
@@ -62,7 +62,7 @@ def test_five_distinct_entity_types_yield_five_placeholders() -> None:
 
 
 # ---------------------------------------------------------------------------
-# US1 acceptance scenario 2 — distinguishable suffixed placeholders (D2)
+# US1 acceptance scenario 2 — distinguishable suffixed placeholders
 # ---------------------------------------------------------------------------
 
 
@@ -103,7 +103,7 @@ def test_redact_decisions_are_compatible_with_guard_result() -> None:
     text = "alice@acme.com"
     findings = (_f("EMAIL_ADDRESS", 0, 14),)
     out, decisions = RedactStrategy().apply(text, findings)
-    # Spec 002 GuardResult accepts the decisions tuple unchanged.
+    # GuardResult accepts the decisions tuple unchanged across the contract layer.
     result = GuardResult(text=out, action="redact", findings=findings, decisions=decisions)
     assert result.text == "[EMAIL_ADDRESS]"
     # Decision references the original finding by index.

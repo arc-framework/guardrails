@@ -1,4 +1,4 @@
-"""Re-exports the core Protocol interfaces (7 from Spec 002 + 1 from Spec 003)."""
+"""Re-exports the core Protocol interfaces (8 in total)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Unit tests for the GuardPipeline shape (T034)."""
+"""Unit tests for the GuardPipeline shape."""
 
 from __future__ import annotations
 

@@ -1,8 +1,8 @@
-"""Decision record types for arc-guard-core (Spec 003 FR-021 — FR-024).
+"""Decision record types for arc-guard-core.
 
 A ``DecisionRecord`` is the audit-grade summary of one pipeline run. It is
-emitted via the Spec 002 observability hooks (``Logger`` + ``MetricSink``) and
-MUST NOT contain raw sensitive payloads (FR-023). Spans are reported as
+emitted via the observability hooks (``Logger`` + ``MetricSink``) and
+MUST NOT contain raw sensitive payloads. Spans are reported as
 ``(start, end, length)`` only; replaced content is reported as the replacement
 string (e.g. ``[CREDIT_CARD]``), never the original.
 """

@@ -1,10 +1,10 @@
-"""Policy and routing types for arc-guard-core (Spec 003).
+"""Policy and routing types for arc-guard-core.
 
 These models describe the structural contract of a policy: rules, thresholds,
 risk bands, and the routed outcome that a ``PolicyRouter`` returns. The
 implementations live in ``arc_guard.policy`` (the pip package).
 
-All types here are part of the public contract and snapshotted by the Spec 002
+All types here are part of the public contract and snapshotted by the
 contract test suite.
 """
 
@@ -33,7 +33,7 @@ class RiskBand(StrEnum):
 
 
 class RiskThresholds(BaseModel):
-    """Aggregation thresholds for the risk classifier (Spec 003).
+    """Aggregation thresholds for the risk classifier.
 
     Defaults are part of the public contract.
     """

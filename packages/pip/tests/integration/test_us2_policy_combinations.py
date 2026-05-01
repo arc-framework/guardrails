@@ -1,4 +1,4 @@
-"""T042b — SC-002 fixture suite: ≥8 (rules × input) combinations."""
+"""Composable-routing fixture suite covering ≥8 (rules × input) combinations."""
 
 from __future__ import annotations
 

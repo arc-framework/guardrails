@@ -1,4 +1,4 @@
-"""T067b — non-blocking emission per FR-022 (constitution Principle V)."""
+"""Non-blocking emission (constitution Principle V)."""
 
 from __future__ import annotations
 

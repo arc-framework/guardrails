@@ -1,7 +1,8 @@
 """Settings skeleton for arc-guard-service.
 
-Spec 002 ships only the placeholder schema. Spec 007 will fill in the env
-prefixes, secret-loading rules, and provider-specific settings nests.
+This is a placeholder schema. The full settings model — env prefixes,
+secret-loading rules, provider-specific settings nests — lands in a
+future deployment-surface implementation.
 """
 
 from __future__ import annotations
@@ -13,8 +14,8 @@ class ServiceSettings(BaseSettings):
     """Minimal settings model.
 
     Reads from environment variables prefixed ``ARC_GUARD_SERVICE__``. Spec
-    002 declares only `enabled` so the package is testable; Spec 007 will
-    add real fields.
+    Declares only `enabled` so the package is testable; real fields land
+    in a future implementation.
     """
 
     model_config = SettingsConfigDict(
