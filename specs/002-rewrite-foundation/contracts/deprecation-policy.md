@@ -37,10 +37,12 @@ The mapping covers every public symbol previously exported from `arc_guard.*`. T
 | `arc_guard.strategies.*` | `arc_guard.strategies.*` | _(stays in pip)_ | No move |
 | `arc_guard.reporters.*` | `arc_guard.reporters.*` | _(stays in pip)_ | No move |
 | `arc_guard.flags.*` | `arc_guard.flags.*` | _(stays in pip)_ | No move |
-| `arc_guard.adapters.*` | `arc_guard.adapters.*` | _(stays in pip)_ | No move |
-| `arc_guard.middleware.*` | `arc_guard.middleware.*` | _(stays in pip)_ | No move |
+| `arc_guard.adapters.*` | _removed in `arc-guard 0.2.0`_ | already removed | NATS / Unleash trimmed per roadmap §4.1–§4.2; Spec 007 reintroduction backlog. |
+| `arc_guard.middleware.*` | _OTEL removed in `arc-guard 0.2.0`_ | already removed | OTEL middleware owned by Spec 004; namespace preserved for future middleware. |
+| `arc_guard.inspectors.semantic` | _removed in `arc-guard 0.2.0`_ | already removed | Semantic inspector owned by Spec 005 (intent fidelity). |
+| `arc_guard.reporters.webhook_reporter` | _removed in `arc-guard 0.2.0`_ | already removed | Webhook reporter trimmed per roadmap §4.1; Spec 007 transport backlog. |
 
-Implementation modules (inspectors, strategies, reporters, flags, adapters, middleware) keep their `arc_guard.*` paths because they belong to `pip`; only the contract layer migrated to `core`.
+Implementation modules that **stayed** in `pip` (inspectors injection / presidio / custom, strategies, reporters null / log, flags) keep their `arc_guard.*` paths because they belong to `pip`; only the contract layer migrated to `core`. Modules that were **trimmed** in Spec 002 (NATS, Unleash, OTEL, semantic, webhook) raise `ModuleNotFoundError` on import — see `packages/pip/CHANGELOG.md` §"Removed" for the rationale and reintroduction plan.
 
 ## Warning text
 

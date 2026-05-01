@@ -7,13 +7,14 @@ Batteries-included guardrails library, built on [`arc-guard-core`](../core/READM
 ## Install
 
 ```bash
-pip install arc-guard               # core implementations + presidio
-pip install arc-guard[nats]         # add NATS reporter
-pip install arc-guard[unleash]      # add Unleash flag provider
-pip install arc-guard[otel]         # add OTEL middleware
-pip install arc-guard[semantic]     # add semantic inspector (torch + transformers)
-pip install arc-guard[arc]          # NATS + Unleash + OTEL bundle
+pip install arc-guard               # all implementations included; presidio is the only heavy dep
 ```
+
+Spec 002 ships **zero optional extras**. The NATS reporter, Unleash flag
+provider, OTEL middleware, semantic inspector, and webhook reporter were
+all trimmed per the rewrite roadmap §4 ("nice-to-have features — future
+expansion"). Specs 004 (OTEL), 005 (semantic / intent fidelity), and 007
+(transports) own their respective reintroductions.
 
 ## Spec 001 → Spec 002 migration
 

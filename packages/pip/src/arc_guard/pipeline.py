@@ -83,8 +83,9 @@ class GuardPipeline:
     ) -> GuardPipeline:
         """Build a pipeline with default config and inspector chain.
 
-        Works with only the core extras installed (presidio required;
-        semantic is optional and skipped when not installed).
+        Spec 002 default chain: ``InjectionInspector`` + ``PresidioInspector``.
+        Spec 005 will reintroduce semantic / fidelity inspectors under the
+        intent-fidelity contract.
         """
         return cls(
             config=GuardConfig.from_env(),
@@ -104,17 +105,6 @@ class GuardPipeline:
         except Exception as exc:
             logger.warning("PresidioInspector unavailable: %s — skipping", exc)
 
-        lite_mode = self._flags.is_enabled("lite_mode", default=False)
-        if not lite_mode:
-            try:
-                from arc_guard.inspectors.semantic import SemanticInspector
-
-                chain.append(SemanticInspector(self._config, self._flags))
-            except ImportError:
-                pass  # arc-guard[semantic] not installed — skip silently
-            except Exception as exc:
-                logger.warning("SemanticInspector unavailable: %s — skipping", exc)
-
         return chain
 
     def _resolve_strategy(self) -> ActionStrategy:
@@ -133,7 +123,7 @@ class GuardPipeline:
                 action="pass",
                 findings=(),
                 bypass_reason="disabled",
-                phase=phase,  # type: ignore[arg-type]
+                phase=phase,
             )
 
         # --- Middleware before ---
@@ -151,7 +141,7 @@ class GuardPipeline:
             action="pass",
             findings=(),
             bypass_reason=None,
-            phase=phase,  # type: ignore[arg-type]
+            phase=phase,
         )
 
         # --- Inspector chain ---

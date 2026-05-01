@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from arc_guard_core.types import Finding, GuardResult, RiskLevel
@@ -262,61 +261,14 @@ class TestNullReporter:
 
 
 # ---------------------------------------------------------------------------
-# WebhookReporter
+# Removed in Spec 002 trim — see CHANGELOG and the pyproject comment.
+# WebhookReporter (httpx-based) is gone; reintroduction tracked under Spec 007.
 # ---------------------------------------------------------------------------
 
 
-class TestWebhookReporter:
-    def test_raises_import_error_when_httpx_missing(self) -> None:
-        import arc_guard.reporters.webhook_reporter as mod
-
-        with patch.object(mod, "_HTTPX_AVAILABLE", False):
-            with pytest.raises(ImportError, match="httpx"):
-                mod.WebhookReporter("http://example.com")
-
-    async def test_posts_json_on_report(self) -> None:
-        import arc_guard.reporters.webhook_reporter as mod
-
-        mock_response = MagicMock()
-        mock_client = AsyncMock()
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=False)
-        mock_client.post = AsyncMock(return_value=mock_response)
-
-        with patch.object(mod, "_HTTPX_AVAILABLE", True), patch.object(
-            mod, "_httpx_mod"
-        ) as mock_httpx:
-            mock_httpx.AsyncClient.return_value = mock_client
-            reporter = mod.WebhookReporter("http://example.com/guard", timeout=2.0)
-            result = GuardResult(
-                text="safe",
-                action="redact",
-                findings=(_finding("X", 0, 1, RiskLevel.LOW),),
-            )
-            await reporter.report(result)
-
-        mock_client.post.assert_awaited_once()
-        call_kwargs = mock_client.post.call_args
-        assert call_kwargs.args[0] == "http://example.com/guard"
-        payload = call_kwargs.kwargs["json"]
-        assert payload["action"] == "redact"
-        assert isinstance(payload["findings"], list)
-        assert payload["findings"][0]["risk_level"] == RiskLevel.LOW.value
-
-    async def test_never_raises_on_post_failure(self) -> None:
-        import arc_guard.reporters.webhook_reporter as mod
-
-        mock_client = AsyncMock()
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=False)
-        mock_client.post = AsyncMock(side_effect=RuntimeError("network error"))
-
-        with patch.object(mod, "_HTTPX_AVAILABLE", True), patch.object(
-            mod, "_httpx_mod"
-        ) as mock_httpx:
-            mock_httpx.AsyncClient.return_value = mock_client
-            reporter = mod.WebhookReporter("http://example.com/guard")
-            await reporter.report(_result())  # must not raise
+def test_webhook_reporter_removed_in_spec_002() -> None:
+    with pytest.raises(ModuleNotFoundError):
+        import arc_guard.reporters.webhook_reporter  # noqa: F401
 
 
 # ---------------------------------------------------------------------------

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import re
 import sys
 import threading
@@ -534,23 +533,13 @@ class TestPresidioInspector:
 
 
 # ---------------------------------------------------------------------------
-# SemanticInspector (skipped unless GUARD_RUN_SEMANTIC_TESTS=1)
+# SemanticInspector — removed in Spec 002 trim. Spec 005 (Safe Rehydration
+# and Intent Fidelity) will reintroduce semantic inspection under the
+# intent-lock contract, replacing the distilbert classifier with a
+# fidelity-aware design.
 # ---------------------------------------------------------------------------
 
-SKIP_SEMANTIC = os.environ.get("GUARD_RUN_SEMANTIC_TESTS", "0") != "1"
 
-
-@pytest.mark.skipif(SKIP_SEMANTIC, reason="GUARD_RUN_SEMANTIC_TESTS != 1")
-class TestSemanticInspector:
-    async def test_basic_inference(self) -> None:
-        from arc_guard.config import GuardConfig
-        from arc_guard.flags.static_provider import StaticFlagProvider
-        from arc_guard.inspectors.semantic import SemanticInspector
-
-        config = GuardConfig()
-        flags = StaticFlagProvider({"semantic_input_threshold": "0.0"})
-        inspector = SemanticInspector(config=config, flag_provider=flags)
-        result = _result("I love sunshine")
-        out = await inspector.inspect(result)
-        # With threshold=0.0 every prediction should produce a finding
-        assert isinstance(out, GuardResult)
+def test_semantic_inspector_removed_in_spec_002() -> None:
+    with pytest.raises(ModuleNotFoundError):
+        import arc_guard.inspectors.semantic  # noqa: F401

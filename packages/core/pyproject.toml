@@ -17,6 +17,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/arc_guard_core"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"src/arc_guard_core/py.typed" = "arc_guard_core/py.typed"
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"

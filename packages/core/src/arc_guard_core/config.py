@@ -51,7 +51,7 @@ class GuardConfig(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def _validate_cross_fields(self, info: ValidationInfo | None = None) -> GuardConfig:  # type: ignore[override]
+    def _validate_cross_fields(self, info: ValidationInfo | None = None) -> GuardConfig:
         if not self.enabled:
             return self
         # Cross-field rule: any name listed in `policy_hints_default` MUST be

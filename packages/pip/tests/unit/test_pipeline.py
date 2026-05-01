@@ -5,8 +5,9 @@ from __future__ import annotations
 import asyncio
 import sys
 import types as _types
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
+import pytest
 from arc_guard_core.types import Finding, GuardInput, GuardResult, RiskLevel
 
 from arc_guard.flags.static_provider import StaticFlagProvider
@@ -211,34 +212,20 @@ async def test_inspector_exception_fail_open_returns_guard_result() -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_lite_mode_excludes_semantic_inspector() -> None:
-    flags = StaticFlagProvider({"lite_mode": True})
-    pipeline = GuardPipeline(flags=flags)
+async def test_semantic_inspector_removed_in_spec_002() -> None:
+    """Spec 002 trim: semantic inspector removed (Spec 005 will reintroduce).
 
-    # Patch SemanticInspector.__init__ so we can detect if it is instantiated
-    with patch("arc_guard.pipeline.GuardPipeline._build_inspector_chain") as mock_build:
-        # Return a chain that we can inspect
-        from arc_guard.inspectors.injection import InjectionInspector
+    Verifies the module is no longer importable and is not present in the
+    default inspector chain.
+    """
+    pytest.importorskip  # noqa: B018 — sentinel reference
+    with pytest.raises(ModuleNotFoundError):
+        import arc_guard.inspectors.semantic  # noqa: F401
 
-        mock_build.return_value = [InjectionInspector()]
-        pipeline._build_inspector_chain()
-        # Verify our mock is in place
-        mock_build.assert_called_once()
-
-    # Now test the real _build_inspector_chain with lite_mode=True
-    pipeline2 = GuardPipeline(flags=StaticFlagProvider({"lite_mode": True}))
-    try:
-        from arc_guard.inspectors.semantic import SemanticInspector as _Semantic
-
-        semantic_cls = _Semantic
-    except ImportError:
-        # semantic extra not installed — lite_mode test is vacuously satisfied
-        return
-
-    with patch.object(semantic_cls, "__init__", side_effect=AssertionError("must not init")) as _p:
-        chain = pipeline2._build_inspector_chain()
-        inspector_types = [type(i).__name__ for i in chain]
-        assert "SemanticInspector" not in inspector_types
+    pipeline = GuardPipeline(flags=StaticFlagProvider({"lite_mode": False}))
+    chain = pipeline._build_inspector_chain()
+    inspector_types = [type(i).__name__ for i in chain]
+    assert "SemanticInspector" not in inspector_types
 
 
 # ---------------------------------------------------------------------------
