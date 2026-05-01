@@ -20,8 +20,8 @@ Spec `002` is implemented. The live workspace lives at [`packages/`](../packages
 
 | #   | Feature                                              | Status      |
 | --- | ---------------------------------------------------- | ----------- |
-| 002 | [Rewrite Foundation](002-rewrite-foundation/spec.md) | Implemented |
-| 003 | Sanitization and Policy Core                         | Planned     |
+| 002 | [Rewrite Foundation](002-rewrite-foundation/spec.md)                 | Implemented |
+| 003 | [Sanitization and Policy Core](003-sanitization-policy-core/spec.md) | Draft       |
 | 004 | Observability and Runtime Hardening                  | Planned     |
 | 005 | Safe Rehydration and Intent Fidelity                 | Planned     |
 | 006 | Jailbreak, Deception, and Evaluation                 | Planned     |

@@ -1,0 +1,368 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_PATH="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)/$(basename -- "${BASH_SOURCE[0]}")"
+INSTALL_PATH="$HOME/.local/bin/mac-tidy"
+
+SAFE_TARGETS=(docker npm pnpm uv browser tooling)
+ALL_TARGETS=(docker npm pnpm uv browser tooling docker-volumes huggingface jetbrains homebrew)
+
+have() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+usage() {
+  cat <<'EOF'
+mac-tidy: reusable macOS disk cleanup helper
+
+Usage:
+  mac-tidy status
+  mac-tidy clean [--safe|--all] [--yes] [targets...]
+  mac-tidy install
+  mac-tidy --help
+
+Commands:
+  status    Show current cache and Docker disk usage.
+  clean     Clean safe targets by default, or specific targets.
+  install   Install this script to ~/.local/bin/mac-tidy.
+
+Targets:
+  docker          Remove stopped containers and build cache.
+  docker-volumes  Remove unused Docker volumes.
+  npm             Clean npm cache and ~/.npm/_npx.
+  pnpm            Prune the pnpm store.
+  uv              Clean the uv cache.
+  browser         Remove Puppeteer and Playwright caches.
+  tooling         Remove common local tooling caches such as pre-commit.
+  huggingface     Remove Hugging Face model cache.
+  jetbrains       Remove JetBrains IDE caches.
+  homebrew        Run brew cleanup -s.
+
+Examples:
+  mac-tidy status
+  mac-tidy clean --safe
+  mac-tidy clean docker npm pnpm uv
+  mac-tidy clean --all --yes
+
+Notes:
+  --safe avoids deleting Docker volumes, Hugging Face caches, JetBrains caches,
+  and Homebrew downloads unless you opt in.
+EOF
+}
+
+human_kb() {
+  awk -v kb="$1" '
+    function human(v) {
+      split("KB MB GB TB", units, " ")
+      i = 1
+      while (v >= 1024 && i < 4) {
+        v /= 1024
+        i++
+      }
+      return (i == 1 ? sprintf("%d%s", v, units[i]) : sprintf("%.1f%s", v, units[i]))
+    }
+    BEGIN { print human(kb) }
+  '
+}
+
+size_kb() {
+  local path="$1"
+  if [[ ! -e "$path" ]]; then
+    echo 0
+    return
+  fi
+  /usr/bin/du -sk "$path" 2>/dev/null | awk 'NR==1 { print $1 }'
+}
+
+print_path_size() {
+  local label="$1"
+  local path="$2"
+  if [[ -e "$path" ]]; then
+    local size
+    size="$(size_kb "$path")"
+    printf "%-18s %8s  %s\n" "$label" "$(human_kb "$size")" "$path"
+  fi
+}
+
+print_top_children() {
+  local path="$1"
+  local limit="${2:-8}"
+  if [[ ! -d "$path" ]]; then
+    return
+  fi
+
+  /usr/bin/find "$path" -mindepth 1 -maxdepth 1 -exec /usr/bin/du -sk {} + 2>/dev/null \
+    | /usr/bin/sort -nr \
+    | /usr/bin/head -n "$limit" \
+    | while read -r size entry; do
+        printf "  %-8s %s\n" "$(human_kb "$size")" "$entry"
+      done
+}
+
+pnpm_store_path() {
+  if have pnpm; then
+    pnpm store path 2>/dev/null || true
+  fi
+}
+
+show_status() {
+  echo "[mac-tidy] usage snapshot"
+  print_path_size ".cache" "$HOME/.cache"
+  print_path_size ".npm" "$HOME/.npm"
+  print_path_size "Library/Caches" "$HOME/Library/Caches"
+
+  local store_path
+  store_path="$(pnpm_store_path)"
+  if [[ -n "$store_path" ]]; then
+    print_path_size "pnpm store" "$store_path"
+  fi
+
+  echo
+  echo "[mac-tidy] largest ~/.cache entries"
+  print_top_children "$HOME/.cache"
+
+  echo
+  echo "[mac-tidy] largest ~/.npm entries"
+  print_top_children "$HOME/.npm"
+
+  echo
+  echo "[mac-tidy] largest ~/Library/Caches entries"
+  print_top_children "$HOME/Library/Caches"
+
+  if have docker; then
+    echo
+    echo "[mac-tidy] docker system df"
+    docker system df || true
+  fi
+}
+
+confirm() {
+  local prompt="$1"
+  if [[ "${ASSUME_YES:-0}" == "1" ]]; then
+    return 0
+  fi
+
+  printf "%s [y/N] " "$prompt"
+  read -r reply
+  [[ "$reply" == "y" || "$reply" == "Y" || "$reply" == "yes" || "$reply" == "YES" ]]
+}
+
+clean_docker() {
+  if ! have docker; then
+    echo "[mac-tidy] docker not found; skipping docker"
+    return
+  fi
+  echo "[mac-tidy] pruning stopped containers"
+  docker container prune -f || true
+  echo "[mac-tidy] pruning build cache"
+  docker builder prune -af || true
+}
+
+clean_docker_volumes() {
+  if ! have docker; then
+    echo "[mac-tidy] docker not found; skipping docker-volumes"
+    return
+  fi
+  echo "[mac-tidy] pruning unused docker volumes"
+  docker volume prune -f || true
+}
+
+clean_npm() {
+  if have npm; then
+    echo "[mac-tidy] cleaning npm cache"
+    npm cache clean --force || true
+  fi
+  if [[ -d "$HOME/.npm/_npx" ]]; then
+    echo "[mac-tidy] removing ~/.npm/_npx"
+    rm -rf "$HOME/.npm/_npx"
+  fi
+}
+
+clean_pnpm() {
+  if ! have pnpm; then
+    echo "[mac-tidy] pnpm not found; skipping pnpm"
+    return
+  fi
+  echo "[mac-tidy] pruning pnpm store"
+  pnpm store prune
+}
+
+clean_uv() {
+  if have uv; then
+    echo "[mac-tidy] cleaning uv cache"
+    uv cache clean || rm -rf "$HOME/.cache/uv"
+    return
+  fi
+  if [[ -d "$HOME/.cache/uv" ]]; then
+    echo "[mac-tidy] removing ~/.cache/uv"
+    rm -rf "$HOME/.cache/uv"
+  fi
+}
+
+clean_browser() {
+  if [[ -d "$HOME/.cache/puppeteer" ]]; then
+    echo "[mac-tidy] removing Puppeteer cache"
+    rm -rf "$HOME/.cache/puppeteer"
+  fi
+  if [[ -d "$HOME/Library/Caches/ms-playwright" ]]; then
+    echo "[mac-tidy] removing Playwright cache"
+    rm -rf "$HOME/Library/Caches/ms-playwright"/*
+  fi
+}
+
+clean_tooling() {
+  if [[ -d "$HOME/.cache/pre-commit" ]]; then
+    echo "[mac-tidy] removing pre-commit cache"
+    rm -rf "$HOME/.cache/pre-commit"
+  fi
+}
+
+clean_huggingface() {
+  if [[ -d "$HOME/.cache/huggingface" ]]; then
+    echo "[mac-tidy] removing Hugging Face cache"
+    rm -rf "$HOME/.cache/huggingface"
+  fi
+}
+
+clean_jetbrains() {
+  if [[ -d "$HOME/Library/Caches/JetBrains" ]]; then
+    echo "[mac-tidy] removing JetBrains caches"
+    /usr/bin/find "$HOME/Library/Caches/JetBrains" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+  fi
+}
+
+clean_homebrew() {
+  if ! have brew; then
+    echo "[mac-tidy] brew not found; skipping homebrew"
+    return
+  fi
+  echo "[mac-tidy] running brew cleanup -s"
+  brew cleanup -s || true
+}
+
+run_target() {
+  case "$1" in
+    docker) clean_docker ;;
+    docker-volumes) clean_docker_volumes ;;
+    npm) clean_npm ;;
+    pnpm) clean_pnpm ;;
+    uv) clean_uv ;;
+    browser) clean_browser ;;
+    tooling) clean_tooling ;;
+    huggingface) clean_huggingface ;;
+    jetbrains) clean_jetbrains ;;
+    homebrew) clean_homebrew ;;
+    *)
+      echo "[mac-tidy] unknown target: $1" >&2
+      exit 1
+      ;;
+  esac
+}
+
+unique_targets() {
+  awk '!seen[$0]++'
+}
+
+dedupe_targets() {
+  local -a deduped=()
+  local target
+
+  while IFS= read -r target; do
+    [[ -n "$target" ]] || continue
+    deduped+=("$target")
+  done < <(printf '%s\n' "$@" | unique_targets)
+
+  targets=("${deduped[@]}")
+}
+
+install_self() {
+  mkdir -p "$(dirname "$INSTALL_PATH")"
+  chmod +x "$SCRIPT_PATH"
+  ln -sfn "$SCRIPT_PATH" "$INSTALL_PATH"
+  echo "[mac-tidy] installed to $INSTALL_PATH"
+  echo "[mac-tidy] run: mac-tidy status"
+}
+
+run_clean() {
+  ASSUME_YES=0
+  local profile="safe"
+  local -a targets=()
+
+  while (($#)); do
+    case "$1" in
+      --safe)
+        profile="safe"
+        ;;
+      --all)
+        profile="all"
+        ;;
+      --yes|-y)
+        ASSUME_YES=1
+        ;;
+      docker|docker-volumes|npm|pnpm|uv|browser|tooling|huggingface|jetbrains|homebrew)
+        targets+=("$1")
+        ;;
+      --help|-h)
+        usage
+        exit 0
+        ;;
+      *)
+        echo "[mac-tidy] unknown option or target: $1" >&2
+        usage >&2
+        exit 1
+        ;;
+    esac
+    shift
+  done
+
+  if [[ ${#targets[@]} -eq 0 ]]; then
+    if [[ "$profile" == "all" ]]; then
+      targets=("${ALL_TARGETS[@]}")
+    else
+      targets=("${SAFE_TARGETS[@]}")
+    fi
+  fi
+
+  dedupe_targets "${targets[@]}"
+
+  echo "[mac-tidy] targets: ${targets[*]}"
+  if ! confirm "[mac-tidy] continue with cleanup?"; then
+    echo "[mac-tidy] aborted"
+    exit 0
+  fi
+
+  for target in "${targets[@]}"; do
+    run_target "$target"
+  done
+
+  echo
+  show_status
+}
+
+main() {
+  local command="${1:-status}"
+  shift || true
+
+  case "$command" in
+    status)
+      show_status
+      ;;
+    clean)
+      run_clean "$@"
+      ;;
+    install)
+      install_self
+      ;;
+    --help|-h|help)
+      usage
+      ;;
+    *)
+      echo "[mac-tidy] unknown command: $command" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"
