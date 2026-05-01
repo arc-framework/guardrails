@@ -1,5 +1,6 @@
-.claude/*
-.specify/*
+.claude/
+.specify/
+specs/
 .venv/
 .idea/
 # Local environment
@@ -30,3 +31,6 @@ python/arc-guardrails/analysis/*
 
 docs/
 images/
+CLAUDE.md
+.github/copilot-instructions.md
+.github/claude-instructions.md
