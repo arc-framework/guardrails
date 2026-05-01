@@ -1,0 +1,62 @@
+[project]
+name = "arc-guard"
+version = "0.2.0"
+description = "Batteries-included guardrails library — concrete inspectors, strategies, reporters, adapters built on arc-guard-core"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "arc-guardrails maintainers" }]
+license = { text = "Proprietary" }
+dependencies = [
+    "arc-guard-core",
+    "presidio-analyzer>=2.2",
+    "presidio-anonymizer>=2.2",
+]
+
+[project.optional-dependencies]
+semantic = [
+    "torch>=2.0",
+    "transformers>=4.30",
+]
+nats = ["nats-py>=2.3"]
+unleash = ["UnleashClient>=5.0"]
+webhook = ["httpx>=0.25"]
+otel = [
+    "opentelemetry-api>=1.20",
+    "opentelemetry-sdk>=1.20",
+]
+arc = ["arc-guard[nats,unleash,otel]"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/arc_guard"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "ASYNC"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["presidio_analyzer.*", "presidio_anonymizer.*", "nats.*", "UnleashClient.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra -q --strict-markers"

@@ -1,0 +1,45 @@
+[importlinter]
+root_packages =
+    arc_guard_core
+    arc_guard
+    arc_guard_service
+include_external_packages = True
+
+[importlinter:contract:layered]
+name = api -> pip -> core, never reversed
+type = layers
+layers =
+    arc_guard_service
+    arc_guard
+    arc_guard_core
+
+[importlinter:contract:core_zero_dep]
+name = core has no provider runtime dependencies
+type = forbidden
+source_modules =
+    arc_guard_core
+forbidden_modules =
+    presidio_analyzer
+    presidio_anonymizer
+    nats
+    UnleashClient
+    httpx
+    opentelemetry
+    torch
+    transformers
+
+[importlinter:contract:pip_no_api]
+name = pip never depends on api
+type = forbidden
+source_modules =
+    arc_guard
+forbidden_modules =
+    arc_guard_service
+
+[importlinter:contract:adapter_isolation]
+name = core never imports adapter modules
+type = forbidden
+source_modules =
+    arc_guard_core
+forbidden_modules =
+    arc_guard.adapters

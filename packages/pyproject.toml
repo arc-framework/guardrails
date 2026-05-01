@@ -1,0 +1,23 @@
+[project]
+name = "arc-guardrails-workspace"
+version = "0.0.0"
+description = "uv workspace root for the arc-guardrails rewrite (Spec 002)"
+requires-python = ">=3.11"
+
+[tool.uv.workspace]
+members = ["core", "pip", "api"]
+
+[tool.uv.sources]
+arc-guard-core = { workspace = true }
+arc-guard = { workspace = true }
+arc-guard-service = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4.1",
+    "import-linter>=2.0",
+]

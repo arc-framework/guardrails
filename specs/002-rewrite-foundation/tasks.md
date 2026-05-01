@@ -36,17 +36,17 @@ This is a multi-package Python `uv` workspace. New layout (per [plan.md](./plan.
 
 **Purpose**: Stand up the `packages/` `uv` workspace and per-package skeletons.
 
-- [ ] T001 Create directory `packages/` with workspace root `packages/pyproject.toml` declaring `[tool.uv.workspace]` members `["core", "pip", "api"]`
-- [ ] T002 [P] Create `packages/core/pyproject.toml` with name `arc-guard-core`, version `0.1.0`, runtime deps `["pydantic>=2.0"]`, Python `>=3.11`
-- [ ] T003 [P] Create `packages/pip/pyproject.toml` with name `arc-guard`, version `0.2.0`, runtime deps `["arc-guard-core", "presidio-analyzer>=2.2", "presidio-anonymizer>=2.2"]`, plus extras `[semantic]`, `[nats]`, `[unleash]`, `[webhook]`, `[otel]`, `[arc]` preserved from existing `python/arc-guardrails/pyproject.toml`
-- [ ] T004 [P] Create `packages/api/pyproject.toml` with name `arc-guard-service`, version `0.1.0`, runtime deps `["arc-guard", "pydantic-settings>=2.0"]`, optional extra `[fastapi]`
-- [ ] T005 [P] Add `[tool.ruff]`, `[tool.mypy]` (with `strict = true`), and `[tool.pytest.ini_options]` sections to all three package `pyproject.toml` files (FR-028)
-- [ ] T006 [P] Create empty `packages/core/src/arc_guard_core/__init__.py`, `packages/pip/src/arc_guard/__init__.py`, `packages/api/src/arc_guard_service/__init__.py`
-- [ ] T007 [P] Create `packages/core/CHANGELOG.md`, `packages/pip/CHANGELOG.md`, `packages/api/CHANGELOG.md` with the 0.1.0 / 0.2.0 / 0.1.0 initial entries
-- [ ] T008 [P] Create `packages/core/README.md`, `packages/pip/README.md`, `packages/api/README.md` linking to the spec, the migration note, and the contract reference (FR-035)
-- [ ] T009 [P] Create `packages/README.md` describing workspace layout and how to run `uv sync`, `uv run --package <name>`, and the boundary-enforcement scripts
-- [ ] T010 [P] Create empty test directories: `packages/core/tests/{unit,contract,integration}/`, `packages/pip/tests/{unit,integration,deprecation}/`, `packages/api/tests/`, each with `__init__.py`
-- [ ] T011 Run `uv sync` from `packages/` and verify the workspace resolves cleanly
+- [x] T001 Create directory `packages/` with workspace root `packages/pyproject.toml` declaring `[tool.uv.workspace]` members `["core", "pip", "api"]`
+- [x] T002 [P] Create `packages/core/pyproject.toml` with name `arc-guard-core`, version `0.1.0`, runtime deps `["pydantic>=2.0"]`, Python `>=3.11`
+- [x] T003 [P] Create `packages/pip/pyproject.toml` with name `arc-guard`, version `0.2.0`, runtime deps `["arc-guard-core", "presidio-analyzer>=2.2", "presidio-anonymizer>=2.2"]`, plus extras `[semantic]`, `[nats]`, `[unleash]`, `[webhook]`, `[otel]`, `[arc]` preserved from existing `python/arc-guardrails/pyproject.toml`
+- [x] T004 [P] Create `packages/api/pyproject.toml` with name `arc-guard-service`, version `0.1.0`, runtime deps `["arc-guard", "pydantic-settings>=2.0"]`, optional extra `[fastapi]`
+- [x] T005 [P] Add `[tool.ruff]`, `[tool.mypy]` (with `strict = true`), and `[tool.pytest.ini_options]` sections to all three package `pyproject.toml` files (FR-028)
+- [x] T006 [P] Create empty `packages/core/src/arc_guard_core/__init__.py`, `packages/pip/src/arc_guard/__init__.py`, `packages/api/src/arc_guard_service/__init__.py`
+- [x] T007 [P] Create `packages/core/CHANGELOG.md`, `packages/pip/CHANGELOG.md`, `packages/api/CHANGELOG.md` with the 0.1.0 / 0.2.0 / 0.1.0 initial entries
+- [x] T008 [P] Create `packages/core/README.md`, `packages/pip/README.md`, `packages/api/README.md` linking to the spec, the migration note, and the contract reference (FR-035)
+- [x] T009 [P] Create `packages/README.md` describing workspace layout and how to run `uv sync`, `uv run --package <name>`, and the boundary-enforcement scripts
+- [x] T010 [P] Create empty test directories: `packages/core/tests/{unit,contract,integration}/`, `packages/pip/tests/{unit,integration,deprecation}/`, `packages/api/tests/`, each with `__init__.py`
+- [x] T011 Run `uv sync` from `packages/` and verify the workspace resolves cleanly
 
 ---
 
@@ -58,23 +58,23 @@ This is a multi-package Python `uv` workspace. New layout (per [plan.md](./plan.
 
 ### Exception hierarchy (FR-021, FR-022, FR-023)
 
-- [ ] T012 Create `packages/core/src/arc_guard_core/exceptions.py` with the base `ArcGuardError` and the second-level classes (`ConfigError`, `ValidationError`, `PipelineError`, `AdapterError`, `RefusalEnvelopeError`) per [contracts/exceptions.md](./contracts/exceptions.md)
-- [ ] T013 Add leaf exception classes to `packages/core/src/arc_guard_core/exceptions.py`: `ConfigSchemaError`, `ConfigCrossFieldError`, `ApiBoundaryValidationError`, `PipelineContractValidationError`, `AdapterBoundaryValidationError`, `InspectorError`, `StrategyError`, `PolicyRouterError`, `ReporterError`, `FlagProviderError`, `EntityProviderError` — each with `__failure_mode__` and `__valid_codes__` class-level attributes
-- [ ] T014 [P] Add unit tests in `packages/core/tests/unit/test_exceptions.py` asserting every leaf class has `__failure_mode__` set, `__valid_codes__` populated, and `__init__` validates `code in __valid_codes__`
+- [x] T012 Create `packages/core/src/arc_guard_core/exceptions.py` with the base `ArcGuardError` and the second-level classes (`ConfigError`, `ValidationError`, `PipelineError`, `AdapterError`, `RefusalEnvelopeError`) per [contracts/exceptions.md](./contracts/exceptions.md)
+- [x] T013 Add leaf exception classes to `packages/core/src/arc_guard_core/exceptions.py`: `ConfigSchemaError`, `ConfigCrossFieldError`, `ApiBoundaryValidationError`, `PipelineContractValidationError`, `AdapterBoundaryValidationError`, `InspectorError`, `StrategyError`, `PolicyRouterError`, `ReporterError`, `FlagProviderError`, `EntityProviderError` — each with `__failure_mode__` and `__valid_codes__` class-level attributes
+- [x] T014 [P] Add unit tests in `packages/core/tests/unit/test_exceptions.py` asserting every leaf class has `__failure_mode__` set, `__valid_codes__` populated, and `__init__` validates `code in __valid_codes__`
 
 ### Observability hook surface (research §9, data-model §10)
 
-- [ ] T015 [P] Create `packages/core/src/arc_guard_core/observability.py` with `Tracer`, `Logger`, `MetricSink` Protocols and `NullTracer`, `NullLogger`, `NullMetricSink` no-op implementations
-- [ ] T016 [P] Add unit tests in `packages/core/tests/unit/test_observability.py` asserting null implementations satisfy each Protocol and `start_span` returns a usable context manager
+- [x] T015 [P] Create `packages/core/src/arc_guard_core/observability.py` with `Tracer`, `Logger`, `MetricSink` Protocols and `NullTracer`, `NullLogger`, `NullMetricSink` no-op implementations
+- [x] T016 [P] Add unit tests in `packages/core/tests/unit/test_observability.py` asserting null implementations satisfy each Protocol and `start_span` returns a usable context manager
 
 ### Refusal code registry
 
-- [ ] T017 [P] Create `packages/core/src/arc_guard_core/refusal/__init__.py` and `packages/core/src/arc_guard_core/refusal/codes.py` with `RefusalCode` `StrEnum` containing the initial code set (e.g. `JAILBREAK`, `PII_CRITICAL`, `STRATEGY_FAILED`, `FIDELITY_DROP_PLACEHOLDER`)
-- [ ] T018 [P] Add unit tests in `packages/core/tests/unit/test_refusal_codes.py` asserting every code is unique and addressable as `RefusalCode.<name>`
+- [x] T017 [P] Create `packages/core/src/arc_guard_core/refusal/__init__.py` and `packages/core/src/arc_guard_core/refusal/codes.py` with `RefusalCode` `StrEnum` containing the initial code set (e.g. `JAILBREAK`, `PII_CRITICAL`, `STRATEGY_FAILED`, `FIDELITY_DROP_PLACEHOLDER`)
+- [x] T018 [P] Add unit tests in `packages/core/tests/unit/test_refusal_codes.py` asserting every code is unique and addressable as `RefusalCode.<name>`
 
 ### Concurrency markers
 
-- [ ] T019 [P] Create `packages/core/src/arc_guard_core/concurrency.py` with marker dataclasses / typed-dict descriptions (`SyncOnly`, `AsyncOnly`, `SyncOrAsync`, `ThreadSafe`) used in protocol docstrings to annotate concurrency expectations
+- [x] T019 [P] Create `packages/core/src/arc_guard_core/concurrency.py` with marker dataclasses / typed-dict descriptions (`SyncOnly`, `AsyncOnly`, `SyncOrAsync`, `ThreadSafe`) used in protocol docstrings to annotate concurrency expectations
 
 **Checkpoint**: Foundation modules are in place. User stories can now begin in parallel.
 
@@ -88,30 +88,30 @@ This is a multi-package Python `uv` workspace. New layout (per [plan.md](./plan.
 
 ### Boundary enforcement tooling for US1
 
-- [ ] T020 [P] [US1] Create `tools/check_import_graph.py` — wraps `lint-imports` against `packages/.importlinter`; also asserts `arc_guard_core` runtime import does not load any forbidden module (FR-006)
-- [ ] T021 [P] [US1] Create `packages/.importlinter` with the rules from [contracts/package-boundaries.md](./contracts/package-boundaries.md)
-- [ ] T022 [P] [US1] Create `tools/check_dependency_tree.py` — runs `uv tree --package arc-guard-core` and asserts the runtime closure contains only `pydantic` and stdlib (SC-002)
-- [ ] T023 [P] [US1] Add `import-linter` to dev dependencies via the workspace `[tool.uv]` section
-- [ ] T024 [P] [US1] Add an adopt-vs-build entry for `import-linter` in `.specify/memory/libraries.md` referencing this spec (FR-031)
-- [ ] T025 [P] [US1] Create `tools/README.md` documenting all `check_*.py` scripts and how to run them
+- [x] T020 [P] [US1] Create `tools/check_import_graph.py` — wraps `lint-imports` against `packages/.importlinter`; also asserts `arc_guard_core` runtime import does not load any forbidden module (FR-006)
+- [x] T021 [P] [US1] Create `packages/.importlinter` with the rules from [contracts/package-boundaries.md](./contracts/package-boundaries.md)
+- [x] T022 [P] [US1] Create `tools/check_dependency_tree.py` — runs `uv tree --package arc-guard-core` and asserts the runtime closure contains only `pydantic` and stdlib (SC-002)
+- [x] T023 [P] [US1] Add `import-linter` to dev dependencies via the workspace `[tool.uv]` section
+- [x] T024 [P] [US1] Add an adopt-vs-build entry for `import-linter` in `.specify/memory/libraries.md` referencing this spec (FR-031)
+- [x] T025 [P] [US1] Create `tools/README.md` documenting all `check_*.py` scripts and how to run them
 
 ### Contract types for US1 (move + extend)
 
-- [ ] T026 [US1] Create `packages/core/src/arc_guard_core/types.py` by porting `python/arc-guardrails/src/arc_guard/types.py` and extending: add `correlation_id: str | None = None` to `GuardContext`, add `policy_hints: frozenset[str] = frozenset()` to `GuardInput`, add `decisions: tuple[PolicyDecision, ...] = ()`, `refusal: RefusalEnvelope | None = None`, `"tokenize"` literal to `GuardResult` (data-model §2, §3, §7)
-- [ ] T027 [US1] Add `PolicyDecision` and `RefusalEnvelope` frozen dataclasses to `packages/core/src/arc_guard_core/types.py` per data-model §5, §6
-- [ ] T028 [US1] Define `arc_guard_core.__all__` in `packages/core/src/arc_guard_core/__init__.py` re-exporting `RiskLevel`, `GuardContext`, `GuardInput`, `Finding`, `PolicyDecision`, `RefusalEnvelope`, `GuardResult`, `EntityDefinition` from `types`, `GuardConfig` from `config`, `RefusalCode` from `refusal.codes`, plus the seven core protocols and the observability hooks
-- [ ] T029 [P] [US1] Add `packages/core/src/arc_guard_core/protocols/__init__.py` and per-protocol files (`guard.py`, `inspector.py`, `strategy.py`, `reporter.py`, `flag_provider.py`, `middleware.py`, `entity_provider.py`) ported from `python/arc-guardrails/src/arc_guard/protocols/`, with docstrings extended to declare sync/async, declared exceptions, thread-safety, and fail-open/closed mode per [contracts/protocols.md](./contracts/protocols.md). Update all internal imports from `arc_guard.types` / `arc_guard.config` etc. to `arc_guard_core.types` / `arc_guard_core.config`.
-- [ ] T030 [US1] Create `packages/core/src/arc_guard_core/config.py` with `GuardConfig` pydantic v2 `BaseModel` (`frozen=True`, `extra='forbid'`) per data-model §9 — fields: `enabled`, `lite_mode`, `inspector_order`, `policy_hints_default`, `tracer`, `logger`, `metrics`
-- [ ] T031 [P] [US1] Create `packages/core/src/arc_guard_core/registry.py` by porting `python/arc-guardrails/src/arc_guard/registry.py` (`EntityRegistry`, thread-safe in-memory)
-- [ ] T032 [US1] Create `packages/core/src/arc_guard_core/pipeline.py` with `GuardPipeline` shape (no provider SDK imports — only `arc_guard_core.*` modules and `pydantic` are permitted) — accepts `GuardConfig`, exposes `pre_process`, `post_process`, `pre_process_sync`, `post_process_sync`; with no inspectors registered, all four entry points return a `GuardResult(action="pass", text=input.text)` (data-model §11)
+- [x] T026 [US1] Create `packages/core/src/arc_guard_core/types.py` by porting `python/arc-guardrails/src/arc_guard/types.py` and extending: add `correlation_id: str | None = None` to `GuardContext`, add `policy_hints: frozenset[str] = frozenset()` to `GuardInput`, add `decisions: tuple[PolicyDecision, ...] = ()`, `refusal: RefusalEnvelope | None = None`, `"tokenize"` literal to `GuardResult` (data-model §2, §3, §7)
+- [x] T027 [US1] Add `PolicyDecision` and `RefusalEnvelope` frozen dataclasses to `packages/core/src/arc_guard_core/types.py` per data-model §5, §6
+- [x] T028 [US1] Define `arc_guard_core.__all__` in `packages/core/src/arc_guard_core/__init__.py` re-exporting `RiskLevel`, `GuardContext`, `GuardInput`, `Finding`, `PolicyDecision`, `RefusalEnvelope`, `GuardResult`, `EntityDefinition` from `types`, `GuardConfig` from `config`, `RefusalCode` from `refusal.codes`, plus the seven core protocols and the observability hooks
+- [x] T029 [P] [US1] Add `packages/core/src/arc_guard_core/protocols/__init__.py` and per-protocol files (`guard.py`, `inspector.py`, `strategy.py`, `reporter.py`, `flag_provider.py`, `middleware.py`, `entity_provider.py`) ported from `python/arc-guardrails/src/arc_guard/protocols/`, with docstrings extended to declare sync/async, declared exceptions, thread-safety, and fail-open/closed mode per [contracts/protocols.md](./contracts/protocols.md). Update all internal imports from `arc_guard.types` / `arc_guard.config` etc. to `arc_guard_core.types` / `arc_guard_core.config`.
+- [x] T030 [US1] Create `packages/core/src/arc_guard_core/config.py` with `GuardConfig` pydantic v2 `BaseModel` (`frozen=True`, `extra='forbid'`) per data-model §9 — fields: `enabled`, `lite_mode`, `inspector_order`, `policy_hints_default`, `tracer`, `logger`, `metrics`
+- [x] T031 [P] [US1] Create `packages/core/src/arc_guard_core/registry.py` by porting `python/arc-guardrails/src/arc_guard/registry.py` (`EntityRegistry`, thread-safe in-memory)
+- [x] T032 [US1] Create `packages/core/src/arc_guard_core/pipeline.py` with `GuardPipeline` shape (no provider SDK imports — only `arc_guard_core.*` modules and `pydantic` are permitted) — accepts `GuardConfig`, exposes `pre_process`, `post_process`, `pre_process_sync`, `post_process_sync`; with no inspectors registered, all four entry points return a `GuardResult(action="pass", text=input.text)` (data-model §11)
 
 ### Tests for US1
 
-- [ ] T033 [P] [US1] Add unit tests in `packages/core/tests/unit/test_types.py` covering `RiskLevel` ordering, `GuardContext` with/without `correlation_id`, `GuardInput` with `policy_hints`, `Finding.span` property, `GuardResult.is_clean` and `max_risk` properties, `PolicyDecision` and `RefusalEnvelope` construction
-- [ ] T034 [P] [US1] Add unit tests in `packages/core/tests/unit/test_pipeline_shape.py` exercising the empty-inspector pass-through, the `bypass_reason="disabled"` path when `enabled=False`, and immutability of returned `GuardResult`
-- [ ] T035 [P] [US1] Add unit tests in `packages/core/tests/unit/test_registry.py` covering registration and retrieval of `EntityDefinition`, plus a *concurrent-execution* test using `concurrent.futures.ThreadPoolExecutor` (≥4 workers) that registers and reads entries concurrently and asserts no lost updates (FR-026)
-- [ ] T036 [P] [US1] Add an install-closure test in `packages/core/tests/integration/test_install_closure.py` that imports `arc_guard_core` and asserts `set(sys.modules) & {"presidio_analyzer", "nats", "UnleashClient", "httpx", "opentelemetry", "torch", "transformers"} == set()` (US1 acceptance scenario 1)
-- [ ] T037 [US1] Run `tools/check_import_graph.py` and `tools/check_dependency_tree.py` against the workspace; both must pass before this phase closes (US1 acceptance scenarios 2 and 3)
+- [x] T033 [P] [US1] Add unit tests in `packages/core/tests/unit/test_types.py` covering `RiskLevel` ordering, `GuardContext` with/without `correlation_id`, `GuardInput` with `policy_hints`, `Finding.span` property, `GuardResult.is_clean` and `max_risk` properties, `PolicyDecision` and `RefusalEnvelope` construction
+- [x] T034 [P] [US1] Add unit tests in `packages/core/tests/unit/test_pipeline_shape.py` exercising the empty-inspector pass-through, the `bypass_reason="disabled"` path when `enabled=False`, and immutability of returned `GuardResult`
+- [x] T035 [P] [US1] Add unit tests in `packages/core/tests/unit/test_registry.py` covering registration and retrieval of `EntityDefinition`, plus a *concurrent-execution* test using `concurrent.futures.ThreadPoolExecutor` (≥4 workers) that registers and reads entries concurrently and asserts no lost updates (FR-026)
+- [x] T036 [P] [US1] Add an install-closure test in `packages/core/tests/integration/test_install_closure.py` that imports `arc_guard_core` and asserts `set(sys.modules) & {"presidio_analyzer", "nats", "UnleashClient", "httpx", "opentelemetry", "torch", "transformers"} == set()` (US1 acceptance scenario 1)
+- [x] T037 [US1] Run `tools/check_import_graph.py` and `tools/check_dependency_tree.py` against the workspace; both must pass before this phase closes (US1 acceptance scenarios 2 and 3)
 
 **Checkpoint**: User Story 1 is fully functional. `arc-guard-core` installs cleanly with only `pydantic`; the empty pipeline runs; the import-graph and dependency-tree audits pass.
 
@@ -184,7 +184,7 @@ This is a multi-package Python `uv` workspace. New layout (per [plan.md](./plan.
 
 ### Product-neutral defaults (FR-020)
 
-- [ ] T101 [P] [US3] Add `packages/core/tests/unit/test_config_defaults_neutrality.py` asserting `GuardConfig()` defaults contain no hard-coded provider names (`nats`, `unleash`, `presidio`, `arc`, etc.), no NATS subjects (`arc.ai.*`), no platform-specific filesystem paths (`/var/`, `~/Library`, `C:\\`), and no logger names that imply a specific platform (FR-020). Walk every default field value via `model_dump()` and run a substring/regex blocklist.
+- [x] T101 [P] [US3] Add `packages/core/tests/unit/test_config_defaults_neutrality.py` asserting `GuardConfig()` defaults contain no hard-coded provider names (`nats`, `unleash`, `presidio`, `arc`, etc.), no NATS subjects (`arc.ai.*`), no platform-specific filesystem paths (`/var/`, `~/Library`, `C:\\`), and no logger names that imply a specific platform (FR-020). Walk every default field value via `model_dump()` and run a substring/regex blocklist.
 
 ### No internal exception leaks at the public boundary (FR-023)
 
@@ -202,21 +202,21 @@ This is a multi-package Python `uv` workspace. New layout (per [plan.md](./plan.
 
 ### Legacy table and shim
 
-- [ ] T063 [US4] Create `packages/pip/src/arc_guard/_legacy.py` with `LEGACY_SYMBOLS: dict[str, LegacyEntry]` populated from [contracts/deprecation-policy.md](./contracts/deprecation-policy.md) §"Symbol mapping" — each entry holds `new_module`, `new_name`, `removed_in`, optional `note_url`
-- [ ] T064 [US4] Implement PEP 562 `__getattr__` in `packages/pip/src/arc_guard/__init__.py` that consults `_legacy.LEGACY_SYMBOLS`, emits `warnings.warn(..., DeprecationWarning, stacklevel=2)` with the documented message format, and returns the resolved attribute from `arc_guard_core`
-- [ ] T065 [P] [US4] Add identical PEP 562 `__getattr__` shims in `packages/pip/src/arc_guard/types.py`, `packages/pip/src/arc_guard/protocols/__init__.py`, `packages/pip/src/arc_guard/config.py`, `packages/pip/src/arc_guard/registry.py` — these submodules forward to `arc_guard_core` while preserving the Spec 001 import paths
+- [x] T063 [US4] Create `packages/pip/src/arc_guard/_legacy.py` with `LEGACY_SYMBOLS: dict[str, LegacyEntry]` populated from [contracts/deprecation-policy.md](./contracts/deprecation-policy.md) §"Symbol mapping" — each entry holds `new_module`, `new_name`, `removed_in`, optional `note_url`
+- [x] T064 [US4] Implement PEP 562 `__getattr__` in `packages/pip/src/arc_guard/__init__.py` that consults `_legacy.LEGACY_SYMBOLS`, emits `warnings.warn(..., DeprecationWarning, stacklevel=2)` with the documented message format, and returns the resolved attribute from `arc_guard_core`
+- [x] T065 [P] [US4] Add identical PEP 562 `__getattr__` shims in `packages/pip/src/arc_guard/types.py`, `packages/pip/src/arc_guard/protocols/__init__.py`, `packages/pip/src/arc_guard/config.py`, `packages/pip/src/arc_guard/registry.py` — these submodules forward to `arc_guard_core` while preserving the Spec 001 import paths
 
 ### Migration note
 
-- [ ] T066 [P] [US4] Create `docs/walkthrough/002-rewrite-foundation.md` with a "Migration" section listing every Spec 001 symbol → new home, the deprecation timeline, and a worked example for the most common usage (FR-009, FR-033)
-- [ ] T067 [P] [US4] Update `packages/pip/README.md` and `packages/core/README.md` to link to the migration section (FR-035)
+- [x] T066 [P] [US4] Create `docs/walkthrough/002-rewrite-foundation.md` with a "Migration" section listing every Spec 001 symbol → new home, the deprecation timeline, and a worked example for the most common usage (FR-009, FR-033)
+- [x] T067 [P] [US4] Update `packages/pip/README.md` and `packages/core/README.md` to link to the migration section (FR-035)
 
 ### Tests for US4
 
-- [ ] T068 [P] [US4] Add `packages/pip/tests/deprecation/test_legacy_imports.py` that for every entry in `LEGACY_SYMBOLS` imports the old path under `warnings.catch_warnings(record=True)`, asserts a `DeprecationWarning` is raised, and asserts the message contains the new module name and removal version
-- [ ] T069 [P] [US4] Add `packages/pip/tests/deprecation/test_no_warning_on_current_paths.py` that runs with `warnings.simplefilter("error")` and imports the canonical `arc_guard_core.*` paths, asserting no warning fires
-- [ ] T070 [P] [US4] Add `packages/pip/tests/deprecation/test_post_removal.py` (parametrized) that simulates the removal release by bumping `LEGACY_SYMBOLS` `removed_in` to the current version and asserts `ImportError` with the migration link is raised
-- [ ] T071 [P] [US4] Add `packages/pip/tests/deprecation/test_changelog_records_removal.py` asserting any deprecation entry has a corresponding line in `packages/pip/CHANGELOG.md` (US4 acceptance scenario 3)
+- [x] T068 [P] [US4] Add `packages/pip/tests/deprecation/test_legacy_imports.py` that for every entry in `LEGACY_SYMBOLS` imports the old path under `warnings.catch_warnings(record=True)`, asserts a `DeprecationWarning` is raised, and asserts the message contains the new module name and removal version
+- [x] T069 [P] [US4] Add `packages/pip/tests/deprecation/test_no_warning_on_current_paths.py` that runs with `warnings.simplefilter("error")` and imports the canonical `arc_guard_core.*` paths, asserting no warning fires
+- [x] T070 [P] [US4] Add `packages/pip/tests/deprecation/test_post_removal.py` (parametrized) that simulates the removal release by bumping `LEGACY_SYMBOLS` `removed_in` to the current version and asserts `ImportError` with the migration link is raised
+- [x] T071 [P] [US4] Add `packages/pip/tests/deprecation/test_changelog_records_removal.py` asserting any deprecation entry has a corresponding line in `packages/pip/CHANGELOG.md` (US4 acceptance scenario 3)
 
 **Checkpoint**: User Story 4 is fully functional. Spec 001 imports continue to work with deprecation warnings; current paths are warning-free; the migration note is published.
 
@@ -230,13 +230,13 @@ This is a multi-package Python `uv` workspace. New layout (per [plan.md](./plan.
 
 ### Decisions directory and check script
 
-- [ ] T072 [P] [US5] Create `specs/002-rewrite-foundation/decisions/` with a `README.md` documenting the ADR template (front-matter must name the dependency)
-- [ ] T073 [US5] Create `tools/check_adopt_vs_build.py` per research §10 — diffs `packages/core/pyproject.toml` runtime deps against the merge-base, requires every new entry to be referenced from `.specify/memory/libraries.md` or `specs/002-rewrite-foundation/decisions/*.md` (FR-031, FR-032)
-- [ ] T074 [P] [US5] Update `tools/README.md` documenting the check, including the dev-deps-exempt rule (FR-031 acceptance scenario 2)
+- [x] T072 [P] [US5] Create `specs/002-rewrite-foundation/decisions/` with a `README.md` documenting the ADR template (front-matter must name the dependency)
+- [x] T073 [US5] Create `tools/check_adopt_vs_build.py` per research §10 — diffs `packages/core/pyproject.toml` runtime deps against the merge-base, requires every new entry to be referenced from `.specify/memory/libraries.md` or `specs/002-rewrite-foundation/decisions/*.md` (FR-031, FR-032)
+- [x] T074 [P] [US5] Update `tools/README.md` documenting the check, including the dev-deps-exempt rule (FR-031 acceptance scenario 2)
 
 ### Tests for US5
 
-- [ ] T075 [P] [US5] Add `tools/tests/test_check_adopt_vs_build.py` with fixtures: (a) PR adds a new runtime dep without a referenced entry → fails, (b) PR adds a new runtime dep with a `libraries.md` entry → passes, (c) PR adds a new runtime dep with a referenced ADR → passes, (d) PR adds only a dev dep → passes (US5 acceptance scenarios 1 and 2)
+- [x] T075 [P] [US5] Add `tools/tests/test_check_adopt_vs_build.py` with fixtures: (a) PR adds a new runtime dep without a referenced entry → fails, (b) PR adds a new runtime dep with a `libraries.md` entry → passes, (c) PR adds a new runtime dep with a referenced ADR → passes, (d) PR adds only a dev dep → passes (US5 acceptance scenarios 1 and 2)
 
 **Checkpoint**: User Story 5 is fully functional. New `core` runtime deps cannot land without a recorded review.
 
