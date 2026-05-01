@@ -1,14 +1,16 @@
 """Integration test for US1 — `core` install closure (T036).
 
-After importing arc_guard_core, no provider SDK module may be present in
-sys.modules. This is the runtime sibling of tools/check_dependency_tree.py.
+A fresh Python interpreter that imports only ``arc_guard_core`` must not
+pull any provider SDK into ``sys.modules``. We run this in a subprocess so
+sibling tests (which legitimately import presidio, transformers, etc. for
+inspector tests) cannot pollute the snapshot.
 """
 
 from __future__ import annotations
 
+import subprocess
 import sys
-
-import arc_guard_core  # noqa: F401
+import textwrap
 
 FORBIDDEN = {
     "presidio_analyzer",
@@ -25,8 +27,23 @@ FORBIDDEN = {
 
 
 def test_core_import_does_not_pull_provider_modules() -> None:
-    loaded = FORBIDDEN & set(sys.modules)
-    assert loaded == set(), f"forbidden modules loaded by arc_guard_core: {loaded}"
+    code = textwrap.dedent(
+        f"""
+        import sys
+        import arc_guard_core  # noqa: F401
+
+        forbidden = {sorted(FORBIDDEN)!r}
+        loaded = [m for m in forbidden if m in sys.modules]
+        if loaded:
+            raise SystemExit(
+                f"forbidden modules loaded by arc_guard_core: {{loaded}}"
+            )
+        """
+    )
+    proc = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
 
 
 def test_core_pipeline_runs_without_extras() -> None:

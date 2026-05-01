@@ -250,28 +250,28 @@ This is a multi-package Python `uv` workspace. New layout (per [plan.md](./plan.
 
 ### Batch B — implementations
 
-- [ ] T076 Move `python/arc-guardrails/src/arc_guard/inspectors/` to `packages/pip/src/arc_guard/inspectors/` via `git mv`; update internal imports from `arc_guard.types` etc. to import from `arc_guard_core.types` (the public re-export still resolves)
-- [ ] T077 [P] Move `python/arc-guardrails/src/arc_guard/strategies/` to `packages/pip/src/arc_guard/strategies/`
-- [ ] T078 [P] Move `python/arc-guardrails/src/arc_guard/reporters/` to `packages/pip/src/arc_guard/reporters/`
-- [ ] T079 [P] Move `python/arc-guardrails/src/arc_guard/flags/` to `packages/pip/src/arc_guard/flags/`
-- [ ] T080 [P] Move `python/arc-guardrails/src/arc_guard/middleware/` to `packages/pip/src/arc_guard/middleware/`
-- [ ] T081 Move `python/arc-guardrails/src/arc_guard/pipeline.py` (the implementation, with inspector chain) to `packages/pip/src/arc_guard/pipeline.py`, importing `GuardPipeline` shape from `arc_guard_core.pipeline` and extending it with the runtime inspector chain
-- [ ] T082 [P] Move `python/arc-guardrails/src/arc_guard/config.py` (env hydration) to `packages/pip/src/arc_guard/config_env.py`; update `arc_guard.config` to be a deprecation shim per Phase 6
+- [x] T076 Move `python/arc-guardrails/src/arc_guard/inspectors/` to `packages/pip/src/arc_guard/inspectors/` via `git mv`; update internal imports from `arc_guard.types` etc. to import from `arc_guard_core.types` (the public re-export still resolves)
+- [x] T077 [P] Move `python/arc-guardrails/src/arc_guard/strategies/` to `packages/pip/src/arc_guard/strategies/`
+- [x] T078 [P] Move `python/arc-guardrails/src/arc_guard/reporters/` to `packages/pip/src/arc_guard/reporters/`
+- [x] T079 [P] Move `python/arc-guardrails/src/arc_guard/flags/` to `packages/pip/src/arc_guard/flags/`
+- [x] T080 [P] Move `python/arc-guardrails/src/arc_guard/middleware/` to `packages/pip/src/arc_guard/middleware/`
+- [x] T081 Move `python/arc-guardrails/src/arc_guard/pipeline.py` (the implementation, with inspector chain) to `packages/pip/src/arc_guard/pipeline.py`, importing `GuardPipeline` shape from `arc_guard_core.pipeline` and extending it with the runtime inspector chain
+- [x] T082 [P] Move `python/arc-guardrails/src/arc_guard/config.py` (env hydration) to `packages/pip/src/arc_guard/config_env.py`; update `arc_guard.config` to be a deprecation shim per Phase 6
 
 ### Batch C — adapters
 
-- [ ] T083 [P] Move `python/arc-guardrails/src/arc_guard/adapters/` to `packages/pip/src/arc_guard/adapters/`; verify `tools/check_import_graph.py` still passes (adapters reachable only from `arc_guard.adapters`, never from `arc_guard_core`)
+- [x] T083 [P] Move `python/arc-guardrails/src/arc_guard/adapters/` to `packages/pip/src/arc_guard/adapters/`; verify `tools/check_import_graph.py` still passes (adapters reachable only from `arc_guard.adapters`, never from `arc_guard_core`)
 - [x] T103 [P] Add `packages/pip/tests/integration/test_extras_gating.py` that, in a clean venv with `arc-guard` installed without extras, verifies importing each adapter (`arc_guard.adapters.nats_reporter`, `arc_guard.adapters.unleash_provider`, etc.) raises `ModuleNotFoundError` with a hint message naming the matching extra to install (FR-005)
 
 ### Test migration
 
-- [ ] T084 Move `python/arc-guardrails/tests/` to the appropriate `packages/pip/tests/{unit,integration}/` subdirectories, preserving the existing test names; update test imports
-- [ ] T085 Verify `cd packages/pip && uv run pytest` passes against the migrated tests
+- [x] T084 Move `python/arc-guardrails/tests/` to the appropriate `packages/pip/tests/{unit,integration}/` subdirectories, preserving the existing test names; update test imports
+- [x] T085 Verify `cd packages/pip && uv run pytest` passes against the migrated tests
 
 ### Decommission the old location
 
-- [ ] T086 Remove the now-empty `python/arc-guardrails/src/arc_guard/` modules (the deprecation shims live in `packages/pip/src/arc_guard/` instead). Keep `python/arc-guardrails/pyproject.toml` and a top-level deprecation README pointing to `packages/pip/`
-- [ ] T087 Add a CHANGELOG entry to `packages/pip/CHANGELOG.md` recording the migration of each module group
+- [x] T086 Remove the now-empty `python/arc-guardrails/src/arc_guard/` modules (the deprecation shims live in `packages/pip/src/arc_guard/` instead). Keep `python/arc-guardrails/pyproject.toml` and a top-level deprecation README pointing to `packages/pip/`
+- [x] T087 Add a CHANGELOG entry to `packages/pip/CHANGELOG.md` recording the migration of each module group
 
 **Checkpoint**: All Spec 001 implementation modules now live in `packages/pip/`. The legacy `python/arc-guardrails/` is decommissioned to a stub README. All tests still pass.
 
@@ -281,19 +281,19 @@ This is a multi-package Python `uv` workspace. New layout (per [plan.md](./plan.
 
 **Purpose**: Walkthrough doc finalization, README cross-links, retirement decision for `arc-common`, and a final dry-run of the quickstart.
 
-- [ ] T088 [P] Finalize `docs/walkthrough/002-rewrite-foundation.md` — add the architecture diagram, the package-boundary table, and the "what's next" pointer to Spec 003 (FR-033)
-- [ ] T089 [P] Update repo-root `README.md` (and `python/README.md` if present) to link to `packages/README.md` and the walkthrough
-- [ ] T090 [P] Verify the `import-linter` adopt-vs-build entry added by T024 is present and complete in `.specify/memory/libraries.md` (audit-only; no second add)
-- [ ] T091 [P] Add a one-line entry to `.specify/memory/patterns.md` cross-referencing this spec as the reference for "package split" patterns
-- [ ] T092 Update `specs/index.md` Spec 002 row to status `In Progress` while tasks run, then `Done` when this phase closes
-- [ ] T093 Decide and record the `python/arc-common/` retirement plan per research §3 — if retiring in Spec 002, add a deprecation README; if deferring to Spec 007, add a backlog entry under `specs/002-rewrite-foundation/decisions/arc-common-retirement.md`
-- [ ] T094 [P] Run `cd packages/core && uv run ruff check src tests`, `uv run mypy src --strict`, `uv run pytest` — all green
-- [ ] T095 [P] Run `cd packages/pip && uv run ruff check src tests`, `uv run mypy src --strict`, `uv run pytest` — all green
-- [ ] T096 [P] Run `cd packages/api && uv run ruff check src tests`, `uv run mypy src --strict`, `uv run pytest` — all green
-- [ ] T097 Run all `tools/check_*.py` scripts end-to-end against the workspace and confirm zero regressions
+- [x] T088 [P] Finalize `docs/walkthrough/002-rewrite-foundation.md` — add the architecture diagram, the package-boundary table, and the "what's next" pointer to Spec 003 (FR-033)
+- [x] T089 [P] Update repo-root `README.md` (and `python/README.md` if present) to link to `packages/README.md` and the walkthrough
+- [x] T090 [P] Verify the `import-linter` adopt-vs-build entry added by T024 is present and complete in `.specify/memory/libraries.md` (audit-only; no second add)
+- [x] T091 [P] Add a one-line entry to `.specify/memory/patterns.md` cross-referencing this spec as the reference for "package split" patterns
+- [x] T092 Update `specs/index.md` Spec 002 row to status `In Progress` while tasks run, then `Done` when this phase closes
+- [x] T093 Decide and record the `python/arc-common/` retirement plan per research §3 — if retiring in Spec 002, add a deprecation README; if deferring to Spec 007, add a backlog entry under `specs/002-rewrite-foundation/decisions/arc-common-retirement.md`
+- [x] T094 [P] Run `cd packages/core && uv run ruff check src tests`, `uv run mypy src --strict`, `uv run pytest` — all green
+- [x] T095 [P] Run `cd packages/pip && uv run ruff check src tests`, `uv run mypy src --strict`, `uv run pytest` — all green
+- [x] T096 [P] Run `cd packages/api && uv run ruff check src tests`, `uv run mypy src --strict`, `uv run pytest` — all green
+- [x] T097 Run all `tools/check_*.py` scripts end-to-end against the workspace and confirm zero regressions
 - [ ] T098 Execute `quickstart.md` Walkthrough A end-to-end in a clean venv; confirm every step's expected output
 - [ ] T099 Execute `quickstart.md` Walkthrough B end-to-end against the workspace; confirm every step's expected output
-- [ ] T100 Run `.specify/scripts/bash/update-agent-context.sh claude` once more so `CLAUDE.md` reflects the final package layout (research §1 mapping)
+- [x] T100 Run `.specify/scripts/bash/update-agent-context.sh claude` once more so `CLAUDE.md` reflects the final package layout (research §1 mapping)
 
 ---
 

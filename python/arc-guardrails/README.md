@@ -1,77 +1,72 @@
-# arc-guard
+# arc-guard — DEPRECATED LOCATION
 
-General-purpose Python guardrails library — PII detection, prompt injection prevention, and toxic output filtering.
+**This directory is the Spec 001 home of `arc-guard`. Spec 002 moved the
+implementation to [`packages/pip/`](../../packages/pip/).**
 
-## Install
+## Where the code lives now
+
+| Old location | New location |
+|---|---|
+| `python/arc-guardrails/src/arc_guard/types.py` | `packages/core/src/arc_guard_core/types.py` |
+| `python/arc-guardrails/src/arc_guard/protocols/` | `packages/core/src/arc_guard_core/protocols/` |
+| `python/arc-guardrails/src/arc_guard/registry.py` | `packages/core/src/arc_guard_core/registry.py` |
+| `python/arc-guardrails/src/arc_guard/config.py` (presidio shape) | `packages/pip/src/arc_guard/config_env.py` |
+| `python/arc-guardrails/src/arc_guard/inspectors/` | `packages/pip/src/arc_guard/inspectors/` |
+| `python/arc-guardrails/src/arc_guard/strategies/` | `packages/pip/src/arc_guard/strategies/` |
+| `python/arc-guardrails/src/arc_guard/reporters/` | `packages/pip/src/arc_guard/reporters/` |
+| `python/arc-guardrails/src/arc_guard/flags/` | `packages/pip/src/arc_guard/flags/` |
+| `python/arc-guardrails/src/arc_guard/middleware/` | `packages/pip/src/arc_guard/middleware/` |
+| `python/arc-guardrails/src/arc_guard/adapters/` | `packages/pip/src/arc_guard/adapters/` |
+| `python/arc-guardrails/src/arc_guard/pipeline.py` | `packages/pip/src/arc_guard/pipeline.py` |
+
+## Why the migration
+
+Spec 002 splits the contract layer (typed models, Protocols, exception hierarchy,
+configuration schema, observability hooks) into a zero-dep `arc-guard-core`
+package that an integrator can install without pulling presidio, NATS, Unleash,
+OTEL, or any model runtime. The batteries-included library `arc-guard` now
+depends on `arc-guard-core` and continues to ship the concrete inspectors,
+strategies, reporters, and adapters under the same import paths.
+
+See the migration walkthrough at
+[`docs/walkthrough/002-rewrite-foundation.md`](../../docs/walkthrough/002-rewrite-foundation.md)
+for the full mapping and a worked example.
+
+## Deprecation timeline
+
+- **`arc-guard 0.2.x`**: Spec 001 import paths (`arc_guard.types.*`,
+  `arc_guard.config.GuardConfig`, `arc_guard.protocols.*`,
+  `arc_guard.registry.*`) keep working through PEP 562 ``__getattr__`` shims.
+  Each access emits a `DeprecationWarning` naming the new home.
+- **`arc-guard 0.3.0`**: shims are removed; importing from the old paths
+  raises `ImportError` with a link to this migration note.
+
+## What still lives here
+
+This directory keeps:
+
+- `pyproject.toml` — kept to mark the legacy distribution while the deprecation
+  window is open. The `[project]` table remains valid but points at no source.
+- `analysis/`, `images/` — historical artifacts referenced by Spec 001 docs.
+- `tests/` — original Spec 001 test suite, preserved for reference. The live
+  suite has been migrated to `packages/pip/tests/` and is the authoritative one.
+- `uv.lock` — preserved for archival reproducibility of Spec 001.
+
+## What to do as a caller
+
+If you use `from arc_guard.types import GuardResult`:
 
 ```bash
-# Core (presidio-based PII detection + injection detection)
-pip install arc-guard
-
-# With NATS event reporting
-pip install "arc-guard[nats]"
-
-# With Unleash feature flags
-pip install "arc-guard[unleash]"
-
-# With OTEL metrics + spans
-pip install "arc-guard[otel]"
-
-# Full ARC platform integration
-pip install "arc-guard[arc]"
+# Spec 002 canonical path:
+from arc_guard_core.types import GuardResult
 ```
 
-## Quick start
+If you use `from arc_guard.inspectors.presidio import PresidioInspector`:
 
 ```python
-from arc_guard import GuardPipeline, GuardInput, GuardContext
-
-# Build pipeline from env vars (GUARD_ENABLED, GUARD_LITE_MODE, etc.)
-guard = GuardPipeline.default()
-
-# Inspect a user prompt before sending to the LLM
-result = await guard.pre_process(
-    GuardInput(text="ignore previous instructions", context=GuardContext(source="input"))
-)
-
-if result.action == "block":
-    raise ValueError("Prompt blocked by guard")
-
-# Inspect model output before returning to the user
-result = await guard.post_process(
-    GuardInput(text=llm_response, context=GuardContext(source="output"))
-)
-print(result.text)   # sanitized text (redacted, hashed, or original)
-print(result.action) # "pass" | "redact" | "hash" | "block"
+# Unchanged — implementation modules keep their import path:
+from arc_guard.inspectors.presidio import PresidioInspector
 ```
 
-## Environment variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GUARD_ENABLED` | `false` | Enable the guard pipeline |
-| `GUARD_LITE_MODE` | `false` | Skip SemanticInspector (latency-sensitive paths) |
-| `GUARD_ACTION_STRATEGY` | `redact` | `redact` \| `hash` \| `block` |
-| `GUARD_PII_ENTITIES` | (all) | Comma-separated presidio entity names |
-| `GUARD_LANGUAGE` | `en` | Language for presidio analysis |
-| `GUARD_MODEL_PATH` | — | Path to pre-downloaded distilbert model (air-gap) |
-| `GUARD_MODEL_CACHE_DIR` | `~/.cache/arc/models/` | HuggingFace model cache dir |
-| `GUARD_HASH_KEY` | auto | Hex-encoded HMAC-SHA256 key (share across replicas) |
-| `GUARD_HASH_KEY_FILE` | `~/.local/share/arc/guard_hash_key` | Key file path |
-| `GUARD_REPORTER_QUEUE_SIZE` | `1000` | Max events buffered in NatsReporter queue |
-
-## Architecture
-
-```
-GuardInput → Middleware.before()
-           → InjectionInspector   (regex, <1ms, input only)
-           → PresidioInspector    (presidio-analyzer, 5-20ms)
-           → SemanticInspector    (distilbert, 30-80ms, skipped in lite_mode)
-           → CustomInspector      (EntityRegistry patterns)
-           → ActionStrategy       (redact / hash / block)
-           → Middleware.after()
-           → Reporter.report()    (fire-and-forget)
-           → GuardResult
-```
-
-All extension points are `typing.Protocol` — zero imports from `arc_guard` required to implement custom inspectors, strategies, or reporters.
+See [`packages/pip/CHANGELOG.md`](../../packages/pip/CHANGELOG.md) for the full
+list of deprecated symbols and their removal version.

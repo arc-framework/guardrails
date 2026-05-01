@@ -23,7 +23,7 @@ The mapping covers every public symbol previously exported from `arc_guard.*`. T
 | `arc_guard.types.Finding` | `arc_guard_core.types.Finding` | `arc-guard 0.3.0` | Shape unchanged |
 | `arc_guard.types.GuardResult` | `arc_guard_core.types.GuardResult` | `arc-guard 0.3.0` | Adds `decisions`, `refusal`, `tokenize` action |
 | `arc_guard.types.EntityDefinition` | `arc_guard_core.types.EntityDefinition` | `arc-guard 0.3.0` | Shape unchanged |
-| `arc_guard.config.GuardConfig` | `arc_guard_core.config.GuardConfig` | `arc-guard 0.3.0` | Adds observability hook fields |
+| `arc_guard.config.GuardConfig` | `arc_guard.config_env.GuardConfig` | `arc-guard 0.3.0` | Spec 001 presidio/model-path shape preserved unchanged at the new path. The new generic contract `arc_guard_core.config.GuardConfig` is a *separate* class with a different shape — opt in explicitly. |
 | `arc_guard.registry.EntityRegistry` | `arc_guard_core.registry.EntityRegistry` | `arc-guard 0.3.0` | Shape unchanged |
 | `arc_guard.protocols.Guard` | `arc_guard_core.protocols.guard.Guard` | `arc-guard 0.3.0` | Docstring extended |
 | `arc_guard.protocols.Inspector` | `arc_guard_core.protocols.inspector.Inspector` | `arc-guard 0.3.0` | Docstring extended |

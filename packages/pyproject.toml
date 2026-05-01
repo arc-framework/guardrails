@@ -21,3 +21,8 @@ dev = [
     "pytest-cov>=4.1",
     "import-linter>=2.0",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["core/tests", "pip/tests", "api/tests"]
+addopts = "-ra -q --strict-markers"

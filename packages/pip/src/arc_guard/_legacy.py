@@ -41,8 +41,11 @@ LEGACY_SYMBOLS: dict[str, LegacyEntry] = {
     "Finding": LegacyEntry("arc_guard_core.types", "Finding", "0.3.0"),
     "GuardResult": LegacyEntry("arc_guard_core.types", "GuardResult", "0.3.0"),
     "EntityDefinition": LegacyEntry("arc_guard_core.types", "EntityDefinition", "0.3.0"),
-    # Config
-    "GuardConfig": LegacyEntry("arc_guard_core.config", "GuardConfig", "0.3.0"),
+    # Config — Spec 001 GuardConfig (presidio + model fields) preserved unchanged
+    # under arc_guard.config_env. Spec 002's generic contract is a new class at
+    # arc_guard_core.config.GuardConfig with a different shape; callers that
+    # want the new contract must opt in to the new path.
+    "GuardConfig": LegacyEntry("arc_guard.config_env", "GuardConfig", "0.3.0"),
     # Registry
     "EntityRegistry": LegacyEntry("arc_guard_core.registry", "EntityRegistry", "0.3.0"),
     "register_entity": LegacyEntry("arc_guard_core.registry", "register_entity", "0.3.0"),
