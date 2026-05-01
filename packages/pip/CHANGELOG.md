@@ -5,14 +5,18 @@ All notable changes to the `arc-guard` package are documented here. Format follo
 ## [0.3.0] — 2026-05-01
 
 ### Added
-- (Spec 003) New built-in strategies `warn` and `tokenize` registered in the strategy registry by default.
-- (Spec 003) `RuleBasedPolicyRouter` — default `PolicyRouter` implementation that resolves per-finding routing decisions, applies the configured precedence (`block > redact > tokenize > hash > warn > pass`), and emits a `DecisionRecord` per pipeline run.
-- (Spec 003) `StrategyRegistry` thread-safe in-memory mapping with `register_strategy`, `get_strategy`, `is_registered`, `list_registered`, and a `@strategy("name")` decorator.
-- (Spec 003) `RefusalBuilder` and decision `Emitter` modules wiring Spec 002 observability hooks.
-- (Spec 003) Pipeline now branches on `GuardConfig.policy is None`: `None` preserves Spec 001/002 behavior; otherwise the policy router runs.
+- New built-in strategies `warn` and `tokenize` registered in the strategy registry by default.
+- `RuleBasedPolicyRouter` — default `PolicyRouter` implementation: resolves per-finding routing decisions, applies precedence (`block > redact > tokenize > hash > warn > pass`), aggregates risk via `RiskClassifier`, builds refusal envelopes for HIGH / CRITICAL bands, and emits a `DecisionRecord` per pipeline run.
+- `StrategyRegistry` thread-safe in-memory mapping with `register_strategy`, `get_strategy`, `is_registered`, `list_registered`, and a `@strategy("name")` decorator.
+- `RefusalBuilder` consumes `RefusalTemplate` defaults and per-rule overrides; never returns an envelope with empty required fields.
+- `DecisionEmitter` builds and emits a `DecisionRecord` per run via `Logger.event` and `MetricSink.counter` / `histogram`. Emission is non-blocking; emitter failures are suppressed.
+- Clarification flow: when `PolicyRuleSet.clarification_enabled=True` and the run lands on `ambiguous_threshold`, the pipeline returns a populated `GuardResult.clarification` instead of a hard block.
+- Pipeline accepts new optional kwargs: `policy_ruleset`, `policy_router`, `logger_hook`, `metrics_hook`. When `policy_ruleset is None`, Spec 001/002 behavior is preserved.
 
 ### Changed
-- (Spec 003) `redact` strategy emits typed placeholders per the typed-placeholder registry (`[<TYPE>]` for single occurrences, `[<TYPE>_1]`/`[<TYPE>_2]`/… for multiple).
+- `redact` strategy emits typed placeholders per the registry (`[<TYPE>]` for single occurrences, `[<TYPE>_1]` / `[<TYPE>_2]` / … for multiple, in span order).
+- `hash` strategy emits `[HASH:<8 hex>]` instead of bare 16-hex digests.
+- All built-in strategies return `Sequence[PolicyDecision]` to satisfy the `ActionStrategy` Protocol.
 
 ## [0.2.0] — 2026-05-01
 
