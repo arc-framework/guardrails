@@ -11,6 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
+from arc_guard_core.exceptions import ConfigCrossFieldError
 from arc_guard_core.observability import (
     Logger,
     MetricSink,
@@ -53,9 +54,33 @@ class GuardConfig(BaseModel):
     def _validate_cross_fields(self, info: ValidationInfo | None = None) -> GuardConfig:  # type: ignore[override]
         if not self.enabled:
             return self
-        # No registered-name check here; the runtime registry is in `pip`.
-        # Cross-field rule: if `lite_mode` is set and `inspector_order` is empty,
-        # the pipeline is effectively a no-op — that's allowed but recorded.
+        # Cross-field rule: any name listed in `policy_hints_default` MUST be
+        # a non-empty string. Empty strings sneak in via misconfigured env
+        # hydration and would silently no-op downstream.
+        for hint in self.policy_hints_default:
+            if not hint or not isinstance(hint, str):
+                raise ConfigCrossFieldError(
+                    f"policy_hints_default contains an empty/non-string entry: {hint!r}",
+                    code="config.cross_field_violation",
+                    details={"field": "policy_hints_default", "value": repr(hint)},
+                )
+        # Cross-field rule: each entry in `inspector_order` MUST be a
+        # non-empty unique string. Duplicates would silently double-run.
+        seen: set[str] = set()
+        for name in self.inspector_order:
+            if not name or not isinstance(name, str):
+                raise ConfigCrossFieldError(
+                    f"inspector_order contains an empty/non-string entry: {name!r}",
+                    code="config.cross_field_violation",
+                    details={"field": "inspector_order", "value": repr(name)},
+                )
+            if name in seen:
+                raise ConfigCrossFieldError(
+                    f"inspector_order contains duplicate {name!r}",
+                    code="config.cross_field_violation",
+                    details={"field": "inspector_order", "duplicate": name},
+                )
+            seen.add(name)
         return self
 
 

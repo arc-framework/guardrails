@@ -1,7 +1,7 @@
 .claude/*
 .specify/*
 .venv/
-
+.idea/
 # Local environment
 .DS_Store
 .python-version

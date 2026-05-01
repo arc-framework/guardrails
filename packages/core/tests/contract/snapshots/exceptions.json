@@ -1,0 +1,199 @@
+[
+  {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "AdapterBoundaryValidationError",
+    "parent": "ValidationError",
+    "stability": "stable",
+    "valid_codes": [
+      "adapter.invalid_input",
+      "adapter.invalid_output"
+    ]
+  },
+  {
+    "failure_mode": null,
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "AdapterError",
+    "parent": "ArcGuardError",
+    "stability": "stable",
+    "valid_codes": []
+  },
+  {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "ApiBoundaryValidationError",
+    "parent": "ValidationError",
+    "stability": "stable",
+    "valid_codes": [
+      "api.malformed_payload",
+      "api.missing_field",
+      "api.type_mismatch",
+      "api.unknown_field"
+    ]
+  },
+  {
+    "failure_mode": null,
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "ArcGuardError",
+    "parent": "Exception",
+    "stability": "stable",
+    "valid_codes": []
+  },
+  {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "ConfigCrossFieldError",
+    "parent": "ConfigError",
+    "stability": "stable",
+    "valid_codes": [
+      "config.cross_field_violation",
+      "config.unknown_inspector"
+    ]
+  },
+  {
+    "failure_mode": null,
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "ConfigError",
+    "parent": "ArcGuardError",
+    "stability": "stable",
+    "valid_codes": []
+  },
+  {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "ConfigSchemaError",
+    "parent": "ConfigError",
+    "stability": "stable",
+    "valid_codes": [
+      "config.missing_field",
+      "config.type_mismatch",
+      "config.unknown_field"
+    ]
+  },
+  {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "EntityProviderError",
+    "parent": "AdapterError",
+    "stability": "stable",
+    "valid_codes": [
+      "entity.duplicate_name",
+      "entity.load_failed"
+    ]
+  },
+  {
+    "failure_mode": "closed-conservative",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "FlagProviderError",
+    "parent": "AdapterError",
+    "stability": "stable",
+    "valid_codes": [
+      "flag.lookup_failed",
+      "flag.unhandled"
+    ]
+  },
+  {
+    "failure_mode": "open",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "InspectorError",
+    "parent": "PipelineError",
+    "stability": "stable",
+    "valid_codes": [
+      "inspector.malformed_finding",
+      "inspector.timeout",
+      "inspector.unhandled"
+    ]
+  },
+  {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "PipelineContractValidationError",
+    "parent": "ValidationError",
+    "stability": "stable",
+    "valid_codes": [
+      "pipeline.invalid_decision",
+      "pipeline.invalid_score",
+      "pipeline.invalid_severity",
+      "pipeline.invalid_span",
+      "pipeline.missing_inspector"
+    ]
+  },
+  {
+    "failure_mode": null,
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "PipelineError",
+    "parent": "ArcGuardError",
+    "stability": "stable",
+    "valid_codes": []
+  },
+  {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "PolicyRouterError",
+    "parent": "PipelineError",
+    "stability": "stable",
+    "valid_codes": [
+      "router.conflicting_decisions",
+      "router.no_decision"
+    ]
+  },
+  {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "RefusalEnvelopeError",
+    "parent": "ArcGuardError",
+    "stability": "stable",
+    "valid_codes": [
+      "refusal.build_failed",
+      "refusal.unknown_code"
+    ]
+  },
+  {
+    "failure_mode": "open",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "ReporterError",
+    "parent": "AdapterError",
+    "stability": "stable",
+    "valid_codes": [
+      "reporter.publish_failed",
+      "reporter.queue_full",
+      "reporter.unhandled"
+    ]
+  },
+  {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "StrategyError",
+    "parent": "PipelineError",
+    "stability": "stable",
+    "valid_codes": [
+      "strategy.failed",
+      "strategy.unsupported_action"
+    ]
+  },
+  {
+    "failure_mode": null,
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "ValidationError",
+    "parent": "ArcGuardError",
+    "stability": "stable",
+    "valid_codes": []
+  }
+]

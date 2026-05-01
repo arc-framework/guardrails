@@ -125,19 +125,19 @@ This is a multi-package Python `uv` workspace. New layout (per [plan.md](./plan.
 
 ### Snapshot generator and diff
 
-- [ ] T038 [P] [US2] Create `packages/core/tests/contract/_snapshot.py` with a `build_snapshot()` function that walks `arc_guard_core.__all__`, introspects each entry, and produces the JSON shape documented in [contracts/public-types.md](./contracts/public-types.md) §"Snapshot schema"
-- [ ] T039 [P] [US2] Extend `_snapshot.py` to introspect Protocol classes per [contracts/protocols.md](./contracts/protocols.md) §"Snapshot format" — capture each method's signature, async flag, declared exceptions, and the protocol's thread-safety and failure-mode markers
-- [ ] T040 [P] [US2] Extend `_snapshot.py` to introspect the exception hierarchy per [contracts/exceptions.md](./contracts/exceptions.md) §"Snapshot format" — capture parent class, `__failure_mode__`, and `__valid_codes__`
-- [ ] T041 [US2] Add `_snapshot.diff(old, new)` returning a structured list of (kind, name, detail) tuples that the test asserts against
-- [ ] T042 [US2] Generate the baseline snapshots and store them as `packages/core/tests/contract/snapshots/public_types.json`, `protocols.json`, `exceptions.json`
+- [x] T038 [P] [US2] Create `packages/core/tests/contract/_snapshot.py` with a `build_snapshot()` function that walks `arc_guard_core.__all__`, introspects each entry, and produces the JSON shape documented in [contracts/public-types.md](./contracts/public-types.md) §"Snapshot schema"
+- [x] T039 [P] [US2] Extend `_snapshot.py` to introspect Protocol classes per [contracts/protocols.md](./contracts/protocols.md) §"Snapshot format" — capture each method's signature, async flag, declared exceptions, and the protocol's thread-safety and failure-mode markers
+- [x] T040 [P] [US2] Extend `_snapshot.py` to introspect the exception hierarchy per [contracts/exceptions.md](./contracts/exceptions.md) §"Snapshot format" — capture parent class, `__failure_mode__`, and `__valid_codes__`
+- [x] T041 [US2] Add `_snapshot.diff(old, new)` returning a structured list of (kind, name, detail) tuples that the test asserts against
+- [x] T042 [US2] Generate the baseline snapshots and store them as `packages/core/tests/contract/snapshots/public_types.json`, `protocols.json`, `exceptions.json`
 
 ### Contract tests
 
-- [ ] T043 [US2] Add `packages/core/tests/contract/test_public_surface_snapshot.py` that runs `build_snapshot()` and asserts no diff against the baseline; on additive changes (new optional field, new exception subclass, etc.), assert that `packages/core/CHANGELOG.md` has been touched in the same commit (use `git diff --name-only HEAD~1` or the `pytest --update-snapshot` flag)
-- [ ] T044 [US2] Add `packages/core/tests/contract/test_protocol_signatures.py` covering rename, removal, async-flip, signature-change, and thread-safety-weakening cases. Also assert every Protocol's docstring contains a `Concurrency:` line declaring sync/async/both, mirroring the failure-mode assertion in T062 (FR-024, SC-007)
-- [ ] T045 [US2] Add `packages/core/tests/contract/test_failure_modes.py` covering exception-class-level changes per the diff rules in `contracts/exceptions.md`
-- [ ] T046 [US2] Add a deliberate-mutation test fixture in `packages/core/tests/contract/test_diff_examples.py` that mutates copies of the snapshot and asserts each diff kind is detected (SC-005)
-- [ ] T047 [P] [US2] Add a `--update-snapshot` flag to the snapshot test invocation (e.g. via `pytest --update-snapshot`) for legitimate additive changes; document it in `tools/README.md`
+- [x] T043 [US2] Add `packages/core/tests/contract/test_public_surface_snapshot.py` that runs `build_snapshot()` and asserts no diff against the baseline; on additive changes (new optional field, new exception subclass, etc.), assert that `packages/core/CHANGELOG.md` has been touched in the same commit (use `git diff --name-only HEAD~1` or the `pytest --update-snapshot` flag)
+- [x] T044 [US2] Add `packages/core/tests/contract/test_protocol_signatures.py` covering rename, removal, async-flip, signature-change, and thread-safety-weakening cases. Also assert every Protocol's docstring contains a `Concurrency:` line declaring sync/async/both, mirroring the failure-mode assertion in T062 (FR-024, SC-007)
+- [x] T045 [US2] Add `packages/core/tests/contract/test_failure_modes.py` covering exception-class-level changes per the diff rules in `contracts/exceptions.md`
+- [x] T046 [US2] Add a deliberate-mutation test fixture in `packages/core/tests/contract/test_diff_examples.py` that mutates copies of the snapshot and asserts each diff kind is detected (SC-005)
+- [x] T047 [P] [US2] Add a `--update-snapshot` flag to the snapshot test invocation (e.g. via `pytest --update-snapshot`) for legitimate additive changes; document it in `tools/README.md`
 
 **Checkpoint**: User Story 2 is fully functional. The contract test suite blocks every breaking change, requires CHANGELOG entries for additive changes, and lets internal refactors through.
 
@@ -151,36 +151,36 @@ This is a multi-package Python `uv` workspace. New layout (per [plan.md](./plan.
 
 ### Configuration validation
 
-- [ ] T048 [US3] Extend `packages/core/src/arc_guard_core/config.py` `GuardConfig` with cross-field validators (e.g. `inspector_order` names must be registered) raising `ConfigCrossFieldError` (FR-016)
-- [ ] T049 [P] [US3] Add unit tests in `packages/core/tests/unit/test_config_validation.py` for: unknown-field rejection (`extra='forbid'`), wrong-type rejection, cross-field violations, and the error messages naming the offending fields
+- [x] T048 [US3] Extend `packages/core/src/arc_guard_core/config.py` `GuardConfig` with cross-field validators (e.g. `inspector_order` names must be registered) raising `ConfigCrossFieldError` (FR-016)
+- [x] T049 [P] [US3] Add unit tests in `packages/core/tests/unit/test_config_validation.py` for: unknown-field rejection (`extra='forbid'`), wrong-type rejection, cross-field violations, and the error messages naming the offending fields
 
 ### Pipeline contract validators
 
-- [ ] T050 [US3] Add `_validate_finding(f: Finding) -> None` and `_validate_decision(d: PolicyDecision) -> None` helpers to `packages/core/src/arc_guard_core/pipeline.py`, raising `PipelineContractValidationError` with the offending field in `details` (FR-018)
-- [ ] T051 [P] [US3] Add unit tests in `packages/core/tests/unit/test_pipeline_validation.py` covering invalid spans (`end <= start`), out-of-range scores, missing inspector name, and out-of-range `RiskLevel`
+- [x] T050 [US3] Add `_validate_finding(f: Finding) -> None` and `_validate_decision(d: PolicyDecision) -> None` helpers to `packages/core/src/arc_guard_core/pipeline.py`, raising `PipelineContractValidationError` with the offending field in `details` (FR-018)
+- [x] T051 [P] [US3] Add unit tests in `packages/core/tests/unit/test_pipeline_validation.py` covering invalid spans (`end <= start`), out-of-range scores, missing inspector name, and out-of-range `RiskLevel`
 
 ### API boundary validation (scaffold)
 
-- [ ] T052 [P] [US3] Create `packages/api/src/arc_guard_service/settings.py` with a minimal pydantic-settings model (placeholder) that loads from env
-- [ ] T053 [P] [US3] Create `packages/api/src/arc_guard_service/_placeholder.py` documenting the Spec 007 handoff per research §12
-- [ ] T054 [US3] Create `packages/api/src/arc_guard_service/validators.py` with `validate_request_payload(payload: Mapping[str, Any]) -> GuardInput` raising `ApiBoundaryValidationError` on shape mismatch (FR-017)
-- [ ] T055 [P] [US3] Add unit tests in `packages/api/tests/test_request_validation.py` for malformed payloads — wrong types, missing required keys, extra unknown keys
-- [ ] T056 [P] [US3] Add a smoke test in `packages/api/tests/test_package_imports.py` that imports `arc_guard_service` and asserts the package loads without provider deps reachable beyond what `arc-guard` already pulls (research §12)
+- [x] T052 [P] [US3] Create `packages/api/src/arc_guard_service/settings.py` with a minimal pydantic-settings model (placeholder) that loads from env
+- [x] T053 [P] [US3] Create `packages/api/src/arc_guard_service/_placeholder.py` documenting the Spec 007 handoff per research §12
+- [x] T054 [US3] Create `packages/api/src/arc_guard_service/validators.py` with `validate_request_payload(payload: Mapping[str, Any]) -> GuardInput` raising `ApiBoundaryValidationError` on shape mismatch (FR-017)
+- [x] T055 [P] [US3] Add unit tests in `packages/api/tests/test_request_validation.py` for malformed payloads — wrong types, missing required keys, extra unknown keys
+- [x] T056 [P] [US3] Add a smoke test in `packages/api/tests/test_package_imports.py` that imports `arc_guard_service` and asserts the package loads without provider deps reachable beyond what `arc-guard` already pulls (research §12)
 
 ### Adapter boundary validation
 
-- [ ] T057 [P] [US3] Add `validate_adapter_input` / `validate_adapter_output` helpers in `packages/core/src/arc_guard_core/_adapter_contract.py` raising `AdapterBoundaryValidationError` (FR-019)
-- [ ] T058 [P] [US3] Add unit tests in `packages/core/tests/unit/test_adapter_contract.py` covering both directions
+- [x] T057 [P] [US3] Add `validate_adapter_input` / `validate_adapter_output` helpers in `packages/core/src/arc_guard_core/_adapter_contract.py` raising `AdapterBoundaryValidationError` (FR-019)
+- [x] T058 [P] [US3] Add unit tests in `packages/core/tests/unit/test_adapter_contract.py` covering both directions
 
 ### Concurrency policy enforcement
 
-- [ ] T059 [P] [US3] Create `tools/check_async_blocking.py` per research §7 — combines ruff `ASYNC` rule output with a small AST walker that flags blocking calls into `time`, `subprocess`, `socket`, `presidio_analyzer.AnalyzerEngine.analyze`, and `transformers.pipeline.__call__` from any function reachable from `Guard.pre_process` / `Guard.post_process` (FR-025, SC-007)
-- [ ] T060 [P] [US3] Enable ruff `ASYNC` rule family in each package's `[tool.ruff.lint]` config
-- [ ] T061 [P] [US3] Add a regression test fixture in `packages/core/tests/contract/test_async_blocking.py` that runs `tools/check_async_blocking.py` against a deliberately-blocking sample async function and asserts it is flagged
+- [x] T059 [P] [US3] Create `tools/check_async_blocking.py` per research §7 — combines ruff `ASYNC` rule output with a small AST walker that flags blocking calls into `time`, `subprocess`, `socket`, `presidio_analyzer.AnalyzerEngine.analyze`, and `transformers.pipeline.__call__` from any function reachable from `Guard.pre_process` / `Guard.post_process` (FR-025, SC-007)
+- [x] T060 [P] [US3] Enable ruff `ASYNC` rule family in each package's `[tool.ruff.lint]` config
+- [x] T061 [P] [US3] Add a regression test fixture in `packages/core/tests/contract/test_async_blocking.py` that runs `tools/check_async_blocking.py` against a deliberately-blocking sample async function and asserts it is flagged
 
 ### Public-stage failure-mode declarations
 
-- [ ] T062 [US3] Add `packages/core/tests/contract/test_failure_mode_declarations.py` asserting every public stage (`Guard`, `Inspector`, `ActionStrategy`, `Reporter`, `FlagProvider`, `Middleware`, `EntityProvider`) has its declared exceptions present in the hierarchy and matching `__failure_mode__` (FR-022, SC-006)
+- [x] T062 [US3] Add `packages/core/tests/contract/test_failure_mode_declarations.py` asserting every public stage (`Guard`, `Inspector`, `ActionStrategy`, `Reporter`, `FlagProvider`, `Middleware`, `EntityProvider`) has its declared exceptions present in the hierarchy and matching `__failure_mode__` (FR-022, SC-006)
 
 ### Product-neutral defaults (FR-020)
 
@@ -188,7 +188,7 @@ This is a multi-package Python `uv` workspace. New layout (per [plan.md](./plan.
 
 ### No internal exception leaks at the public boundary (FR-023)
 
-- [ ] T102 [US3] Add `packages/core/tests/contract/test_no_unwrapped_leaks.py` that, for every leaf exception class in the hierarchy, injects a raise into each documented `Guard` call site (via monkeypatched stages and adapters) and asserts the public method returns a `GuardResult` (with `bypass_reason` for fail-open or `refusal` populated for fail-closed) — no exception escapes unwrapped (FR-023, complements [contracts/exceptions.md](./contracts/exceptions.md) §"No leak rule")
+- [x] T102 [US3] Add `packages/core/tests/contract/test_no_unwrapped_leaks.py` that, for every leaf exception class in the hierarchy, injects a raise into each documented `Guard` call site (via monkeypatched stages and adapters) and asserts the public method returns a `GuardResult` (with `bypass_reason` for fail-open or `refusal` populated for fail-closed) — no exception escapes unwrapped (FR-023, complements [contracts/exceptions.md](./contracts/exceptions.md) §"No leak rule")
 
 **Checkpoint**: User Story 3 is fully functional. Every documented boundary rejects malformed data with a typed error; the async-blocking lint catches regressions; failure-mode declarations are enforced; defaults are product-neutral; no internal exceptions leak across the public API.
 
@@ -261,7 +261,7 @@ This is a multi-package Python `uv` workspace. New layout (per [plan.md](./plan.
 ### Batch C — adapters
 
 - [ ] T083 [P] Move `python/arc-guardrails/src/arc_guard/adapters/` to `packages/pip/src/arc_guard/adapters/`; verify `tools/check_import_graph.py` still passes (adapters reachable only from `arc_guard.adapters`, never from `arc_guard_core`)
-- [ ] T103 [P] Add `packages/pip/tests/integration/test_extras_gating.py` that, in a clean venv with `arc-guard` installed without extras, verifies importing each adapter (`arc_guard.adapters.nats_reporter`, `arc_guard.adapters.unleash_provider`, etc.) raises `ModuleNotFoundError` with a hint message naming the matching extra to install (FR-005)
+- [x] T103 [P] Add `packages/pip/tests/integration/test_extras_gating.py` that, in a clean venv with `arc-guard` installed without extras, verifies importing each adapter (`arc_guard.adapters.nats_reporter`, `arc_guard.adapters.unleash_provider`, etc.) raises `ModuleNotFoundError` with a hint message naming the matching extra to install (FR-005)
 
 ### Test migration
 

@@ -1,0 +1,510 @@
+[
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "name",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "category",
+        "type": "str"
+      },
+      {
+        "default": "None",
+        "name": "pattern",
+        "type": "re.Pattern[str] | None"
+      },
+      {
+        "default": "None",
+        "name": "recognizer",
+        "type": "Any | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "EntityDefinition",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "bases": [
+      "object"
+    ],
+    "kind": "class",
+    "methods": [
+      {
+        "name": "__init__",
+        "signature": "(self) -> 'None'"
+      },
+      {
+        "name": "entities",
+        "signature": "(self) -> 'Iterable[EntityDefinition]'"
+      },
+      {
+        "name": "get_entities",
+        "signature": "(self) -> 'list[EntityDefinition]'"
+      },
+      {
+        "name": "register",
+        "signature": "(self, entity: 'EntityDefinition') -> 'None'"
+      }
+    ],
+    "module": "arc_guard_core.registry",
+    "name": "EntityRegistry",
+    "stability": "stable"
+  },
+  {
+    "alias": "typing.Literal['open', 'closed', 'closed-conservative']",
+    "kind": "type_alias",
+    "module": "arc_guard_core.exceptions",
+    "name": "FailureMode",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "entity_type",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "start",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "end",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "risk_level",
+        "type": "RiskLevel"
+      },
+      {
+        "default": null,
+        "name": "inspector",
+        "type": "str"
+      },
+      {
+        "default": "None",
+        "name": "score",
+        "type": "float | None"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "Finding",
+    "properties": [
+      "span"
+    ],
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "True",
+        "name": "enabled",
+        "required": false,
+        "type": "bool"
+      },
+      {
+        "default": "False",
+        "name": "lite_mode",
+        "required": false,
+        "type": "bool"
+      },
+      {
+        "default": "<factory>",
+        "name": "inspector_order",
+        "required": false,
+        "type": "tuple[str, ...]"
+      },
+      {
+        "default": "<factory>",
+        "name": "policy_hints_default",
+        "required": false,
+        "type": "frozenset[str]"
+      },
+      {
+        "default": "<factory>",
+        "name": "tracer",
+        "required": false,
+        "type": "Tracer"
+      },
+      {
+        "default": "<factory>",
+        "name": "logger",
+        "required": false,
+        "type": "Logger"
+      },
+      {
+        "default": "<factory>",
+        "name": "metrics",
+        "required": false,
+        "type": "MetricSink"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.config",
+    "name": "GuardConfig",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": "'input'",
+        "name": "source",
+        "type": "Literal['input', 'output']"
+      },
+      {
+        "default": "None",
+        "name": "user_id",
+        "type": "str | None"
+      },
+      {
+        "default": "None",
+        "name": "session_id",
+        "type": "str | None"
+      },
+      {
+        "default": "None",
+        "name": "correlation_id",
+        "type": "str | None"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "GuardContext",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "text",
+        "type": "str"
+      },
+      {
+        "default": "<factory:GuardContext>",
+        "name": "context",
+        "type": "GuardContext"
+      },
+      {
+        "default": "<factory:frozenset>",
+        "name": "policy_hints",
+        "type": "frozenset[str]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "GuardInput",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "bases": [
+      "object"
+    ],
+    "kind": "class",
+    "methods": [
+      {
+        "name": "__init__",
+        "signature": "(self, *, config: 'GuardConfig | None' = None) -> 'None'"
+      },
+      {
+        "name": "post_process",
+        "signature": "(self, guard_input: 'GuardInput') -> 'GuardResult'"
+      },
+      {
+        "name": "post_process_sync",
+        "signature": "(self, guard_input: 'GuardInput') -> 'GuardResult'"
+      },
+      {
+        "name": "pre_process",
+        "signature": "(self, guard_input: 'GuardInput') -> 'GuardResult'"
+      },
+      {
+        "name": "pre_process_sync",
+        "signature": "(self, guard_input: 'GuardInput') -> 'GuardResult'"
+      },
+      {
+        "name": "validate_decisions",
+        "signature": "(decisions: 'Sequence[PolicyDecision]') -> 'None'"
+      },
+      {
+        "name": "validate_findings",
+        "signature": "(findings: 'Sequence[Finding]') -> 'None'"
+      }
+    ],
+    "module": "arc_guard_core.pipeline",
+    "name": "GuardPipeline",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "text",
+        "type": "str"
+      },
+      {
+        "default": "'pass'",
+        "name": "action",
+        "type": "Literal['pass', 'redact', 'hash', 'block', 'tokenize']"
+      },
+      {
+        "default": "<factory:tuple>",
+        "name": "findings",
+        "type": "tuple[Finding, ...]"
+      },
+      {
+        "default": "<factory:tuple>",
+        "name": "decisions",
+        "type": "tuple[PolicyDecision, ...]"
+      },
+      {
+        "default": "None",
+        "name": "refusal",
+        "type": "RefusalEnvelope | None"
+      },
+      {
+        "default": "None",
+        "name": "bypass_reason",
+        "type": "Literal['disabled', 'error', None]"
+      },
+      {
+        "default": "'pre_process'",
+        "name": "phase",
+        "type": "Literal['pre_process', 'post_process']"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "GuardResult",
+    "properties": [
+      "is_clean",
+      "max_risk"
+    ],
+    "stability": "stable"
+  },
+  {
+    "bases": [
+      "object"
+    ],
+    "kind": "class",
+    "methods": [
+      {
+        "name": "bind",
+        "signature": "(self, **fields: 'Any') -> 'NullLogger'"
+      },
+      {
+        "name": "event",
+        "signature": "(self, name: 'str', *, level: 'str' = 'info', **fields: 'Any') -> 'None'"
+      }
+    ],
+    "module": "arc_guard_core.observability",
+    "name": "NullLogger",
+    "stability": "experimental"
+  },
+  {
+    "bases": [
+      "object"
+    ],
+    "kind": "class",
+    "methods": [
+      {
+        "name": "counter",
+        "signature": "(self, name: 'str', value: 'int' = 1, *, attributes: 'Mapping[str, Any] | None' = None) -> 'None'"
+      },
+      {
+        "name": "histogram",
+        "signature": "(self, name: 'str', value: 'float', *, attributes: 'Mapping[str, Any] | None' = None) -> 'None'"
+      }
+    ],
+    "module": "arc_guard_core.observability",
+    "name": "NullMetricSink",
+    "stability": "experimental"
+  },
+  {
+    "bases": [
+      "object"
+    ],
+    "kind": "class",
+    "methods": [
+      {
+        "name": "start_span",
+        "signature": "(self, name: 'str', *, attributes: 'Mapping[str, Any] | None' = None) -> 'AbstractContextManager[Any]'"
+      }
+    ],
+    "module": "arc_guard_core.observability",
+    "name": "NullTracer",
+    "stability": "experimental"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "finding_ids",
+        "type": "tuple[int, ...]"
+      },
+      {
+        "default": null,
+        "name": "strategy",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "severity",
+        "type": "RiskLevel"
+      },
+      {
+        "default": null,
+        "name": "rationale",
+        "type": "str"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "PolicyDecision",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "base": "StrEnum",
+    "kind": "enum",
+    "module": "arc_guard_core.refusal.codes",
+    "name": "RefusalCode",
+    "stability": "stable",
+    "values": [
+      {
+        "name": "JAILBREAK",
+        "value": "jailbreak"
+      },
+      {
+        "name": "PII_CRITICAL",
+        "value": "pii_critical"
+      },
+      {
+        "name": "STRATEGY_FAILED",
+        "value": "strategy_failed"
+      },
+      {
+        "name": "POLICY_BLOCK",
+        "value": "policy_block"
+      },
+      {
+        "name": "FIDELITY_DROP_PLACEHOLDER",
+        "value": "fidelity_drop_placeholder"
+      }
+    ]
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "code",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "trigger",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "policy",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "human_message",
+        "type": "str"
+      },
+      {
+        "default": "<factory:tuple>",
+        "name": "decisions",
+        "type": "tuple[PolicyDecision, ...]"
+      },
+      {
+        "default": "<factory:tuple>",
+        "name": "next_steps",
+        "type": "tuple[str, ...]"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "RefusalEnvelope",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "base": "IntEnum",
+    "kind": "enum",
+    "module": "arc_guard_core.types",
+    "name": "RiskLevel",
+    "stability": "stable",
+    "values": [
+      {
+        "name": "NONE",
+        "value": 0
+      },
+      {
+        "name": "LOW",
+        "value": 1
+      },
+      {
+        "name": "MEDIUM",
+        "value": 2
+      },
+      {
+        "name": "HIGH",
+        "value": 3
+      },
+      {
+        "name": "CRITICAL",
+        "value": 4
+      }
+    ]
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.registry",
+    "name": "register_entity",
+    "signature": "(name: 'str', category: 'str', pattern: 're.Pattern[str] | None' = None, recognizer: 'Any | None' = None) -> 'None'",
+    "stability": "stable"
+  }
+]
