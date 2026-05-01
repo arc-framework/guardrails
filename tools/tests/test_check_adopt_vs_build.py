@@ -14,7 +14,6 @@ if str(TOOLS_DIR) not in sys.path:
 
 import check_adopt_vs_build as cab  # noqa: E402
 
-
 CORE_PYPROJECT_BASELINE = """
 [project]
 name = "arc-guard-core"
@@ -45,9 +44,9 @@ def test_no_new_deps_passes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
 
 
 def test_new_dep_without_record_fails(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
 ) -> None:
     current = tmp_path / "pyproject.toml"
     current.write_text(CORE_PYPROJECT_WITH_NEW_DEP)
@@ -63,7 +62,7 @@ def test_new_dep_without_record_fails(
 
 
 def test_new_dep_with_libraries_md_entry_passes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     current = tmp_path / "pyproject.toml"
     current.write_text(CORE_PYPROJECT_WITH_NEW_DEP)
@@ -77,7 +76,7 @@ def test_new_dep_with_libraries_md_entry_passes(
 
 
 def test_new_dep_with_referenced_adr_passes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     current = tmp_path / "pyproject.toml"
     current.write_text(CORE_PYPROJECT_WITH_NEW_DEP)
@@ -91,7 +90,7 @@ def test_new_dep_with_referenced_adr_passes(
 
 
 def test_dev_only_change_does_not_trigger(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A change that only edits the dev group must not flag anything."""
     pyproject_with_only_dev_dep = """
@@ -116,7 +115,7 @@ def test_decisions_mention_matches_front_matter(tmp_path: Path) -> None:
     """The ADR-detection helper should pick up `dependency:` in YAML front matter."""
     decisions = tmp_path / "decisions"
     decisions.mkdir()
-    (decisions / "001-test.md").write_text(
+    (decisions / "001-test.university").write_text(
         "---\n"
         "dependency: somedep\n"
         "status: adopted\n"

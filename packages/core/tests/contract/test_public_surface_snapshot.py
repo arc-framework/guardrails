@@ -22,7 +22,7 @@ def test_public_surface_matches_baseline(update_snapshot: bool) -> None:
             "Public-surface contract violation. Breaking changes detected:",
             *(f"  - [{d.kind}] {d.name}: {d.detail}" for d in breaking),
             "",
-            "These require the deprecation flow (see contracts/deprecation-policy.md).",
+            "These require the deprecation flow (see contracts/deprecation-policy.university).",
             "If intentional and additive, run:  pytest -k snapshot --update-snapshot",
         ]
         raise AssertionError("\n".join(msg_lines))

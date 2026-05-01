@@ -4,8 +4,8 @@ The names exported here ARE the public surface, snapshotted by the contract
 test suite under ``tests/contract/``. Adding a new public symbol requires a
 CHANGELOG entry; renaming or removing one requires the deprecation flow.
 
-See ``specs/002-rewrite-foundation/contracts/public-types.md`` and
-``specs/003-sanitization-policy-core/contracts/public-types.md``.
+See ``specs/002-rewrite-foundation/contracts/public-types.university`` and
+``specs/003-sanitization-policy-core/contracts/public-types.university``.
 """
 
 from __future__ import annotations

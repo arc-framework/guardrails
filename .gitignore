@@ -30,7 +30,7 @@ pip-wheel-metadata/
 python/arc-guardrails/analysis/*
 
 docs/
-images/
+docs/university/images/
 CLAUDE.md
 .github/copilot-instructions.md
 .github/claude-instructions.md

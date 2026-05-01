@@ -8,7 +8,7 @@ The table is the single source of truth for the deprecation flow. The
 contract test suite under ``tests/deprecation/`` asserts every entry is
 reachable through the PEP 562 ``__getattr__`` shim.
 
-See specs/002-rewrite-foundation/contracts/deprecation-policy.md.
+See specs/002-rewrite-foundation/contracts/deprecation-policy.university.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 MIGRATION_NOTE_URL = (
     "https://example.invalid/arc-guardrails/docs/walkthrough/"
-    "002-rewrite-foundation.md#migration"
+    "002-rewrite-foundation.university#migration"
 )
 
 
@@ -64,7 +64,6 @@ LEGACY_SYMBOLS: dict[str, LegacyEntry] = {
         "arc_guard_core.protocols.entity_provider", "EntityProvider", "0.3.0"
     ),
 }
-
 
 # The current arc-guard release version. The shim raises ImportError when
 # CURRENT_VERSION >= entry.removed_in. This version is updated by the release

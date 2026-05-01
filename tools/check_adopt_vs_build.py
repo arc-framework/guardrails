@@ -4,8 +4,8 @@ Diffs the runtime dependency list in ``packages/core/pyproject.toml`` against
 a baseline (``main`` by default) and requires every newly added entry to be
 referenced from an adopt-vs-build record in either:
 
-- ``.specify/memory/libraries.md`` (single-line adoption note), or
-- ``specs/002-rewrite-foundation/decisions/<id>.md`` (full ADR with front-matter
+- ``.specify/memory/libraries.university`` (single-line adoption note), or
+- ``specs/002-rewrite-foundation/decisions/<id>.university`` (full ADR with front-matter
   ``dependency: <name>``).
 
 Dev-only dependencies under ``[dependency-groups.dev]`` or ``[tool.uv]`` are
@@ -28,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE_PYPROJECT = ROOT / "packages" / "core" / "pyproject.toml"
-LIBRARIES_MD = ROOT / ".specify" / "memory" / "libraries.md"
+LIBRARIES_MD = ROOT / ".specify" / "memory" / "libraries.university"
 DECISIONS_DIR = ROOT / "specs" / "002-rewrite-foundation" / "decisions"
 
 REQ_NAME_RE = re.compile(r"^\s*([A-Za-z0-9_.-]+)")
@@ -74,7 +74,7 @@ def _decisions_mention(name: str) -> bool:
         return False
     front_matter_re = re.compile(r"^---\s*$.*?^---\s*$", re.MULTILINE | re.DOTALL)
     dep_line_re = re.compile(r"^dependency:\s*([A-Za-z0-9_.-]+)\s*$", re.MULTILINE)
-    for md in DECISIONS_DIR.glob("*.md"):
+    for md in DECISIONS_DIR.glob("*.university"):
         text = md.read_text()
         match = front_matter_re.search(text)
         if not match:
@@ -122,7 +122,7 @@ def main(argv: list[str] | None = None) -> int:
         for dep in missing:
             print(f"  - {dep}")
         print(
-            "\nAdd a line to .specify/memory/libraries.md or an ADR under "
+            "\nAdd a line to .specify/memory/libraries.university or an ADR under "
             f"{DECISIONS_DIR.relative_to(ROOT)} with front-matter `dependency: <name>`."
         )
         return 1

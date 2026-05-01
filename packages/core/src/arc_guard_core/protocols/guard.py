@@ -22,7 +22,7 @@ class Guard(Protocol):
     unwrapped exceptions across this boundary.
 
     Failure mode: aggregate fail-open. Each underlying stage carries its
-    own per-stage mode (see ``contracts/exceptions.md``).
+    own per-stage mode (see ``contracts/exceptions.university``).
     """
 
     async def pre_process(self, guard_input: GuardInput) -> GuardResult: ...

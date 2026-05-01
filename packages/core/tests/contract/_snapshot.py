@@ -9,8 +9,8 @@ are committed to git. Adding a new public symbol is an additive change that
 requires a CHANGELOG entry; renaming, removing, or narrowing a public type
 fails the contract test.
 
-See ``specs/002-rewrite-foundation/contracts/public-types.md``,
-``contracts/protocols.md``, and ``contracts/exceptions.md`` for the diff
+See ``specs/002-rewrite-foundation/contracts/public-types.university``,
+``contracts/protocols.university``, and ``contracts/exceptions.university`` for the diff
 rules.
 """
 
@@ -129,8 +129,8 @@ def _dataclass_entry(name: str, obj: type) -> dict[str, Any]:
         "module": obj.__module__,
         "stability": _stability_for(name),
         "frozen": getattr(obj, "__dataclass_params__", None)
-        and obj.__dataclass_params__.frozen
-        or False,
+                  and obj.__dataclass_params__.frozen
+                  or False,
         "fields": fields,
         "properties": properties,
     }
@@ -334,7 +334,7 @@ def build_exceptions_snapshot() -> list[dict[str, Any]]:
 
 @dataclasses.dataclass(frozen=True)
 class Diff:
-    kind: str   # "added" | "removed" | "changed"
+    kind: str  # "added" | "removed" | "changed"
     name: str
     detail: str
 

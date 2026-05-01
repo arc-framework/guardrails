@@ -14,7 +14,7 @@ from arc_guard_core.protocols import (
 )
 
 # Mapping from public stage to (declared exception, expected failure mode).
-# This is the table that ``contracts/exceptions.md`` §"Failure-mode table per
+# This is the table that ``contracts/exceptions.university`` §"Failure-mode table per
 # public stage" formalises. Adding a new stage requires adding a row here.
 STAGE_FAILURE_MODE = {
     Inspector: (exc.InspectorError, "open"),

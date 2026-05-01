@@ -3,7 +3,7 @@
 ``DeprecationWarning`` naming the new home; the shim is removed in
 ``arc-guard 0.3.0``.
 
-See specs/002-rewrite-foundation/contracts/deprecation-policy.md.
+See specs/002-rewrite-foundation/contracts/deprecation-policy.university.
 """
 
 from __future__ import annotations

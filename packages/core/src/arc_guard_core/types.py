@@ -5,7 +5,7 @@ to share across threads / coroutines and findings can be accumulated without
 mutation.
 
 This module is part of the contract layer. Field-level descriptions and
-validation rules live in ``specs/002-rewrite-foundation/data-model.md``.
+validation rules live in ``specs/002-rewrite-foundation/data-model.university``.
 The contract test suite under ``tests/contract/`` snapshots these types and
 fails on incompatible changes.
 """

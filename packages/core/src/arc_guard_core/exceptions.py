@@ -5,7 +5,7 @@ Every leaf exception declares its failure mode (``open``, ``closed``, or
 The contract test suite under ``tests/contract/test_failure_modes.py`` asserts
 these invariants.
 
-See ``specs/002-rewrite-foundation/contracts/exceptions.md`` for the canonical
+See ``specs/002-rewrite-foundation/contracts/exceptions.university`` for the canonical
 table of stages and their failure modes.
 """
 
@@ -21,12 +21,12 @@ class ArcGuardError(Exception):
     """Base exception. Never raised directly."""
 
     def __init__(
-        self,
-        message: str,
-        *,
-        code: str,
-        details: Mapping[str, Any] | None = None,
-        cause: BaseException | None = None,
+            self,
+            message: str,
+            *,
+            code: str,
+            details: Mapping[str, Any] | None = None,
+            cause: BaseException | None = None,
     ) -> None:
         super().__init__(message)
         valid_codes: frozenset[str] = getattr(type(self), "__valid_codes__", frozenset())
