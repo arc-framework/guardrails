@@ -1,5 +1,7 @@
 # Tasks: arc-guardrails — Python Guardrails Library (RoboCop)
 
+> **Historical Note:** These tasks belong to the original baseline implementation plan. Use the rewrite roadmap in `docs/superpowers/specs/2026-05-01-rewrite-roadmap.md` to derive future rewrite specs and tasks.
+
 > **Spec**: 001-arc-guard-rails
 > **Date**: 2026-03-15
 

@@ -1,5 +1,7 @@
 # Implementation Plan: arc-guardrails — Python Guardrails Library (RoboCop)
 
+> **Historical Note:** This implementation plan captures the pre-rewrite baseline architecture. For new rewrite-driven planning, use `docs/superpowers/specs/2026-05-01-rewrite-roadmap.md` as the planning source of truth.
+
 > **Spec**: 001-arc-guard-rails
 > **Date**: 2026-03-15
 > **ARD**: `.specify/docs/decisions/001-arc-guard-rails.md` (gap-fixed, implementation-ready)

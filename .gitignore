@@ -27,3 +27,6 @@ dist/
 *.egg-info/
 pip-wheel-metadata/
 python/arc-guardrails/analysis/*
+
+docs/
+images/

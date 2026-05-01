@@ -1,5 +1,7 @@
 # Feature: arc-guardrails — Python Guardrails Library (RoboCop)
 
+> **Historical Note:** This document captures the pre-rewrite baseline plan for the original single-package implementation. For new rewrite-driven planning, use `docs/superpowers/specs/2026-05-01-rewrite-roadmap.md` and related rewrite docs.
+
 > **Spec**: 001-arc-guard-rails
 > **Author**: Bala
 > **Date**: 2026-03-15
