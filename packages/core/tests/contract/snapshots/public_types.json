@@ -149,6 +149,10 @@
         "signature": "(self) -> 'Iterable[EntityDefinition]'"
       },
       {
+        "name": "freeze",
+        "signature": "(self) -> 'None'"
+      },
+      {
         "name": "get_entities",
         "signature": "(self) -> 'list[EntityDefinition]'"
       },

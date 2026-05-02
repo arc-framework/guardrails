@@ -1,9 +1,12 @@
 """StrategyRegistry — name-to-strategy lookup.
 
-Module-level singleton, thread-safe RLock. Built-in strategies register
-themselves on import of ``arc_guard.strategies``. User strategies register
-via ``register_strategy(name, strategy)`` or the ``@strategy("name")``
-decorator.
+Module-level singleton backed by ``FrozenAfterConstructionRegistry``.
+Built-in strategies register themselves on import of
+``arc_guard.strategies``. User strategies register via
+``register_strategy(name, strategy)`` or the ``@strategy("name")``
+decorator. Once the pipeline is constructed and ``freeze_strategies()``
+runs, further ``register_strategy`` calls raise
+``RegistryFrozenError``.
 
 Policy-load validation consults this registry — unknown names raise
 ``ConfigCrossFieldError``.
@@ -11,14 +14,13 @@ Policy-load validation consults this registry — unknown names raise
 
 from __future__ import annotations
 
-import threading
 from collections.abc import Callable
 from typing import Any, TypeVar
 
+from arc_guard_core._registry_lock import FrozenAfterConstructionRegistry
 from arc_guard_core.exceptions import StrategyError
 
-_LOCK = threading.RLock()
-_REGISTRY: dict[str, Any] = {}
+_REGISTRY: FrozenAfterConstructionRegistry[Any] = FrozenAfterConstructionRegistry()
 
 T = TypeVar("T")
 
@@ -28,21 +30,21 @@ def register_strategy(name: str, strategy: Any) -> None:
 
     Raises:
         ValueError: when ``name`` is empty.
-        StrategyError: when ``name`` is already registered to a different
-            instance. Duplicate registration with the same instance is a
-            no-op.
+        StrategyError: when ``name`` is already registered to a
+            different instance. Duplicate registration with the same
+            instance is a no-op.
+        RegistryFrozenError: when called after ``freeze_strategies()``.
     """
     if not name:
         raise ValueError("strategy name must be non-empty")
-    with _LOCK:
-        existing = _REGISTRY.get(name)
-        if existing is not None and existing is not strategy:
-            raise StrategyError(
-                f"strategy {name!r} already registered to a different instance",
-                code="strategy.failed",
-                details={"name": name},
-            )
-        _REGISTRY[name] = strategy
+    existing = _REGISTRY.get(name)
+    if existing is not None and existing is not strategy:
+        raise StrategyError(
+            f"strategy {name!r} already registered to a different instance",
+            code="strategy.failed",
+            details={"name": name},
+        )
+    _REGISTRY.register(name, strategy, replace=True)
 
 
 def get_strategy(name: str) -> Any:
@@ -51,8 +53,7 @@ def get_strategy(name: str) -> Any:
     Raises:
         StrategyError: when ``name`` is not registered.
     """
-    with _LOCK:
-        strat = _REGISTRY.get(name)
+    strat = _REGISTRY.get(name)
     if strat is None:
         raise StrategyError(
             f"strategy {name!r} is not registered",
@@ -64,14 +65,24 @@ def get_strategy(name: str) -> Any:
 
 def is_registered(name: str) -> bool:
     """Return True if ``name`` is registered."""
-    with _LOCK:
-        return name in _REGISTRY
+    return name in _REGISTRY
 
 
 def list_registered() -> frozenset[str]:
     """Return all registered names (snapshot)."""
-    with _LOCK:
-        return frozenset(_REGISTRY.keys())
+    return frozenset(_REGISTRY.names())
+
+
+def freeze_strategies() -> None:
+    """Seal the registry. Called from pipeline construction so
+    post-construction registration attempts raise
+    ``RegistryFrozenError``.
+    """
+    _REGISTRY.freeze()
+
+
+def is_strategies_frozen() -> bool:
+    return _REGISTRY.is_frozen
 
 
 def strategy(name: str) -> Callable[[type[T]], type[T]]:
@@ -90,9 +101,10 @@ def strategy(name: str) -> Callable[[type[T]], type[T]]:
 
 
 def _reset_for_testing() -> None:
-    """Test-only: clear the registry. Production code MUST NOT call this."""
-    with _LOCK:
-        _REGISTRY.clear()
+    """Test-only: unfreeze the registry while preserving import-time
+    built-in registrations. Production code MUST NOT call this.
+    """
+    _REGISTRY._unfreeze_for_testing()
 
 
 __all__ = [
@@ -100,5 +112,7 @@ __all__ = [
     "get_strategy",
     "is_registered",
     "list_registered",
+    "freeze_strategies",
+    "is_strategies_frozen",
     "strategy",
 ]

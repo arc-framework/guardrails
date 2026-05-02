@@ -117,6 +117,20 @@ class ConfigCrossFieldError(ConfigError):
     })
 
 
+class RegistryFrozenError(ConfigCrossFieldError):
+    """Raised when ``register(...)`` is called after the registry was frozen.
+
+    Subclasses ``ConfigCrossFieldError`` so the failure-mode lookup walks
+    the MRO and inherits the ``config`` rule (closed posture, critical
+    severity) without a separate ``FAIL_RULE`` entry.
+    """
+
+    __failure_mode__: ClassVar[FailureMode] = "closed"
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
+        "registry.frozen",
+    })
+
+
 # ---------------------------------------------------------------------------
 # Validation leaves
 # ---------------------------------------------------------------------------
@@ -220,6 +234,7 @@ __all__ = [
     "RefusalEnvelopeError",
     "ConfigSchemaError",
     "ConfigCrossFieldError",
+    "RegistryFrozenError",
     "ApiBoundaryValidationError",
     "PipelineContractValidationError",
     "AdapterBoundaryValidationError",

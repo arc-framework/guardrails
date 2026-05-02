@@ -1,13 +1,16 @@
-"""Every leaf exception has a FAIL_RULE entry, and every FAIL_RULE key
-has a foundation ``__failure_mode__`` ClassVar.
+"""Every leaf exception has a rule reachable via MRO, and every
+FAIL_RULE key has a foundation ``__failure_mode__`` ClassVar.
 
 Reflects over ``arc_guard_core.exceptions``, walks every concrete leaf
 subclass (filtering second-level group classes per the existing
-``test_failure_modes.py`` discipline), and asserts each appears as a
-key in ``FAIL_RULE``. Adding a new leaf without a ``FAIL_RULE`` entry
-fails this test. The reverse check (every key has a ``__failure_mode__``
-ClassVar) protects the single-source-of-truth invariant: posture is
-read from the foundation, never redeclared in the rule table.
+``test_failure_modes.py`` discipline), and asserts each resolves to a
+non-unknown rule via ``lookup_rule``. Subclasses that inherit their
+parent's rule via MRO walking (e.g. ``RegistryFrozenError`` inheriting
+the ``ConfigCrossFieldError`` rule) pass without a direct
+``FAIL_RULE`` entry. The reverse check (every key has a
+``__failure_mode__`` ClassVar) protects the single-source-of-truth
+invariant: posture is read from the foundation, never redeclared in
+the rule table.
 """
 
 from __future__ import annotations
@@ -15,7 +18,7 @@ from __future__ import annotations
 import inspect
 
 from arc_guard_core import exceptions as exc
-from arc_guard_core.failure_modes import FAIL_RULE
+from arc_guard_core.failure_modes import FAIL_RULE, FAILURE_UNKNOWN, lookup_rule
 
 # Second-level group classes that organize the hierarchy but are never
 # raised directly. They have no ``__failure_mode__`` and no ``FAIL_RULE``
@@ -43,14 +46,26 @@ def _concrete_leaves() -> list[type[exc.ArcGuardError]]:
     return leaves
 
 
-def test_every_leaf_has_a_fail_rule_entry() -> None:
-    """Every leaf in ``arc_guard_core.exceptions`` MUST be a FAIL_RULE key."""
+def test_every_leaf_resolves_to_a_known_rule() -> None:
+    """Every leaf in ``arc_guard_core.exceptions`` MUST resolve to a
+    non-unknown rule via MRO walking.
+
+    Subclasses that inherit a parent's rule (e.g.
+    ``RegistryFrozenError`` inheriting ``ConfigCrossFieldError``'s
+    config rule) are valid; only leaves that fall through to
+    ``UNKNOWN_RULE`` fail the test, since that means the leaf has no
+    documented failure-mode contract.
+    """
     leaves = _concrete_leaves()
-    missing = [cls.__name__ for cls in leaves if cls not in FAIL_RULE]
-    assert missing == [], (
-        f"Leaf exceptions without FAIL_RULE entries: {missing}. "
+    unknown = [
+        cls.__name__
+        for cls in leaves
+        if lookup_rule(cls)[0].failure_class == FAILURE_UNKNOWN
+    ]
+    assert unknown == [], (
+        f"Leaf exceptions resolving to unknown rule: {unknown}. "
         "Either add a FAIL_RULE entry in arc_guard_core.failure_modes "
-        "or document why the new class is exempt."
+        "or subclass an exception that already has one."
     )
 
 
