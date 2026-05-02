@@ -7,15 +7,20 @@ All notable changes to the `arc-guard-core` package are documented here. Format 
 ### Added
 - `arc_guard_core.stages` module: `STAGE_VALIDATE`, `STAGE_CLASSIFY`, `STAGE_SANITIZE`, `STAGE_ROUTE`, `STAGE_EXECUTE`, `STAGE_REFUSAL`, `STAGE_DECISION_EMIT`, `STAGE_REPORT`, plus `STAGE_DESCRIPTORS` allow-list.
 - `arc_guard_core.failure_modes` module: `FailureRule` NamedTuple, `FAIL_RULE` table covering all 12 leaf exceptions, `lookup_rule(exc_type)` helper that walks MRO and reads posture from foundation `__failure_mode__` ClassVar.
-- `arc_guard_core.observability_config.ObservabilityConfig` frozen pydantic model: `sampling_rate`, `refusal_always_emits`, `log_level_floor`, `metric_attribute_allow_list`, `max_attribute_bytes`.
+- `arc_guard_core.observability_config.ObservabilityConfig` frozen pydantic model: `sampling_rate`, `refusal_always_emits`, `log_level_floor`, `metric_attribute_allow_list`, `max_attribute_bytes`. Validates fully at construction time.
 - `arc_guard_core.protocols.attribute_redactor.AttributeRedactor` Protocol with `RedactionResult` frozen dataclass.
+- `arc_guard_core._registry_lock.FrozenAfterConstructionRegistry` shared internal helper. Generic over the value type; both `EntityRegistry` (core) and `StrategyRegistry` (pip) compose with it. Underscore-prefixed: not part of the public surface.
+- `RegistryFrozenError(ConfigCrossFieldError)` leaf exception. Inherits the `config` rule via MRO walking in `failure_modes.lookup_rule`; declares `__failure_mode__ = "closed"` and `__valid_codes__ = {"registry.frozen"}` per the foundation invariant.
 - `RefusalCode` enum extended with six new members: `API_INVALID_REQUEST`, `INTERNAL_PIPELINE_ERROR`, `INTERNAL_ADAPTER_ERROR`, `INTERNAL_REFUSAL_BUILD_ERROR`, `INTERNAL_ENTITY_PROVIDER_ERROR`, `INTERNAL_UNKNOWN_ERROR`. Default refusal templates registered for each.
+- `EntityRegistry` adopts the frozen-after-construction discipline: `register()` raises `RegistryFrozenError` after `freeze()`; `entities()` returns a snapshot copy that does not require locking on the hot path.
 
 ### Changed
 - `GuardConfig` gains `observability: ObservabilityConfig` field with safe defaults (full sampling, full verbosity, conservative attribute allow-list). Additive — existing constructors continue to work.
+- Contract-snapshot machinery (`tests/contract/_snapshot.py`) canonicalizes `frozenset` / `set` / `dict` defaults via a stable repr so post-Python-3.7 hash randomization no longer produces flaky snapshot diffs.
 
 ### Migration notes
-- Additive only. No breaking changes; no migration required.
+- Additive only on the public surface. No breaking changes; no migration required.
+- Callers that mutated `EntityRegistry` after pipeline construction will now see `RegistryFrozenError`. Move registrations earlier (before pipeline construction) to keep working.
 
 ## [0.2.0] — 2026-05-01
 

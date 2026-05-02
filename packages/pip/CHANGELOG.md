@@ -6,21 +6,36 @@ All notable changes to the `arc-guard` package are documented here. Format follo
 
 ### Added
 - New observability glue sub-package `arc_guard.observability/`:
-  - `stage_runner` — context-manager factory wrapping each pipeline stage with span / log / metric emissions, posture-aware failure-mode application, and post-decision sampling.
+  - `stage_runner` — context-manager factory wrapping each pipeline stage with span / log / metric emissions and posture-aware failure-mode application.
   - `recording` — `RecordingTracer` / `RecordingLogger` / `RecordingMetricSink` with `CapturedSpan` / `CapturedEvent` / `CapturedMetric` dataclasses; thread-safe via internal lock; intentionally importable from production code so dependent specs can use them.
   - `attributes` — `BoundedRedactor` default `AttributeRedactor` implementation: rejects values containing input substrings, values exceeding the configured byte cap, and metric attributes outside the allow-list.
   - `leak_scanner` — pure-function `scan_for_leaks(captured, originals)` returning a list of `LeakReport` entries; substring search only, no regex / entropy.
+  - `sampling` — `BufferedTracer`, `BufferedLogger`, `LogLevelFloorLogger`, and `RunSampler` implementing post-decision sampling. Buffered emissions flush at run end if sampled-in or if the run produced a refusal and `refusal_always_emits=True`. Failure events bypass sampling entirely.
+  - `validation` — `validate_request_with_observability(validator, payload, ...)` wraps an API-boundary validator and emits `guard.request.rejected` + `arc_guardrails.request.rejected` on `ApiBoundaryValidationError`. Standalone `emit_request_rejected` helper for callers who do their own validation.
 - New concurrency sub-package `arc_guard.concurrency/`:
   - `offload` — `run_off_loop(callable_, ..., stage, metric_sink)` wrapping `asyncio.to_thread` with an `arc_guardrails.observability.offload` counter.
+- New OTEL adapter sub-package `arc_guard.middleware.otel/` (gated by the `arc-guard[otel]` extra):
+  - `OtelTracer` / `OtelLogger` / `OtelMetricSink` adapters satisfying the foundation `Tracer` / `Logger` / `MetricSink` Protocols structurally.
+  - `OtelObservability.from_otel_sdk()` bundles the three with the SDK's auto-configured providers.
+  - `exporter.configure_otlp_exporter()` and `safe_shutdown()` for explicit control over OTLP wiring.
+  - Top-level `arc_guard.middleware.from_otel_sdk()` lazy factory: bare `import arc_guard.middleware` works without the extra; calling the factory without it raises a friendly `ImportError`.
 - `RegistryFrozenError(ConfigCrossFieldError)` declared in `arc_guard_core.exceptions`; raised by both `EntityRegistry` and `StrategyRegistry` after `freeze()`. Inherits `config` rule via MRO.
-- Pipeline stages emit spans, structured events, and metrics via `stage_runner`. Default sinks remain null — opt-in by passing a configured `tracer` / `logger` / `metrics` to `GuardConfig`.
+- Pipeline stages emit spans, structured events, and metrics via `stage_runner`. Default sinks remain null — opt-in by passing a configured `tracer_hook` / `logger_hook` / `metrics_hook` to `GuardPipeline`.
+- Pipeline emits `guard.refusal.constructed` event + `arc_guardrails.refusal.emitted` counter (with `refusal_code` label) when the policy router builds a refusal envelope.
+- Pipeline emits run-level `guard.run.started` / `guard.run.completed` events plus `arc_guardrails.run.duration` histogram and `arc_guardrails.run.action` counter.
+- Recursive `pre_process` invocation propagates `parent_run_correlation_id` on the inner run's `guard.run.started` event via a `contextvars.ContextVar`. Sequential top-level runs do not see each other as parent.
+- `arc-guard[otel]` install extra. Dependencies: `opentelemetry-api>=1.20`, `opentelemetry-sdk>=1.20`, `opentelemetry-exporter-otlp>=1.20`.
+- Performance benchmark suite under `tests/perf/` (marked `@pytest.mark.slow`; excluded from default CI via `addopts = -m 'not slow'`). Measures observability overhead delta — current median is ~0.013ms vs null sinks.
 
 ### Changed
 - `StrategyRegistry` and `EntityRegistry` adopt frozen-after-construction discipline via the shared core helper `arc_guard_core._registry_lock.FrozenAfterConstructionRegistry`. Construction-time registration is unchanged; post-snapshot registration raises `RegistryFrozenError`.
-- The async pipeline path detects sync-only inspectors / strategies and routes them through `concurrency.offload.run_off_loop` so the event loop is not blocked.
+- The async pipeline path routes synchronous strategy dispatch through `concurrency.offload.run_off_loop` so the event loop is not blocked by strategies that do heavy regex or model work.
+- `GuardPipeline` accepts a new optional `tracer_hook` parameter alongside the existing `logger_hook` / `metrics_hook`.
 
 ### Migration notes
-- Additive only on the public observability surface; `GuardConfig.observability` defaults preserve prior behavior. Custom registry consumers that mutated registries at runtime will hit `RegistryFrozenError` and need to register before pipeline construction.
+- Additive only on the public observability surface; `GuardConfig.observability` defaults preserve prior behavior.
+- Custom registry consumers that mutated registries at runtime will hit `RegistryFrozenError` and need to register before pipeline construction.
+- Strategies that depended on synchronous (non-`to_thread`) execution within the async pipeline now run on the asyncio default thread-pool executor; pure-CPU strategies see ~50µs of additional context-switch overhead per run. Tune via the standard asyncio executor knobs if needed.
 
 ## [0.3.0] — 2026-05-01
 
