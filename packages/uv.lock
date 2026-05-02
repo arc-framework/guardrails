@@ -49,7 +49,7 @@ wheels = [
 
 [[package]]
 name = "arc-guard"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "pip" }
 dependencies = [
     { name = "arc-guard-core" },
@@ -58,6 +58,10 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+jailbreak-ml = [
+    { name = "torch" },
+    { name = "transformers" },
+]
 otel = [
     { name = "opentelemetry-api" },
     { name = "opentelemetry-exporter-otlp" },
@@ -78,12 +82,14 @@ requires-dist = [
     { name = "presidio-analyzer", specifier = ">=2.2" },
     { name = "presidio-anonymizer", specifier = ">=2.2" },
     { name = "sentence-transformers", marker = "extra == 'semantic'", specifier = ">=2.2" },
+    { name = "torch", marker = "extra == 'jailbreak-ml'", specifier = ">=2.0" },
+    { name = "transformers", marker = "extra == 'jailbreak-ml'", specifier = ">=4.30" },
 ]
-provides-extras = ["otel", "semantic"]
+provides-extras = ["otel", "semantic", "jailbreak-ml"]
 
 [[package]]
 name = "arc-guard-core"
-version = "0.4.0"
+version = "0.5.0"
 source = { editable = "core" }
 dependencies = [
     { name = "pydantic" },

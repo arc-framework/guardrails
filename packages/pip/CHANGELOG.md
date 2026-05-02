@@ -2,6 +2,26 @@
 
 All notable changes to the `arc-guard` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.6.0] — 2026-05-02
+
+### Added
+- New `arc_guard.jailbreak/` sub-package: `RuleBasedJailbreakDetector` default with curated patterns across the 5 documented jailbreak categories; `apply_jailbreak_ladder` helper.
+- New `arc_guard.deception/` sub-package: `StatefulConversationInspector` default (counter-based heuristic; no ML); `update_state` / `fresh_state` reducers; `apply_deception_ladder` helper.
+- New `arc_guard.evaluation/` sub-package: `HarnessImpl` driving 4 pipeline configurations; `load_adversarial_corpus` validator; per-configuration metric computations; JSON Lines + Markdown report writers.
+- New `arc-guard[jailbreak-ml]` install extra: `transformers>=4.30`, `torch>=2.0`. Ships `JailbreakMlBundle.from_huggingface_jailbreak()` factory with `ClassifierJailbreakDetector` wrapping a transformer-based jailbreak classifier.
+- Bundled adversarial corpus under `tests/fixtures/adversarial_corpus.py` (≥ 50 entries × 5 categories) — also importable at runtime for the evaluation harness.
+- New CLI entrypoint `tools/run_evaluation.py` driving the harness against operator-provided or bundled corpus.
+- `GuardPipeline` accepts new optional kwargs `jailbreak_detector` and `conversation_turn_inspector` (Protocol implementations following the bare-name convention).
+- Pipeline emits `STAGE_DECEPTION_INSPECT` (post-classify, pre-sanitize) span + `guard.deception.scored` event + `arc_guardrails.deception.score` counter + `arc_guardrails.deception.duration` histogram. The jailbreak detector runs inside `STAGE_CLASSIFY` and emits `arc_guardrails.jailbreak.detected` counter + `arc_guardrails.jailbreak.duration` histogram.
+- `DecisionRecord` emitted by the pipeline carries the new `jailbreak_signals` and `deception_score` fields when the new stages ran.
+
+### Changed
+- Depends on `arc-guard-core>=0.5.0` for the new Protocols, exception leaves, threshold types, refusal codes, stage constant, and additive field changes to `GuardResult` / `GuardContext` / `DecisionRecord`.
+
+### Migration notes
+- Additive only on the public pipeline surface; default behavior with no `jailbreak_detector` / `conversation_turn_inspector` configured uses the rule-based / stateful defaults; operators see no behavior change unless they opt in to the new stage's emissions.
+- Operators wanting multi-turn deception detection thread a `ConversationState` through `GuardContext.conversation_state` and read the updated state back from `GuardResult.conversation_state` (top-level field, NOT under `result.context`).
+
 ## [0.5.0] — 2026-05-02
 
 ### Added

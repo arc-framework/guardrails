@@ -12,8 +12,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from arc_guard_core.deception import DeceptionScore
 from arc_guard_core.fidelity import FidelityScore
 from arc_guard_core.intent_lock import IntentLock
+from arc_guard_core.jailbreak import JailbreakSignal
 from arc_guard_core.policy import RiskBand, TransformSummary
 from arc_guard_core.types import RiskLevel
 
@@ -53,6 +55,8 @@ class DecisionRecord:
     metadata: dict[str, Any] = field(default_factory=dict)
     intent_lock: IntentLock | None = None
     fidelity_score: FidelityScore | None = None
+    jailbreak_signals: tuple[JailbreakSignal, ...] = ()
+    deception_score: DeceptionScore | None = None
 
 
 __all__ = [

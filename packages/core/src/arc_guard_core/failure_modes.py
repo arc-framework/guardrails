@@ -25,12 +25,16 @@ from arc_guard_core.exceptions import (
     ApiBoundaryValidationError,
     ConfigCrossFieldError,
     ConfigSchemaError,
+    ConversationTurnInspectorError,
+    CorpusValidationError,
     EntityProviderError,
+    EvaluationHarnessError,
     FailureMode,
     FidelityScorerError,
     FlagProviderError,
     InspectorError,
     IntentEncoderError,
+    JailbreakDetectorError,
     PipelineContractValidationError,
     PolicyRouterError,
     RefusalEnvelopeError,
@@ -58,6 +62,10 @@ FAILURE_ENTITY_PROVIDER: Final[str] = "entity_provider"
 FAILURE_INTENT_ENCODER: Final[str] = "intent_encoder"
 FAILURE_FIDELITY_SCORER: Final[str] = "fidelity_scorer"
 FAILURE_REHYDRATION_VERIFIER: Final[str] = "rehydration_verifier"
+FAILURE_JAILBREAK_DETECTOR: Final[str] = "jailbreak_detector"
+FAILURE_CONVERSATION_TURN_INSPECTOR: Final[str] = "conversation_turn_inspector"
+FAILURE_EVALUATION_HARNESS: Final[str] = "evaluation_harness"
+FAILURE_CORPUS_VALIDATION: Final[str] = "corpus_validation"
 FAILURE_UNKNOWN: Final[str] = "unknown"
 
 
@@ -125,6 +133,18 @@ FAIL_RULE: dict[type[Exception], FailureRule] = {
     RehydrationVerifierError: FailureRule(
         FAILURE_REHYDRATION_VERIFIER, "error", RefusalCode.FIDELITY_DROP,
     ),
+    JailbreakDetectorError: FailureRule(
+        FAILURE_JAILBREAK_DETECTOR, "warn", None,
+    ),
+    ConversationTurnInspectorError: FailureRule(
+        FAILURE_CONVERSATION_TURN_INSPECTOR, "warn", None,
+    ),
+    EvaluationHarnessError: FailureRule(
+        FAILURE_EVALUATION_HARNESS, "error", RefusalCode.INTERNAL_PIPELINE_ERROR,
+    ),
+    CorpusValidationError: FailureRule(
+        FAILURE_CORPUS_VALIDATION, "error", RefusalCode.API_INVALID_REQUEST,
+    ),
 }
 
 UNKNOWN_RULE: Final[FailureRule] = FailureRule(
@@ -163,6 +183,10 @@ __all__ = [
     "FAILURE_INTENT_ENCODER",
     "FAILURE_FIDELITY_SCORER",
     "FAILURE_REHYDRATION_VERIFIER",
+    "FAILURE_JAILBREAK_DETECTOR",
+    "FAILURE_CONVERSATION_TURN_INSPECTOR",
+    "FAILURE_EVALUATION_HARNESS",
+    "FAILURE_CORPUS_VALIDATION",
     "FAILURE_UNKNOWN",
     "Severity",
     "FailureRule",

@@ -18,6 +18,7 @@ from enum import IntEnum
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
+    from arc_guard_core.deception import ConversationState, DeceptionScore
     from arc_guard_core.fidelity import FidelityScore
 
 
@@ -50,6 +51,7 @@ class GuardContext:
     session_id: str | None = None
     correlation_id: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    conversation_state: ConversationState | None = None
 
 
 @dataclass(frozen=True)
@@ -205,6 +207,8 @@ class GuardResult:
     phase: Literal["pre_process", "post_process"] = "pre_process"
     fidelity_score: FidelityScore | None = None
     fidelity_warning: bool = False
+    deception_score: DeceptionScore | None = None
+    conversation_state: ConversationState | None = None
 
     def __post_init__(self) -> None:
         # Clarification is a recovery path; it is mutually exclusive with a

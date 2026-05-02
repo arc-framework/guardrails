@@ -16,6 +16,7 @@ from typing import Final
 STAGE_VALIDATE: Final[str] = "validate"
 STAGE_DEFEND: Final[str] = "defend"
 STAGE_CLASSIFY: Final[str] = "classify"
+STAGE_DECEPTION_INSPECT: Final[str] = "deception_inspect"
 STAGE_SANITIZE: Final[str] = "sanitize"
 STAGE_ROUTE: Final[str] = "route"
 STAGE_EXECUTE: Final[str] = "execute"
@@ -29,6 +30,7 @@ STAGE_DESCRIPTORS: frozenset[str] = frozenset({
     STAGE_VALIDATE,
     STAGE_DEFEND,
     STAGE_CLASSIFY,
+    STAGE_DECEPTION_INSPECT,
     STAGE_SANITIZE,
     STAGE_ROUTE,
     STAGE_EXECUTE,
@@ -44,6 +46,7 @@ __all__ = [
     "STAGE_VALIDATE",
     "STAGE_DEFEND",
     "STAGE_CLASSIFY",
+    "STAGE_DECEPTION_INSPECT",
     "STAGE_SANITIZE",
     "STAGE_ROUTE",
     "STAGE_EXECUTE",

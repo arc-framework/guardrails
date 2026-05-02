@@ -19,6 +19,8 @@ class RefusalCode(StrEnum):
     """
 
     JAILBREAK = "jailbreak"
+    JAILBREAK_STRONG = "jailbreak_strong"
+    DECEPTION_DRIFT = "deception_drift"
     PII_CRITICAL = "pii_critical"
     STRATEGY_FAILED = "strategy_failed"
     POLICY_BLOCK = "policy_block"

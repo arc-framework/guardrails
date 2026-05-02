@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+from arc_guard_core.protocols.conversation_turn_inspector import (
+    ConversationTurnInspector,
+)
 from arc_guard_core.protocols.entity_provider import EntityProvider
+from arc_guard_core.protocols.evaluation_harness import EvaluationHarness
 from arc_guard_core.protocols.fidelity_scorer import FidelityScorer
 from arc_guard_core.protocols.flag_provider import FlagProvider
 from arc_guard_core.protocols.guard import Guard
@@ -11,6 +15,7 @@ from arc_guard_core.protocols.intent_encoder import (
     IntentEncoder,
     IntentRepresentation,
 )
+from arc_guard_core.protocols.jailbreak_detector import JailbreakDetector
 from arc_guard_core.protocols.middleware import Middleware
 from arc_guard_core.protocols.policy_router import PolicyRouter
 from arc_guard_core.protocols.rehydration_verifier import (
@@ -36,4 +41,7 @@ __all__ = [
     "RehydrationVerifier",
     "RehydrationVerdict",
     "RehydrationDecision",
+    "JailbreakDetector",
+    "ConversationTurnInspector",
+    "EvaluationHarness",
 ]

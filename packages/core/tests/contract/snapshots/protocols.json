@@ -62,6 +62,36 @@
   {
     "has_concurrency_line": true,
     "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "inspect_turn",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "text"
+          },
+          {
+            "annotation": "ConversationState | None",
+            "default": "<empty>",
+            "kind": "KEYWORD_ONLY",
+            "name": "prior_state"
+          }
+        ],
+        "return": "tuple[DeceptionScore, ConversationState]"
+      }
+    ],
+    "module": "arc_guard_core.protocols.conversation_turn_inspector",
+    "name": "ConversationTurnInspector",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
     "has_thread_safety_line": true,
     "kind": "protocol",
     "methods": [
@@ -74,6 +104,42 @@
     ],
     "module": "arc_guard_core.protocols.entity_provider",
     "name": "EntityProvider",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "evaluate",
+        "params": [
+          {
+            "annotation": "Iterable[CorpusEntry]",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "corpus"
+          },
+          {
+            "annotation": "tuple[Configuration, ...]",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "configurations"
+          },
+          {
+            "annotation": "int",
+            "default": "0",
+            "kind": "KEYWORD_ONLY",
+            "name": "seed"
+          }
+        ],
+        "return": "EvaluationReport"
+      }
+    ],
+    "module": "arc_guard_core.protocols.evaluation_harness",
+    "name": "EvaluationHarness",
     "stability": "stable"
   },
   {
@@ -258,6 +324,36 @@
     ],
     "module": "arc_guard_core.protocols.intent_encoder",
     "name": "IntentEncoder",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "detect",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "text"
+          },
+          {
+            "annotation": "ConversationState | None",
+            "default": "None",
+            "kind": "KEYWORD_ONLY",
+            "name": "conversation_state"
+          }
+        ],
+        "return": "tuple[JailbreakSignal, ...]"
+      }
+    ],
+    "module": "arc_guard_core.protocols.jailbreak_detector",
+    "name": "JailbreakDetector",
     "stability": "stable"
   },
   {

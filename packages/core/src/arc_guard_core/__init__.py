@@ -20,12 +20,16 @@ from arc_guard_core.exceptions import (
     ConfigCrossFieldError,
     ConfigError,
     ConfigSchemaError,
+    ConversationTurnInspectorError,
+    CorpusValidationError,
     EntityProviderError,
+    EvaluationHarnessError,
     FailureMode,
     FidelityScorerError,
     FlagProviderError,
     InspectorError,
     IntentEncoderError,
+    JailbreakDetectorError,
     PipelineContractValidationError,
     PipelineError,
     PolicyRouterError,
@@ -40,11 +44,15 @@ from arc_guard_core.failure_modes import (
     FAILURE_ADAPTER_VALIDATION,
     FAILURE_API_VALIDATION,
     FAILURE_CONFIG,
+    FAILURE_CONVERSATION_TURN_INSPECTOR,
+    FAILURE_CORPUS_VALIDATION,
     FAILURE_ENTITY_PROVIDER,
+    FAILURE_EVALUATION_HARNESS,
     FAILURE_FIDELITY_SCORER,
     FAILURE_FLAG_PROVIDER,
     FAILURE_INSPECTOR,
     FAILURE_INTENT_ENCODER,
+    FAILURE_JAILBREAK_DETECTOR,
     FAILURE_PIPELINE_CONTRACT,
     FAILURE_POLICY_ROUTER,
     FAILURE_REFUSAL_ENVELOPE,
@@ -58,8 +66,24 @@ from arc_guard_core.failure_modes import (
     Severity,
     lookup_rule,
 )
+from arc_guard_core.deception import (
+    NOT_MEASURED as DECEPTION_NOT_MEASURED,
+)
+from arc_guard_core.deception import (
+    ConversationState,
+    DeceptionScore,
+)
+from arc_guard_core.evaluation import (
+    Configuration,
+    ConfigurationMetrics,
+    CorpusCategory,
+    CorpusEntry,
+    EvaluationReport,
+    ExpectedOutcome,
+)
 from arc_guard_core.fidelity import NOT_MEASURED, FidelityScore
 from arc_guard_core.intent_lock import IntentLock
+from arc_guard_core.jailbreak import JailbreakCategory, JailbreakSignal
 from arc_guard_core.observability import (
     Logger,
     MetricSink,
@@ -69,7 +93,9 @@ from arc_guard_core.observability import (
     Tracer,
 )
 from arc_guard_core.observability_config import (
+    DeceptionThresholds,
     FidelityThresholds,
+    JailbreakThresholds,
     LogLevelFloor,
     ObservabilityConfig,
 )
@@ -90,13 +116,16 @@ from arc_guard_core.policy import (
 )
 from arc_guard_core.protocols import (
     ActionStrategy,
+    ConversationTurnInspector,
     EntityProvider,
+    EvaluationHarness,
     FidelityScorer,
     FlagProvider,
     Guard,
     Inspector,
     IntentEncoder,
     IntentRepresentation,
+    JailbreakDetector,
     Middleware,
     PolicyRouter,
     RehydrationDecision,
@@ -118,6 +147,7 @@ from arc_guard_core.refusal.templates import (
 from arc_guard_core.registry import EntityRegistry, register_entity
 from arc_guard_core.stages import (
     STAGE_CLASSIFY,
+    STAGE_DECEPTION_INSPECT,
     STAGE_DECISION_EMIT,
     STAGE_DEFEND,
     STAGE_DESCRIPTORS,
@@ -142,7 +172,7 @@ from arc_guard_core.types import (
     RiskLevel,
 )
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     # version
@@ -200,6 +230,9 @@ __all__ = [
     "RehydrationVerifier",
     "RehydrationVerdict",
     "RehydrationDecision",
+    "JailbreakDetector",
+    "ConversationTurnInspector",
+    "EvaluationHarness",
     # observability hooks
     "Tracer",
     "Logger",
@@ -228,12 +261,32 @@ __all__ = [
     "IntentEncoderError",
     "FidelityScorerError",
     "RehydrationVerifierError",
+    "JailbreakDetectorError",
+    "ConversationTurnInspectorError",
+    "EvaluationHarnessError",
+    "CorpusValidationError",
     "FailureMode",
     # fidelity types
     "FidelityScore",
     "NOT_MEASURED",
     "FidelityThresholds",
     "IntentLock",
+    # jailbreak types
+    "JailbreakSignal",
+    "JailbreakCategory",
+    "JailbreakThresholds",
+    # deception types
+    "DeceptionScore",
+    "DECEPTION_NOT_MEASURED",
+    "ConversationState",
+    "DeceptionThresholds",
+    # evaluation types
+    "Configuration",
+    "ExpectedOutcome",
+    "CorpusCategory",
+    "CorpusEntry",
+    "ConfigurationMetrics",
+    "EvaluationReport",
     # observability config
     "ObservabilityConfig",
     "LogLevelFloor",
@@ -258,6 +311,10 @@ __all__ = [
     "FAILURE_INTENT_ENCODER",
     "FAILURE_FIDELITY_SCORER",
     "FAILURE_REHYDRATION_VERIFIER",
+    "FAILURE_JAILBREAK_DETECTOR",
+    "FAILURE_CONVERSATION_TURN_INSPECTOR",
+    "FAILURE_EVALUATION_HARNESS",
+    "FAILURE_CORPUS_VALIDATION",
     "FAILURE_UNKNOWN",
     # attribute redaction
     "AttributeRedactor",
@@ -266,6 +323,7 @@ __all__ = [
     "STAGE_VALIDATE",
     "STAGE_DEFEND",
     "STAGE_CLASSIFY",
+    "STAGE_DECEPTION_INSPECT",
     "STAGE_SANITIZE",
     "STAGE_ROUTE",
     "STAGE_EXECUTE",

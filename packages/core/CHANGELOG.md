@@ -2,6 +2,22 @@
 
 All notable changes to the `arc-guard-core` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.5.0] — 2026-05-02
+
+### Added
+- New pipeline stage constant `STAGE_DECEPTION_INSPECT` in `arc_guard_core.stages`. Appended additively to `STAGE_DESCRIPTORS`; runs after `STAGE_CLASSIFY` and before `STAGE_SANITIZE`.
+- New Protocol modules: `protocols/jailbreak_detector.py` (`JailbreakDetector` runtime-checkable Protocol), `protocols/conversation_turn_inspector.py` (`ConversationTurnInspector`), `protocols/evaluation_harness.py` (`EvaluationHarness`).
+- `arc_guard_core.jailbreak`: `JailbreakSignal` frozen dataclass with runtime regex validation on `evidence_reference` (`[A-Z][A-Z0-9_]*`) and `JailbreakCategory` Literal alias (5 categories).
+- `arc_guard_core.deception`: `DeceptionScore` frozen dataclass (INVERSE direction relative to `FidelityScore` — higher = more deception) with `measured(value)` / `not_measured()` factories and module-level `NOT_MEASURED` singleton; `ConversationState` per-conversation accumulator with `conversation_id`, `turn_count`, `role_play_markers`, `escalation_signals`, `state_version` fields.
+- `arc_guard_core.evaluation`: `Configuration` Literal (4 documented pipeline configurations), `ExpectedOutcome` Literal, `CorpusCategory` Literal, `CorpusEntry` frozen dataclass, `ConfigurationMetrics` with 12 metric columns (including `intelligibility_score`), `EvaluationReport` frozen dataclass.
+- `JailbreakThresholds` and `DeceptionThresholds` nested pydantic models on `ObservabilityConfig`. **INVERSE direction** relative to `FidelityThresholds`: ordered `refuse > clarify > warn` since higher = more risk.
+- Four new exception leaves with `__failure_mode__` discipline: `JailbreakDetectorError(AdapterError)` closed-conservative; `ConversationTurnInspectorError(AdapterError)` closed-conservative; `EvaluationHarnessError(PipelineError)` closed; `CorpusValidationError(ValidationError)` closed.
+- Four new `FAIL_RULE` entries + matching `FAILURE_*` string constants.
+- Two new `RefusalCode` members: `JAILBREAK_STRONG` (sibling of `JAILBREAK`, distinguishes strong-detector refusals from regex refusals in audit records) and `DECEPTION_DRIFT` (multi-turn deception refusals). Default refusal templates registered for both.
+- `GuardResult` gains additive fields: `deception_score: DeceptionScore | None = None` and `conversation_state: ConversationState | None = None` (the **updated** state returned by the inspector; operators thread it forward to the next turn).
+- `GuardContext` gains additive field `conversation_state: ConversationState | None = None` (the **prior** state the operator threads in).
+- `DecisionRecord` gains additive fields `jailbreak_signals: tuple[JailbreakSignal, ...] = ()` and `deception_score: DeceptionScore | None = None`.
+
 ## [0.4.0] — 2026-05-02
 
 ### Added

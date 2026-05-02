@@ -276,6 +276,71 @@ class RehydrationVerifierError(PipelineError):
     })
 
 
+# ---------------------------------------------------------------------------
+# Jailbreak / deception / evaluation leaves
+# ---------------------------------------------------------------------------
+
+
+class JailbreakDetectorError(AdapterError):
+    """Detector failure — wraps model load, timeout, inference errors.
+
+    Posture ``closed-conservative``: the pipeline produces no signal
+    rather than a false-positive refusal; the failure is recorded as
+    ``failure_class='jailbreak_detector'`` in observability.
+    """
+
+    __failure_mode__: ClassVar[FailureMode] = "closed-conservative"
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
+        "jailbreak_detector.timeout",
+        "jailbreak_detector.model_load_failed",
+        "jailbreak_detector.inference_failed",
+    })
+
+
+class ConversationTurnInspectorError(AdapterError):
+    """Inspector failure — wraps state-validation and inference errors.
+
+    Posture ``closed-conservative``: the pipeline emits
+    ``DeceptionScore.NOT_MEASURED`` and the threshold ladder is a no-op.
+    """
+
+    __failure_mode__: ClassVar[FailureMode] = "closed-conservative"
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
+        "conversation_turn_inspector.state_invalid",
+        "conversation_turn_inspector.inference_failed",
+    })
+
+
+class EvaluationHarnessError(PipelineError):
+    """Harness failure — the report cannot be trusted.
+
+    Posture ``closed``: the CLI exits non-zero and writes a
+    partial-report trail for debugging.
+    """
+
+    __failure_mode__: ClassVar[FailureMode] = "closed"
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
+        "evaluation_harness.configuration_invalid",
+        "evaluation_harness.corpus_unreadable",
+        "evaluation_harness.metric_compute_failed",
+    })
+
+
+class CorpusValidationError(ValidationError):
+    """Corpus loader failure — malformed corpus must fail loud.
+
+    Posture ``closed``: raised at load time before the harness sees
+    the data.
+    """
+
+    __failure_mode__: ClassVar[FailureMode] = "closed"
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
+        "corpus.entry_invalid",
+        "corpus.schema_mismatch",
+        "corpus.empty",
+    })
+
+
 __all__ = [
     "ArcGuardError",
     "ConfigError",
@@ -298,5 +363,9 @@ __all__ = [
     "IntentEncoderError",
     "FidelityScorerError",
     "RehydrationVerifierError",
+    "JailbreakDetectorError",
+    "ConversationTurnInspectorError",
+    "EvaluationHarnessError",
+    "CorpusValidationError",
     "FailureMode",
 ]

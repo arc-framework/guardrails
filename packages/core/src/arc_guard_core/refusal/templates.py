@@ -30,6 +30,28 @@ DEFAULT_REFUSAL_TEMPLATES: dict[RefusalCode, RefusalTemplate] = {
             "Rephrase without language that asks the assistant to ignore its rules.",
         ),
     ),
+    RefusalCode.JAILBREAK_STRONG: RefusalTemplate(
+        human_message=(
+            "This request was blocked because the extended jailbreak detector "
+            "identified one or more attack patterns (role-play coercion, "
+            "hypothetical framing, policy erosion, or override instructions)."
+        ),
+        next_steps=(
+            "Rephrase the question directly without role-play or hypothetical framing.",
+            "Avoid instructions that ask the assistant to ignore its rules.",
+        ),
+    ),
+    RefusalCode.DECEPTION_DRIFT: RefusalTemplate(
+        human_message=(
+            "This request was blocked because the conversation showed a pattern "
+            "of escalating role-play, accumulating exception requests, or "
+            "references to forbidden actions discussed earlier."
+        ),
+        next_steps=(
+            "Start a fresh conversation and rephrase the original intent directly.",
+            "Avoid framing that references past role-play or 'we already agreed'.",
+        ),
+    ),
     RefusalCode.PII_CRITICAL: RefusalTemplate(
         human_message=(
             "This request contained sensitive personal information that cannot be processed."

@@ -30,6 +30,170 @@
     "stability": "stable"
   },
   {
+    "kind": "function",
+    "module": "typing",
+    "name": "Configuration",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "configuration",
+        "type": "Configuration"
+      },
+      {
+        "default": null,
+        "name": "jailbreak_precision",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "jailbreak_recall",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "deception_precision",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "deception_recall",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "sanitization_precision",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "sanitization_recall",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "fidelity_score_median",
+        "type": "float | None"
+      },
+      {
+        "default": null,
+        "name": "refusal_rate",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "clarification_rate",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "latency_p50_ms",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "latency_p99_ms",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "intelligibility_score",
+        "type": "float"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.evaluation",
+    "name": "ConfigurationMetrics",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "conversation_id",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "turn_count",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "role_play_markers",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "escalation_signals",
+        "type": "int"
+      },
+      {
+        "default": "1",
+        "name": "state_version",
+        "type": "int"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.deception",
+    "name": "ConversationState",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "typing",
+    "name": "CorpusCategory",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "category",
+        "type": "CorpusCategory"
+      },
+      {
+        "default": null,
+        "name": "prompt",
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "name": "turns",
+        "type": "tuple[str, ...] | None"
+      },
+      {
+        "default": null,
+        "name": "expected_outcomes",
+        "type": "Mapping[Configuration, ExpectedOutcome]"
+      },
+      {
+        "default": null,
+        "name": "notes",
+        "type": "str"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.evaluation",
+    "name": "CorpusEntry",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "DECEPTION_NOT_MEASURED",
+    "stability": "stable"
+  },
+  {
     "kind": "unknown",
     "name": "DEFAULT_PLACEHOLDERS",
     "stability": "stable"
@@ -37,6 +201,54 @@
   {
     "kind": "unknown",
     "name": "DEFAULT_REFUSAL_TEMPLATES",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "value",
+        "type": "float | None"
+      },
+      {
+        "default": null,
+        "name": "sentinel",
+        "type": "DeceptionSentinel"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.deception",
+    "name": "DeceptionScore",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "0.7",
+        "name": "refuse",
+        "required": false,
+        "type": "float"
+      },
+      {
+        "default": "0.5",
+        "name": "clarify",
+        "required": false,
+        "type": "float"
+      },
+      {
+        "default": "0.3",
+        "name": "warn",
+        "required": false,
+        "type": "float"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.observability_config",
+    "name": "DeceptionThresholds",
     "stability": "stable"
   },
   {
@@ -105,6 +317,16 @@
         "default": "None",
         "name": "fidelity_score",
         "type": "FidelityScore | None"
+      },
+      {
+        "default": "()",
+        "name": "jailbreak_signals",
+        "type": "tuple[JailbreakSignal, ...]"
+      },
+      {
+        "default": "None",
+        "name": "deception_score",
+        "type": "DeceptionScore | None"
       }
     ],
     "frozen": true,
@@ -176,6 +398,38 @@
     "stability": "stable"
   },
   {
+    "fields": [
+      {
+        "default": null,
+        "name": "seed",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "corpus_size",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "configurations",
+        "type": "tuple[ConfigurationMetrics, ...]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.evaluation",
+    "name": "EvaluationReport",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "typing",
+    "name": "ExpectedOutcome",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
     "kind": "unknown",
     "name": "FAILURE_ADAPTER_VALIDATION",
     "stability": "stable"
@@ -192,7 +446,22 @@
   },
   {
     "kind": "unknown",
+    "name": "FAILURE_CONVERSATION_TURN_INSPECTOR",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_CORPUS_VALIDATION",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
     "name": "FAILURE_ENTITY_PROVIDER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_EVALUATION_HARNESS",
     "stability": "stable"
   },
   {
@@ -213,6 +482,11 @@
   {
     "kind": "unknown",
     "name": "FAILURE_INTENT_ENCODER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_JAILBREAK_DETECTOR",
     "stability": "stable"
   },
   {
@@ -502,6 +776,11 @@
         "default": "<factory:dict>",
         "name": "metadata",
         "type": "dict[str, Any]"
+      },
+      {
+        "default": "None",
+        "name": "conversation_state",
+        "type": "ConversationState | None"
       }
     ],
     "frozen": true,
@@ -626,6 +905,16 @@
         "default": "False",
         "name": "fidelity_warning",
         "type": "bool"
+      },
+      {
+        "default": "None",
+        "name": "deception_score",
+        "type": "DeceptionScore | None"
+      },
+      {
+        "default": "None",
+        "name": "conversation_state",
+        "type": "ConversationState | None"
       }
     ],
     "frozen": true,
@@ -676,6 +965,71 @@
     "methods": [],
     "module": "typing",
     "name": "IntentRepresentation",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "typing",
+    "name": "JailbreakCategory",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "category",
+        "type": "JailbreakCategory"
+      },
+      {
+        "default": null,
+        "name": "confidence",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "evidence_reference",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "detector_id",
+        "type": "str"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.jailbreak",
+    "name": "JailbreakSignal",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "0.8",
+        "name": "refuse",
+        "required": false,
+        "type": "float"
+      },
+      {
+        "default": "0.6",
+        "name": "clarify",
+        "required": false,
+        "type": "float"
+      },
+      {
+        "default": "0.4",
+        "name": "warn",
+        "required": false,
+        "type": "float"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.observability_config",
+    "name": "JailbreakThresholds",
     "stability": "stable"
   },
   {
@@ -781,6 +1135,18 @@
         "name": "fidelity_thresholds",
         "required": false,
         "type": "FidelityThresholds"
+      },
+      {
+        "default": "<factory>",
+        "name": "jailbreak_thresholds",
+        "required": false,
+        "type": "JailbreakThresholds"
+      },
+      {
+        "default": "<factory>",
+        "name": "deception_thresholds",
+        "required": false,
+        "type": "DeceptionThresholds"
       }
     ],
     "frozen": true,
@@ -963,6 +1329,14 @@
       {
         "name": "JAILBREAK",
         "value": "jailbreak"
+      },
+      {
+        "name": "JAILBREAK_STRONG",
+        "value": "jailbreak_strong"
+      },
+      {
+        "name": "DECEPTION_DRIFT",
+        "value": "deception_drift"
       },
       {
         "name": "PII_CRITICAL",
@@ -1250,6 +1624,11 @@
   {
     "kind": "unknown",
     "name": "STAGE_CLASSIFY",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_DECEPTION_INSPECT",
     "stability": "stable"
   },
   {

@@ -78,6 +78,31 @@
     ]
   },
   {
+    "failure_mode": "closed-conservative",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "ConversationTurnInspectorError",
+    "parent": "AdapterError",
+    "stability": "stable",
+    "valid_codes": [
+      "conversation_turn_inspector.inference_failed",
+      "conversation_turn_inspector.state_invalid"
+    ]
+  },
+  {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "CorpusValidationError",
+    "parent": "ValidationError",
+    "stability": "stable",
+    "valid_codes": [
+      "corpus.empty",
+      "corpus.entry_invalid",
+      "corpus.schema_mismatch"
+    ]
+  },
+  {
     "failure_mode": "closed",
     "kind": "exception",
     "module": "arc_guard_core.exceptions",
@@ -87,6 +112,19 @@
     "valid_codes": [
       "entity.duplicate_name",
       "entity.load_failed"
+    ]
+  },
+  {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "EvaluationHarnessError",
+    "parent": "PipelineError",
+    "stability": "stable",
+    "valid_codes": [
+      "evaluation_harness.configuration_invalid",
+      "evaluation_harness.corpus_unreadable",
+      "evaluation_harness.metric_compute_failed"
     ]
   },
   {
@@ -137,6 +175,19 @@
       "intent_encoder.inference_failed",
       "intent_encoder.model_load_failed",
       "intent_encoder.timeout"
+    ]
+  },
+  {
+    "failure_mode": "closed-conservative",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "JailbreakDetectorError",
+    "parent": "AdapterError",
+    "stability": "stable",
+    "valid_codes": [
+      "jailbreak_detector.inference_failed",
+      "jailbreak_detector.model_load_failed",
+      "jailbreak_detector.timeout"
     ]
   },
   {
