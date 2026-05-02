@@ -29,6 +29,12 @@ from arc_guard.observability.recording import (
     RecordingTracer,
 )
 from arc_guard.observability.stage_runner import stage_runner
+from arc_guard.observability.validation import (
+    REQUEST_REJECTED_COUNTER,
+    REQUEST_REJECTED_EVENT,
+    emit_request_rejected,
+    validate_request_with_observability,
+)
 
 __all__ = [
     "CapturedSpan",
@@ -45,4 +51,8 @@ __all__ = [
     "REASON_CONTAINS_INPUT_SUBSTRING",
     "LeakReport",
     "scan_for_leaks",
+    "REQUEST_REJECTED_EVENT",
+    "REQUEST_REJECTED_COUNTER",
+    "emit_request_rejected",
+    "validate_request_with_observability",
 ]

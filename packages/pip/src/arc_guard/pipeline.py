@@ -17,6 +17,7 @@ Fail-open guarantees:
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import logging
 import time
 import uuid
@@ -49,6 +50,7 @@ from arc_guard_core.stages import (
 )
 from arc_guard_core.types import GuardInput, GuardResult, RefusalEnvelope
 
+from arc_guard.concurrency.offload import run_off_loop
 from arc_guard.config_env import GuardConfig
 from arc_guard.decision.emitter import DecisionEmitter
 from arc_guard.flags.env_provider import EnvFlagProvider
@@ -67,6 +69,14 @@ from arc_guard.strategies.hash import HashStrategy
 from arc_guard.strategies.redact import RedactStrategy
 
 logger = logging.getLogger("arc_guard")
+
+# Tracks the active run's correlation_id so a recursive ``pre_process``
+# call inside a strategy automatically sees the outer run's id as its
+# parent. ``ContextVar`` is asyncio-aware and copy-on-fork, so each
+# task gets its own value without explicit threading.
+_ACTIVE_CORRELATION_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "arc_guard_active_correlation_id", default=None,
+)
 
 _STRATEGIES: dict[str, ActionStrategy] = {
     "redact": RedactStrategy(),
@@ -242,6 +252,14 @@ class GuardPipeline:
             )
 
         correlation_id, decision_id = self._run_ids(guard_input)
+        # Recursive-run detection: if the active context already has a
+        # correlation_id (set by an enclosing pipeline run on the same
+        # asyncio task), record it as the parent so emissions can be
+        # linked across the nested runs. The current run sets its own
+        # id as the active id, scoped via ContextVar.set / .reset so
+        # the parent's id is restored on return.
+        parent_correlation_id = _ACTIVE_CORRELATION_ID.get()
+        active_token = _ACTIVE_CORRELATION_ID.set(correlation_id)
         # Per-run redactor: scoped to this run's input text so the
         # substring-rejection branch can scan against the actual originals.
         # Constructed fresh per run so concurrent runs do not share the
@@ -263,12 +281,17 @@ class GuardPipeline:
             )
         run_total_started = time.monotonic_ns()
         run_logger = sampler.logger if sampler is not None else self._logger_hook
+        run_started_fields: dict[str, Any] = {
+            "correlation_id": correlation_id,
+            "decision_id": decision_id,
+            "input_size_bytes": len(guard_input.text.encode("utf-8")),
+        }
+        if parent_correlation_id is not None:
+            run_started_fields["parent_run_correlation_id"] = parent_correlation_id
         run_logger.event(
             "guard.run.started",
             level="info",
-            correlation_id=correlation_id,
-            decision_id=decision_id,
-            input_size_bytes=len(guard_input.text.encode("utf-8")),
+            **run_started_fields,
         )
 
         # --- Middleware before ---
@@ -372,13 +395,34 @@ class GuardPipeline:
                 # in stage_runner; continue the run unchanged.
             # STAGE_REFUSAL marker — fires only when the run produced a refusal
             # envelope. The construction itself happens inside the router; this
-            # marker makes the existence observable without re-doing work.
+            # marker makes the existence observable AND records the refusal's
+            # code, trigger, and policy as a structured event so observers can
+            # filter on the refusal class without correlating to the
+            # decision record.
             if result.refusal is not None:
                 with stage_runner(
                     STAGE_REFUSAL,
                     **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
                 ):
-                    pass
+                    refusal_logger = (
+                        sampler.logger if sampler is not None else self._logger_hook
+                    )
+                    refusal_logger.event(
+                        "guard.refusal.constructed",
+                        level="info",
+                        correlation_id=correlation_id,
+                        decision_id=decision_id,
+                        refusal_code=str(result.refusal.code),
+                        refusal_trigger=result.refusal.trigger,
+                        refusal_policy=result.refusal.policy,
+                    )
+                    self._metrics_hook.counter(
+                        "arc_guardrails.refusal.emitted",
+                        attributes={
+                            "stage": "refusal",
+                            "refusal_code": str(result.refusal.code),
+                        },
+                    )
             # Only emit decision record when the policy router actually ran.
             # On closed-posture short-circuit, ``outcome`` is None.
             if outcome is not None:
@@ -396,13 +440,25 @@ class GuardPipeline:
         elif result.findings:
             # Legacy single-strategy chain: pick one strategy from flags
             # (default ``redact``) and apply it across all findings.
+            # ``ActionStrategy.apply`` is sync per Protocol; route it
+            # through ``run_off_loop`` so a strategy that does blocking
+            # work (regex over a large blob, model inference) does not
+            # stall the asyncio event loop. The offload helper bumps
+            # the offload counter so operators can dashboard how often
+            # the path fires.
             try:
                 with stage_runner(
                     STAGE_EXECUTE,
                     **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
                 ):
                     strategy = self._resolve_strategy()
-                    new_text, decisions = strategy.apply(result.text, result.findings)
+                    new_text, decisions = await run_off_loop(
+                        strategy.apply,
+                        result.text,
+                        result.findings,
+                        stage=STAGE_EXECUTE,
+                        metric_sink=self._metrics_hook,
+                    )
                     action = getattr(strategy, "name", "redact")
                     result = GuardResult(
                         text=new_text,
@@ -487,6 +543,11 @@ class GuardPipeline:
                 refusal_present=result.refusal is not None,
                 correlation_id=correlation_id,
             )
+
+        # Restore the parent run's correlation_id (or None) so a
+        # subsequent same-task run does not see this run's id as its
+        # parent.
+        _ACTIVE_CORRELATION_ID.reset(active_token)
 
         return result
 
