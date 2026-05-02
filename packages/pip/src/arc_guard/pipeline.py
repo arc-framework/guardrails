@@ -18,9 +18,18 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
+import uuid
 from typing import Any
 
-from arc_guard_core.observability import Logger, MetricSink, NullLogger, NullMetricSink
+from arc_guard_core.observability import (
+    Logger,
+    MetricSink,
+    NullLogger,
+    NullMetricSink,
+    NullTracer,
+    Tracer,
+)
 from arc_guard_core.policy import PolicyRuleSet
 from arc_guard_core.protocols.flag_provider import FlagProvider
 from arc_guard_core.protocols.inspector import Inspector
@@ -28,6 +37,14 @@ from arc_guard_core.protocols.middleware import Middleware
 from arc_guard_core.protocols.policy_router import PolicyRouter
 from arc_guard_core.protocols.reporter import Reporter
 from arc_guard_core.protocols.strategy import ActionStrategy
+from arc_guard_core.stages import (
+    STAGE_CLASSIFY,
+    STAGE_DECISION_EMIT,
+    STAGE_EXECUTE,
+    STAGE_REFUSAL,
+    STAGE_REPORT,
+    STAGE_ROUTE,
+)
 from arc_guard_core.types import GuardInput, GuardResult
 
 from arc_guard.config_env import GuardConfig
@@ -36,6 +53,8 @@ from arc_guard.flags.env_provider import EnvFlagProvider
 from arc_guard.flags.static_provider import StaticFlagProvider
 from arc_guard.inspectors.injection import InjectionInspector
 from arc_guard.inspectors.presidio import PresidioInspector
+from arc_guard.observability.attributes import BoundedRedactor
+from arc_guard.observability.stage_runner import stage_runner
 from arc_guard.policy import validate_strategies_registered
 from arc_guard.policy.router import RuleBasedPolicyRouter
 from arc_guard.reporters.null_reporter import NullReporter
@@ -80,6 +99,7 @@ class GuardPipeline:
         policy_router: PolicyRouter | None = None,
         logger_hook: Logger | None = None,
         metrics_hook: MetricSink | None = None,
+        tracer_hook: Tracer | None = None,
     ) -> None:
         self._config = config or GuardConfig()
         self._flags = flags or EnvFlagProvider()
@@ -91,6 +111,7 @@ class GuardPipeline:
         self._policy_router: PolicyRouter | None = policy_router
         self._logger_hook: Logger = logger_hook or NullLogger()
         self._metrics_hook: MetricSink = metrics_hook or NullMetricSink()
+        self._tracer_hook: Tracer = tracer_hook or NullTracer()
         self._decision_emitter = DecisionEmitter()
         self._last_decision: Any = None  # tests / dev tooling read this
         # Validate at construction so unknown strategies fail eagerly.
@@ -146,6 +167,30 @@ class GuardPipeline:
             phase=result.phase,
         )
 
+    def _run_ids(self, guard_input: GuardInput) -> tuple[str, str]:
+        """Resolve correlation_id (from context, or fresh) and a fresh decision_id."""
+        ctx_corr: str | None = None
+        if guard_input.context is not None:
+            ctx_corr = getattr(guard_input.context, "correlation_id", None)
+        correlation_id = ctx_corr or uuid.uuid4().hex
+        decision_id = uuid.uuid4().hex
+        return correlation_id, decision_id
+
+    def _stage_kwargs(
+        self,
+        correlation_id: str,
+        decision_id: str,
+        redactor: BoundedRedactor | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "correlation_id": correlation_id,
+            "decision_id": decision_id,
+            "tracer": self._tracer_hook,
+            "logger": self._logger_hook,
+            "metric_sink": self._metrics_hook,
+            "redactor": redactor,
+        }
+
     async def _run_pipeline(
         self, guard_input: GuardInput, phase: str
     ) -> GuardResult:
@@ -160,6 +205,24 @@ class GuardPipeline:
                 bypass_reason="disabled",
                 phase=phase,
             )
+
+        correlation_id, decision_id = self._run_ids(guard_input)
+        # Per-run redactor: scoped to this run's input text so the
+        # substring-rejection branch can scan against the actual originals.
+        # Constructed fresh per run so concurrent runs do not share the
+        # ``_run_originals`` field on the shared pipeline's redactor.
+        observability_config = getattr(self._config, "observability", None)
+        redactor = BoundedRedactor(observability_config) if observability_config else None
+        if redactor is not None:
+            redactor.set_run_originals((guard_input.text,))
+        run_total_started = time.monotonic_ns()
+        self._logger_hook.event(
+            "guard.run.started",
+            level="info",
+            correlation_id=correlation_id,
+            decision_id=decision_id,
+            input_size_bytes=len(guard_input.text.encode("utf-8")),
+        )
 
         # --- Middleware before ---
         effective_input = guard_input
@@ -179,20 +242,23 @@ class GuardPipeline:
             phase=phase,
         )
 
-        # --- Inspector chain ---
+        # --- Inspector chain (STAGE_CLASSIFY) ---
         inspectors = self._explicit_inspectors or self._build_inspector_chain()
         had_error = False
 
-        for inspector in inspectors:
-            try:
-                result = await inspector.inspect(result)
-            except Exception as exc:
-                logger.warning(
-                    "Inspector %s raised: %s — fail-open, continuing",
-                    type(inspector).__name__,
-                    exc,
-                )
-                had_error = True
+        with stage_runner(
+            STAGE_CLASSIFY, **self._stage_kwargs(correlation_id, decision_id, redactor)
+        ):
+            for inspector in inspectors:
+                try:
+                    result = await inspector.inspect(result)
+                except Exception as exc:
+                    logger.warning(
+                        "Inspector %s raised: %s — fail-open, continuing",
+                        type(inspector).__name__,
+                        exc,
+                    )
+                    had_error = True
 
         if had_error and result.bypass_reason is None:
             result = GuardResult(
@@ -203,39 +269,58 @@ class GuardPipeline:
                 phase=result.phase,
             )
 
-        # --- ActionStrategy / PolicyRouter ---
+        # --- ActionStrategy / PolicyRouter (STAGE_ROUTE + STAGE_EXECUTE + STAGE_DECISION_EMIT) ---
+        outcome_band: str = "LOW"
         if self._policy_ruleset is not None:
             # Opt-in policy routing: per-finding decisions, aggregated band,
             # decision-record emission.
-            import time
-
             router = self._policy_router or RuleBasedPolicyRouter()
-            t0 = time.perf_counter()
-            outcome = router.route(result, self._policy_ruleset)
-            latency_ms = (time.perf_counter() - t0) * 1000.0
-            result = self._apply_outcome(result, outcome)
-            record = self._decision_emitter.build(result, outcome, latency_ms)
-            self._last_decision = record
-            self._decision_emitter.emit(
-                record,
-                logger=self._logger_hook,
-                metrics=self._metrics_hook,
-            )
+            with stage_runner(
+                STAGE_ROUTE, **self._stage_kwargs(correlation_id, decision_id, redactor)
+            ):
+                t0 = time.perf_counter()
+                outcome = router.route(result, self._policy_ruleset)
+                latency_ms = (time.perf_counter() - t0) * 1000.0
+                result = self._apply_outcome(result, outcome)
+                band_obj = getattr(outcome, "aggregate_band", None)
+                outcome_band = (
+                    band_obj.value if hasattr(band_obj, "value") else str(band_obj or "LOW")
+                )
+            # STAGE_REFUSAL marker — fires only when the run produced a refusal
+            # envelope. The construction itself happens inside the router; this
+            # marker makes the existence observable without re-doing work.
+            if result.refusal is not None:
+                with stage_runner(
+                    STAGE_REFUSAL, **self._stage_kwargs(correlation_id, decision_id, redactor)
+                ):
+                    pass
+            with stage_runner(
+                STAGE_DECISION_EMIT, **self._stage_kwargs(correlation_id, decision_id, redactor)
+            ):
+                record = self._decision_emitter.build(result, outcome, latency_ms)
+                self._last_decision = record
+                self._decision_emitter.emit(
+                    record,
+                    logger=self._logger_hook,
+                    metrics=self._metrics_hook,
+                )
         elif result.findings:
             # Legacy single-strategy chain: pick one strategy from flags
             # (default ``redact``) and apply it across all findings.
-            strategy = self._resolve_strategy()
-            new_text, decisions = strategy.apply(result.text, result.findings)
-            # Strategy `.name` attribute drives the aggregate action label.
-            action = getattr(strategy, "name", "redact")
-            result = GuardResult(
-                text=new_text,
-                action=action,
-                findings=result.findings,
-                decisions=tuple(decisions),
-                bypass_reason=result.bypass_reason,
-                phase=result.phase,
-            )
+            with stage_runner(
+                STAGE_EXECUTE, **self._stage_kwargs(correlation_id, decision_id, redactor)
+            ):
+                strategy = self._resolve_strategy()
+                new_text, decisions = strategy.apply(result.text, result.findings)
+                action = getattr(strategy, "name", "redact")
+                result = GuardResult(
+                    text=new_text,
+                    action=action,
+                    findings=result.findings,
+                    decisions=tuple(decisions),
+                    bypass_reason=result.bypass_reason,
+                    phase=result.phase,
+                )
 
         # --- Middleware after ---
         for mw in self._middlewares:
@@ -244,14 +329,59 @@ class GuardPipeline:
             except Exception as exc:
                 logger.warning("Middleware.after() raised: %s — using pre-after result", exc)
 
-        # --- Reporter (fire-and-forget) ---
-        asyncio.ensure_future(self._fire_report(result))
+        # --- Reporter (fire-and-forget, STAGE_REPORT) ---
+        asyncio.ensure_future(
+            self._fire_report(
+                result,
+                correlation_id=correlation_id,
+                decision_id=decision_id,
+                redactor=redactor,
+            )
+        )
+
+        # --- Run-level completion event + total latency histogram ---
+        total_ms = (time.monotonic_ns() - run_total_started) / 1_000_000
+        risk_band = outcome_band
+        self._logger_hook.event(
+            "guard.run.completed",
+            level="info",
+            correlation_id=correlation_id,
+            decision_id=decision_id,
+            action=result.action,
+            risk_band=risk_band,
+            total_duration_ms=total_ms,
+        )
+        self._metrics_hook.histogram(
+            "arc_guardrails.run.duration",
+            total_ms,
+            attributes={"correlation_id": correlation_id, "stage": "run"},
+        )
+        self._metrics_hook.counter(
+            "arc_guardrails.run.action",
+            1,
+            attributes={
+                "correlation_id": correlation_id,
+                "stage": "run",
+                "action": result.action,
+                "risk_band": risk_band,
+            },
+        )
 
         return result
 
-    async def _fire_report(self, result: GuardResult) -> None:
+    async def _fire_report(
+        self,
+        result: GuardResult,
+        *,
+        correlation_id: str = "",
+        decision_id: str = "",
+        redactor: BoundedRedactor | None = None,
+    ) -> None:
         try:
-            await self._reporter.report(result)
+            with stage_runner(
+                STAGE_REPORT, **self._stage_kwargs(correlation_id, decision_id, redactor)
+            ):
+                await self._reporter.report(result)
         except Exception as exc:
             logger.warning("Reporter.report() raised: %s", exc)
 

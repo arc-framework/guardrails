@@ -2,6 +2,21 @@
 
 All notable changes to the `arc-guard-core` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.3.0] — 2026-05-02
+
+### Added
+- `arc_guard_core.stages` module: `STAGE_VALIDATE`, `STAGE_CLASSIFY`, `STAGE_SANITIZE`, `STAGE_ROUTE`, `STAGE_EXECUTE`, `STAGE_REFUSAL`, `STAGE_DECISION_EMIT`, `STAGE_REPORT`, plus `STAGE_DESCRIPTORS` allow-list.
+- `arc_guard_core.failure_modes` module: `FailureRule` NamedTuple, `FAIL_RULE` table covering all 12 leaf exceptions, `lookup_rule(exc_type)` helper that walks MRO and reads posture from foundation `__failure_mode__` ClassVar.
+- `arc_guard_core.observability_config.ObservabilityConfig` frozen pydantic model: `sampling_rate`, `refusal_always_emits`, `log_level_floor`, `metric_attribute_allow_list`, `max_attribute_bytes`.
+- `arc_guard_core.protocols.attribute_redactor.AttributeRedactor` Protocol with `RedactionResult` frozen dataclass.
+- `RefusalCode` enum extended with six new members: `API_INVALID_REQUEST`, `INTERNAL_PIPELINE_ERROR`, `INTERNAL_ADAPTER_ERROR`, `INTERNAL_REFUSAL_BUILD_ERROR`, `INTERNAL_ENTITY_PROVIDER_ERROR`, `INTERNAL_UNKNOWN_ERROR`. Default refusal templates registered for each.
+
+### Changed
+- `GuardConfig` gains `observability: ObservabilityConfig` field with safe defaults (full sampling, full verbosity, conservative attribute allow-list). Additive — existing constructors continue to work.
+
+### Migration notes
+- Additive only. No breaking changes; no migration required.
+
 ## [0.2.0] — 2026-05-01
 
 ### Added

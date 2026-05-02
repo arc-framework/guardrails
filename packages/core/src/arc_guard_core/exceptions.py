@@ -7,6 +7,30 @@ these invariants.
 
 See ``specs/002-rewrite-foundation/contracts/exceptions.university`` for the canonical
 table of stages and their failure modes.
+
+Per-leaf observability metadata (failure_class label, severity, refusal_code)
+lives in ``arc_guard_core.failure_modes.FAIL_RULE``. The runtime helper
+``failure_modes.lookup_rule(exc_type)`` walks the MRO and reads ``posture``
+from each class's ``__failure_mode__`` ClassVar so the foundation
+declaration remains the single source of truth. The mapping (read the
+``FAIL_RULE`` table for the authoritative version):
+
+- ``ApiBoundaryValidationError`` → api_validation / warn / API_INVALID_REQUEST
+- ``PipelineContractValidationError`` → pipeline_contract / error /
+  INTERNAL_PIPELINE_ERROR
+- ``AdapterBoundaryValidationError`` → adapter_validation / error /
+  INTERNAL_ADAPTER_ERROR
+- ``ConfigSchemaError`` → config / critical / N/A (construction-time)
+- ``ConfigCrossFieldError`` → config / critical / N/A (construction-time)
+- ``InspectorError`` → inspector / warn / N/A (fail-open)
+- ``StrategyError`` → strategy / error / STRATEGY_FAILED
+- ``PolicyRouterError`` → policy_router / error / POLICY_BLOCK
+- ``RefusalEnvelopeError`` → refusal_envelope / critical /
+  INTERNAL_REFUSAL_BUILD_ERROR
+- ``ReporterError`` → reporter / warn / N/A (fail-open)
+- ``FlagProviderError`` → flag_provider / warn / N/A (closed-conservative)
+- ``EntityProviderError`` → entity_provider / error /
+  INTERNAL_ENTITY_PROVIDER_ERROR
 """
 
 from __future__ import annotations

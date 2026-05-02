@@ -162,10 +162,85 @@
     "stability": "stable"
   },
   {
+    "kind": "unknown",
+    "name": "FAILURE_ADAPTER_VALIDATION",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_API_VALIDATION",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_CONFIG",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_ENTITY_PROVIDER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_FLAG_PROVIDER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_INSPECTOR",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_PIPELINE_CONTRACT",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_POLICY_ROUTER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_REFUSAL_ENVELOPE",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_REPORTER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_STRATEGY",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_UNKNOWN",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAIL_RULE",
+    "stability": "stable"
+  },
+  {
     "alias": "typing.Literal['open', 'closed', 'closed-conservative']",
     "kind": "type_alias",
     "module": "arc_guard_core.exceptions",
     "name": "FailureMode",
+    "stability": "stable"
+  },
+  {
+    "bases": [
+      "tuple"
+    ],
+    "kind": "class",
+    "methods": [],
+    "module": "arc_guard_core.failure_modes",
+    "name": "FailureRule",
     "stability": "stable"
   },
   {
@@ -310,6 +385,12 @@
         "name": "policy",
         "required": false,
         "type": "arc_guard_core.policy.PolicyRuleSet | None"
+      },
+      {
+        "default": "<factory>",
+        "name": "observability",
+        "required": false,
+        "type": "ObservabilityConfig"
       }
     ],
     "frozen": true,
@@ -471,6 +552,13 @@
     "stability": "stable"
   },
   {
+    "kind": "function",
+    "module": "typing",
+    "name": "LogLevelFloor",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
     "bases": [
       "object"
     ],
@@ -522,6 +610,46 @@
     "module": "arc_guard_core.observability",
     "name": "NullTracer",
     "stability": "experimental"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "1.0",
+        "name": "sampling_rate",
+        "required": false,
+        "type": "float"
+      },
+      {
+        "default": "True",
+        "name": "refusal_always_emits",
+        "required": false,
+        "type": "bool"
+      },
+      {
+        "default": "'info'",
+        "name": "log_level_floor",
+        "required": false,
+        "type": "typing.Literal['debug', 'info', 'warn', 'error']"
+      },
+      {
+        "default": "frozenset({'action', 'correlation_id', 'decision_id', 'failure_class', 'risk_band', 'stage'})",
+        "name": "metric_attribute_allow_list",
+        "required": false,
+        "type": "frozenset[str]"
+      },
+      {
+        "default": "1024",
+        "name": "max_attribute_bytes",
+        "required": false,
+        "type": "int"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.observability_config",
+    "name": "ObservabilityConfig",
+    "stability": "stable"
   },
   {
     "fields": [
@@ -663,6 +791,31 @@
     "stability": "stable"
   },
   {
+    "fields": [
+      {
+        "default": null,
+        "name": "accepted",
+        "type": "bool"
+      },
+      {
+        "default": "None",
+        "name": "value",
+        "type": "Any | None"
+      },
+      {
+        "default": "None",
+        "name": "reason",
+        "type": "str | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.protocols.attribute_redactor",
+    "name": "RedactionResult",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
     "base": "StrEnum",
     "kind": "enum",
     "module": "arc_guard_core.refusal.codes",
@@ -688,6 +841,30 @@
       {
         "name": "FIDELITY_DROP_PLACEHOLDER",
         "value": "fidelity_drop_placeholder"
+      },
+      {
+        "name": "API_INVALID_REQUEST",
+        "value": "api_invalid_request"
+      },
+      {
+        "name": "INTERNAL_PIPELINE_ERROR",
+        "value": "internal_pipeline_error"
+      },
+      {
+        "name": "INTERNAL_ADAPTER_ERROR",
+        "value": "internal_adapter_error"
+      },
+      {
+        "name": "INTERNAL_REFUSAL_BUILD_ERROR",
+        "value": "internal_refusal_build_error"
+      },
+      {
+        "name": "INTERNAL_ENTITY_PROVIDER_ERROR",
+        "value": "internal_entity_provider_error"
+      },
+      {
+        "name": "INTERNAL_UNKNOWN_ERROR",
+        "value": "internal_unknown_error"
       }
     ]
   },
@@ -901,6 +1078,58 @@
     "stability": "stable"
   },
   {
+    "kind": "unknown",
+    "name": "STAGE_CLASSIFY",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_DECISION_EMIT",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_DESCRIPTORS",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_EXECUTE",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_REFUSAL",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_REPORT",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_ROUTE",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_SANITIZE",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_VALIDATE",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "typing",
+    "name": "Severity",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
     "fields": [
       {
         "default": null,
@@ -941,6 +1170,16 @@
     "stability": "stable"
   },
   {
+    "kind": "unknown",
+    "name": "UNKNOWN_POSTURE",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "UNKNOWN_RULE",
+    "stability": "stable"
+  },
+  {
     "kind": "function",
     "module": "arc_guard_core.placeholders",
     "name": "format_placeholder",
@@ -959,6 +1198,13 @@
     "module": "arc_guard_core.refusal.templates",
     "name": "get_refusal_template",
     "signature": "(code: 'RefusalCode') -> 'RefusalTemplate'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.failure_modes",
+    "name": "lookup_rule",
+    "signature": "(exc_type: 'type[BaseException]') -> 'tuple[FailureRule, FailureMode]'",
     "stability": "stable"
   },
   {

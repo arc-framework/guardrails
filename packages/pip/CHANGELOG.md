@@ -2,6 +2,26 @@
 
 All notable changes to the `arc-guard` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.4.0] — 2026-05-02
+
+### Added
+- New observability glue sub-package `arc_guard.observability/`:
+  - `stage_runner` — context-manager factory wrapping each pipeline stage with span / log / metric emissions, posture-aware failure-mode application, and post-decision sampling.
+  - `recording` — `RecordingTracer` / `RecordingLogger` / `RecordingMetricSink` with `CapturedSpan` / `CapturedEvent` / `CapturedMetric` dataclasses; thread-safe via internal lock; intentionally importable from production code so dependent specs can use them.
+  - `attributes` — `BoundedRedactor` default `AttributeRedactor` implementation enforcing FR-007 (no input substring), FR-010 (byte cap), FR-025 (allow-list).
+  - `leak_scanner` — pure-function `scan_for_leaks(captured, originals)` returning a list of `LeakReport` entries; substring search only, no regex / entropy.
+- New concurrency sub-package `arc_guard.concurrency/`:
+  - `offload` — `run_off_loop(callable_, ..., stage, metric_sink)` wrapping `asyncio.to_thread` with an `arc_guardrails.observability.offload` counter.
+- `RegistryFrozenError(ConfigCrossFieldError)` declared in `arc_guard_core.exceptions`; raised by both `EntityRegistry` and `StrategyRegistry` after `freeze()`. Inherits `config` rule via MRO.
+- Pipeline stages emit spans, structured events, and metrics via `stage_runner`. Default sinks remain null — opt-in by passing a configured `tracer` / `logger` / `metrics` to `GuardConfig`.
+
+### Changed
+- `StrategyRegistry` and `EntityRegistry` adopt frozen-after-construction discipline via the shared core helper `arc_guard_core._registry_lock.FrozenAfterConstructionRegistry`. Construction-time registration is unchanged; post-snapshot registration raises `RegistryFrozenError`.
+- The async pipeline path detects sync-only inspectors / strategies and routes them through `concurrency.offload.run_off_loop` so the event loop is not blocked.
+
+### Migration notes
+- Additive only on the public observability surface; `GuardConfig.observability` defaults preserve pre-Spec-004 behavior. Custom registry consumers that mutated registries at runtime will hit `RegistryFrozenError` and need to register before pipeline construction.
+
 ## [0.3.0] — 2026-05-01
 
 ### Added

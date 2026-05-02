@@ -49,6 +49,23 @@ def _type_repr(annotation: Any) -> str:
     return str(annotation)
 
 
+def _stable_repr(value: Any) -> str:
+    """Order-independent ``repr`` for set/frozenset/dict defaults.
+
+    Python's hash randomization makes ``repr(frozenset({...}))`` produce a
+    different element order on every interpreter start, which made
+    snapshot diffs flaky. Canonicalize by sorting collection contents.
+    """
+    if isinstance(value, (set, frozenset)):
+        prefix = type(value).__name__
+        items = sorted(repr(item) for item in value)
+        return f"{prefix}({{{', '.join(items)}}})"
+    if isinstance(value, dict):
+        items = sorted(f"{k!r}: {v!r}" for k, v in value.items())
+        return "{" + ", ".join(items) + "}"
+    return repr(value)
+
+
 def _is_protocol(obj: Any) -> bool:
     return inspect.isclass(obj) and getattr(obj, "_is_protocol", False)
 
@@ -145,7 +162,9 @@ def _pydantic_entry(name: str, obj: type[BaseModel]) -> dict[str, Any]:
                 "type": _type_repr(finfo.annotation),
                 "required": finfo.is_required(),
                 "default": (
-                    "<factory>" if finfo.default_factory is not None else repr(finfo.default)
+                    "<factory>"
+                    if finfo.default_factory is not None
+                    else _stable_repr(finfo.default)
                 )
                 if not finfo.is_required()
                 else None,

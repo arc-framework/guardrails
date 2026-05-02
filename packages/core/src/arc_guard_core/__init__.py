@@ -32,6 +32,26 @@ from arc_guard_core.exceptions import (
     StrategyError,
     ValidationError,
 )
+from arc_guard_core.failure_modes import (
+    FAIL_RULE,
+    FAILURE_ADAPTER_VALIDATION,
+    FAILURE_API_VALIDATION,
+    FAILURE_CONFIG,
+    FAILURE_ENTITY_PROVIDER,
+    FAILURE_FLAG_PROVIDER,
+    FAILURE_INSPECTOR,
+    FAILURE_PIPELINE_CONTRACT,
+    FAILURE_POLICY_ROUTER,
+    FAILURE_REFUSAL_ENVELOPE,
+    FAILURE_REPORTER,
+    FAILURE_STRATEGY,
+    FAILURE_UNKNOWN,
+    UNKNOWN_POSTURE,
+    UNKNOWN_RULE,
+    FailureRule,
+    Severity,
+    lookup_rule,
+)
 from arc_guard_core.observability import (
     Logger,
     MetricSink,
@@ -40,6 +60,7 @@ from arc_guard_core.observability import (
     NullTracer,
     Tracer,
 )
+from arc_guard_core.observability_config import LogLevelFloor, ObservabilityConfig
 from arc_guard_core.pipeline import GuardPipeline
 from arc_guard_core.placeholders import (
     DEFAULT_PLACEHOLDERS,
@@ -65,6 +86,10 @@ from arc_guard_core.protocols import (
     PolicyRouter,
     Reporter,
 )
+from arc_guard_core.protocols.attribute_redactor import (
+    AttributeRedactor,
+    RedactionResult,
+)
 from arc_guard_core.refusal.codes import RefusalCode
 from arc_guard_core.refusal.templates import (
     DEFAULT_REFUSAL_TEMPLATES,
@@ -73,6 +98,17 @@ from arc_guard_core.refusal.templates import (
     register_refusal_template,
 )
 from arc_guard_core.registry import EntityRegistry, register_entity
+from arc_guard_core.stages import (
+    STAGE_CLASSIFY,
+    STAGE_DECISION_EMIT,
+    STAGE_DESCRIPTORS,
+    STAGE_EXECUTE,
+    STAGE_REFUSAL,
+    STAGE_REPORT,
+    STAGE_ROUTE,
+    STAGE_SANITIZE,
+    STAGE_VALIDATE,
+)
 from arc_guard_core.types import (
     ClarificationRequest,
     EntityDefinition,
@@ -85,7 +121,7 @@ from arc_guard_core.types import (
     RiskLevel,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     # version
@@ -163,4 +199,39 @@ __all__ = [
     "EntityProviderError",
     "RefusalEnvelopeError",
     "FailureMode",
+    # observability config
+    "ObservabilityConfig",
+    "LogLevelFloor",
+    # failure-mode contract
+    "FailureRule",
+    "Severity",
+    "FAIL_RULE",
+    "UNKNOWN_RULE",
+    "UNKNOWN_POSTURE",
+    "lookup_rule",
+    "FAILURE_API_VALIDATION",
+    "FAILURE_PIPELINE_CONTRACT",
+    "FAILURE_ADAPTER_VALIDATION",
+    "FAILURE_CONFIG",
+    "FAILURE_INSPECTOR",
+    "FAILURE_STRATEGY",
+    "FAILURE_POLICY_ROUTER",
+    "FAILURE_REFUSAL_ENVELOPE",
+    "FAILURE_REPORTER",
+    "FAILURE_FLAG_PROVIDER",
+    "FAILURE_ENTITY_PROVIDER",
+    "FAILURE_UNKNOWN",
+    # attribute redaction
+    "AttributeRedactor",
+    "RedactionResult",
+    # stages
+    "STAGE_VALIDATE",
+    "STAGE_CLASSIFY",
+    "STAGE_SANITIZE",
+    "STAGE_ROUTE",
+    "STAGE_EXECUTE",
+    "STAGE_REFUSAL",
+    "STAGE_DECISION_EMIT",
+    "STAGE_REPORT",
+    "STAGE_DESCRIPTORS",
 ]

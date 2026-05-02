@@ -20,6 +20,7 @@ from arc_guard_core.observability import (
     NullTracer,
     Tracer,
 )
+from arc_guard_core.observability_config import ObservabilityConfig
 from arc_guard_core.policy import PolicyRuleSet
 
 
@@ -46,6 +47,7 @@ class GuardConfig(BaseModel):
     # Optional policy ruleset; None disables routing and the pipeline falls
     # back to the legacy single-strategy chain.
     policy: PolicyRuleSet | None = None
+    observability: ObservabilityConfig = Field(default_factory=ObservabilityConfig)
 
     @field_validator("inspector_order", mode="before")
     @classmethod

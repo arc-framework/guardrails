@@ -56,6 +56,59 @@ DEFAULT_REFUSAL_TEMPLATES: dict[RefusalCode, RefusalTemplate] = {
         human_message="(reserved for fidelity-drop refusals — detector not yet implemented)",
         next_steps=(),
     ),
+    RefusalCode.API_INVALID_REQUEST: RefusalTemplate(
+        human_message="The request payload was rejected at the API boundary.",
+        next_steps=(
+            "Re-check the request schema against the documented contract.",
+            "Verify all required fields are present and well-typed.",
+        ),
+    ),
+    RefusalCode.INTERNAL_PIPELINE_ERROR: RefusalTemplate(
+        human_message=(
+            "An internal pipeline-contract violation was detected; "
+            "the request was blocked as a safety measure."
+        ),
+        next_steps=(
+            "Retry the request.",
+            "Contact support if the issue persists; reference the correlation_id.",
+        ),
+    ),
+    RefusalCode.INTERNAL_ADAPTER_ERROR: RefusalTemplate(
+        human_message=(
+            "An adapter boundary validation failed; the request was blocked as a safety measure."
+        ),
+        next_steps=(
+            "Retry the request.",
+            "Contact support if the issue persists; reference the correlation_id.",
+        ),
+    ),
+    RefusalCode.INTERNAL_REFUSAL_BUILD_ERROR: RefusalTemplate(
+        human_message=(
+            "The refusal envelope could not be constructed; "
+            "the request was blocked as a safety measure."
+        ),
+        next_steps=(
+            "Contact support; reference the correlation_id.",
+        ),
+    ),
+    RefusalCode.INTERNAL_ENTITY_PROVIDER_ERROR: RefusalTemplate(
+        human_message=(
+            "An entity-provider operation failed; the request was blocked as a safety measure."
+        ),
+        next_steps=(
+            "Retry the request.",
+            "Contact support if the issue persists; reference the correlation_id.",
+        ),
+    ),
+    RefusalCode.INTERNAL_UNKNOWN_ERROR: RefusalTemplate(
+        human_message=(
+            "An unexpected internal error occurred; the request was blocked as a safety measure."
+        ),
+        next_steps=(
+            "Retry the request.",
+            "Contact support if the issue persists; reference the correlation_id.",
+        ),
+    ),
 }
 
 

@@ -32,6 +32,36 @@
   {
     "has_concurrency_line": true,
     "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "sanitize",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "key"
+          },
+          {
+            "annotation": "Any",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "value"
+          }
+        ],
+        "return": "RedactionResult"
+      }
+    ],
+    "module": "arc_guard_core.protocols.attribute_redactor",
+    "name": "AttributeRedactor",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
     "has_thread_safety_line": true,
     "kind": "protocol",
     "methods": [
