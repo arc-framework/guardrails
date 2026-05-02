@@ -17,6 +17,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
+from arc_guard_core.stages import STAGE_DESCRIPTORS
+
 from arc_guard.observability.recording import (
     CapturedArtifacts,
     CapturedEvent,
@@ -70,6 +72,14 @@ def _scan_value(
     if not isinstance(value, str):
         return []
     if not value:
+        return []
+    # The pipeline emits ``stage=<member of STAGE_DESCRIPTORS>`` on
+    # every span / event / metric. Stage names are short common English
+    # words ("verify", "execute", "report", ...) that legitimately appear
+    # in user prompts. Treat exact-match-to-a-known-stage as system-set,
+    # not user-derived; otherwise the scanner false-positives whenever
+    # an input prompt happens to contain a stage name.
+    if value in STAGE_DESCRIPTORS:
         return []
     reports: list[LeakReport] = []
     for original in originals:

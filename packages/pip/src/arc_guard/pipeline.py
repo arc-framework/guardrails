@@ -21,9 +21,12 @@ import contextvars
 import logging
 import time
 import uuid
-from typing import Any
+from typing import Any, Final
 
+from arc_guard_core.exceptions import ConfigCrossFieldError
 from arc_guard_core.failure_modes import lookup_rule
+from arc_guard_core.fidelity import NOT_MEASURED, FidelityScore
+from arc_guard_core.observability_config import FidelityThresholds
 from arc_guard_core.observability import (
     Logger,
     MetricSink,
@@ -33,30 +36,40 @@ from arc_guard_core.observability import (
     Tracer,
 )
 from arc_guard_core.policy import PolicyRuleSet
+from arc_guard_core.protocols.fidelity_scorer import FidelityScorer
 from arc_guard_core.protocols.flag_provider import FlagProvider
 from arc_guard_core.protocols.inspector import Inspector
+from arc_guard_core.protocols.intent_encoder import (
+    IntentEncoder,
+    IntentRepresentation,
+)
 from arc_guard_core.protocols.middleware import Middleware
 from arc_guard_core.protocols.policy_router import PolicyRouter
+from arc_guard_core.protocols.rehydration_verifier import RehydrationVerifier
 from arc_guard_core.protocols.reporter import Reporter
 from arc_guard_core.protocols.strategy import ActionStrategy
 from arc_guard_core.refusal.codes import RefusalCode
 from arc_guard_core.stages import (
     STAGE_CLASSIFY,
     STAGE_DECISION_EMIT,
+    STAGE_DEFEND,
     STAGE_EXECUTE,
     STAGE_REFUSAL,
     STAGE_REPORT,
     STAGE_ROUTE,
+    STAGE_VERIFY,
 )
 from arc_guard_core.types import GuardInput, GuardResult, RefusalEnvelope
 
 from arc_guard.concurrency.offload import run_off_loop
 from arc_guard.config_env import GuardConfig
 from arc_guard.decision.emitter import DecisionEmitter
+from arc_guard.fidelity.scorer import NullFidelityScorer, score_fidelity
 from arc_guard.flags.env_provider import EnvFlagProvider
 from arc_guard.flags.static_provider import StaticFlagProvider
 from arc_guard.inspectors.injection import InjectionInspector
 from arc_guard.inspectors.presidio import PresidioInspector
+from arc_guard.intent.capture import NullIntentEncoder, capture_intent
 from arc_guard.observability.attributes import BoundedRedactor
 from arc_guard.observability.sampling import RunSampler, build_run_sampler
 from arc_guard.observability.stage_runner import emit_stage_failed, stage_runner
@@ -83,6 +96,12 @@ _STRATEGIES: dict[str, ActionStrategy] = {
     "hash": HashStrategy(),
     "block": BlockStrategy(),
 }
+
+# Used when no ``ObservabilityConfig`` is wired through the pipeline's
+# config (e.g. the legacy single-strategy path that never got an
+# observability block). Equivalent to constructing
+# ``FidelityThresholds()`` per call but cheaper.
+_DEFAULT_FIDELITY_THRESHOLDS: Final[FidelityThresholds] = FidelityThresholds()
 
 
 class GuardPipeline:
@@ -114,6 +133,14 @@ class GuardPipeline:
         logger_hook: Logger | None = None,
         metrics_hook: MetricSink | None = None,
         tracer_hook: Tracer | None = None,
+        # Pluggable Protocol implementations (NOT observability sinks —
+        # bare names follow the policy_router / inspectors convention).
+        # Default to the null pair so the offline-capable rule holds:
+        # without any concrete extra installed, the pipeline runs and the
+        # fidelity score is the documented NOT_MEASURED sentinel.
+        intent_encoder: IntentEncoder | None = None,
+        fidelity_scorer: FidelityScorer | None = None,
+        rehydration_verifier: RehydrationVerifier | None = None,
     ) -> None:
         self._config = config or GuardConfig()
         self._flags = flags or EnvFlagProvider()
@@ -126,11 +153,26 @@ class GuardPipeline:
         self._logger_hook: Logger = logger_hook or NullLogger()
         self._metrics_hook: MetricSink = metrics_hook or NullMetricSink()
         self._tracer_hook: Tracer = tracer_hook or NullTracer()
+        self._intent_encoder: IntentEncoder = intent_encoder or NullIntentEncoder()
+        self._fidelity_scorer: FidelityScorer = fidelity_scorer or NullFidelityScorer()
+        self._rehydration_verifier: RehydrationVerifier | None = rehydration_verifier
         self._decision_emitter = DecisionEmitter()
         self._last_decision: Any = None  # tests / dev tooling read this
         # Validate at construction so unknown strategies fail eagerly.
         if self._policy_ruleset is not None:
             validate_strategies_registered(self._policy_ruleset)
+        # Eager pairing check: a misconfigured encoder/scorer pair would
+        # silently produce meaningless scores at runtime, so the
+        # construction call fails instead.
+        if not self._fidelity_scorer.compatible_with(self._intent_encoder):
+            raise ConfigCrossFieldError(
+                "intent_encoder is incompatible with fidelity_scorer",
+                code="config.cross_field_violation",
+                details={
+                    "encoder_id": self._intent_encoder.encoder_id,
+                    "scorer": type(self._fidelity_scorer).__name__,
+                },
+            )
 
     @classmethod
     def default(
@@ -303,6 +345,33 @@ class GuardPipeline:
                 logger.warning("Middleware.before() raised: %s — using original input", exc)
                 effective_input = guard_input
 
+        # --- Intent capture (STAGE_DEFEND) ---
+        # Runs before classify/sanitize so the encoder sees the original
+        # prompt text, not the masked version. The captured representation
+        # flows to the verify stage via a per-run local variable; it is
+        # never persisted on shared state so concurrent runs stay isolated.
+        captured_intent: IntentRepresentation | None = None
+        try:
+            with stage_runner(
+                STAGE_DEFEND,
+                **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
+            ):
+                defend_logger = sampler.logger if sampler is not None else self._logger_hook
+                captured_intent = await capture_intent(
+                    effective_input.text,
+                    encoder=self._intent_encoder,
+                    correlation_id=correlation_id,
+                    decision_id=decision_id,
+                    logger=defend_logger,
+                    metric_sink=self._metrics_hook,
+                )
+        except Exception as exc:
+            # IntentEncoderError is closed-conservative — degrade to the
+            # NOT_MEASURED sentinel and continue. Other exceptions also
+            # fall through here because the encoder is non-safety-critical.
+            logger.warning("Intent capture raised %s — degrading to sentinel", exc)
+            captured_intent = None
+
         # --- Build result accumulator ---
         result = GuardResult(
             text=effective_input.text,
@@ -423,20 +492,10 @@ class GuardPipeline:
                             "refusal_code": str(result.refusal.code),
                         },
                     )
-            # Only emit decision record when the policy router actually ran.
-            # On closed-posture short-circuit, ``outcome`` is None.
-            if outcome is not None:
-                with stage_runner(
-                    STAGE_DECISION_EMIT,
-                    **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
-                ):
-                    record = self._decision_emitter.build(result, outcome, latency_ms)
-                    self._last_decision = record
-                    self._decision_emitter.emit(
-                        record,
-                        logger=self._logger_hook,
-                        metrics=self._metrics_hook,
-                    )
+            # STAGE_DECISION_EMIT runs AFTER STAGE_VERIFY (below), so the
+            # built record carries the fidelity score. ``outcome`` and
+            # ``latency_ms`` flow through from this branch's locals to
+            # the post-verify decision-emit block.
         elif result.findings:
             # Legacy single-strategy chain: pick one strategy from flags
             # (default ``redact``) and apply it across all findings.
@@ -484,6 +543,76 @@ class GuardPipeline:
                         phase=result.phase,
                     )
                     outcome_band = "CRITICAL"
+
+        # --- Fidelity score (STAGE_VERIFY) ---
+        # Runs after the existing execute / refusal-construction flow
+        # but BEFORE STAGE_DECISION_EMIT so the score lands on the
+        # DecisionRecord the emitter builds. Skipped on
+        # refused-before-generation runs (those that produced a
+        # policy refusal) — there is no answer to score.
+        fidelity_score: FidelityScore = NOT_MEASURED
+        if captured_intent is not None and result.refusal is None:
+            try:
+                with stage_runner(
+                    STAGE_VERIFY,
+                    **self._stage_kwargs(
+                        correlation_id, decision_id, redactor, sampler,
+                    ),
+                ):
+                    verify_logger = (
+                        sampler.logger if sampler is not None else self._logger_hook
+                    )
+                    thresholds = (
+                        observability_config.fidelity_thresholds
+                        if observability_config is not None
+                        else _DEFAULT_FIDELITY_THRESHOLDS
+                    )
+                    answer_representation = await run_off_loop(
+                        self._intent_encoder.encode,
+                        result.text,
+                        stage="verify",
+                        metric_sink=self._metrics_hook,
+                    )
+                    fidelity_score = await score_fidelity(
+                        captured_intent,
+                        answer_representation,
+                        scorer=self._fidelity_scorer,
+                        thresholds=thresholds,
+                        correlation_id=correlation_id,
+                        decision_id=decision_id,
+                        logger=verify_logger,
+                        metric_sink=self._metrics_hook,
+                    )
+            except Exception as exc:
+                logger.warning(
+                    "Fidelity scoring raised %s — degrading to sentinel", exc,
+                )
+                fidelity_score = NOT_MEASURED
+        # Attach the score to the result (preserves frozen=True via replace).
+        if result.fidelity_score != fidelity_score:
+            import dataclasses as _dc
+
+            result = _dc.replace(result, fidelity_score=fidelity_score)
+
+        # --- Decision record emission (STAGE_DECISION_EMIT) ---
+        # Only emits when the policy router actually ran (``outcome`` is
+        # not None). The record carries the fidelity score from the
+        # verify stage above.
+        if outcome is not None:
+            with stage_runner(
+                STAGE_DECISION_EMIT,
+                **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
+            ):
+                record = self._decision_emitter.build(
+                    result, outcome, latency_ms,
+                    fidelity_score=fidelity_score,
+                )
+                self._last_decision = record
+                self._decision_emitter.emit(
+                    record,
+                    logger=self._logger_hook,
+                    metrics=self._metrics_hook,
+                )
 
         # --- Middleware after ---
         for mw in self._middlewares:

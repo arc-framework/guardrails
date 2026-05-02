@@ -6,6 +6,8 @@ import contextlib
 import dataclasses
 
 from arc_guard_core.decision import DecisionRecord, FindingSummary
+from arc_guard_core.fidelity import FidelityScore
+from arc_guard_core.intent_lock import IntentLock
 from arc_guard_core.observability import Logger, MetricSink
 from arc_guard_core.policy import RoutedOutcome
 from arc_guard_core.types import GuardResult
@@ -19,6 +21,9 @@ class DecisionEmitter:
         result: GuardResult,
         outcome: RoutedOutcome,
         latency_ms: float,
+        *,
+        intent_lock: IntentLock | None = None,
+        fidelity_score: FidelityScore | None = None,
     ) -> DecisionRecord:
         finding_summaries = tuple(
             FindingSummary(
@@ -43,6 +48,8 @@ class DecisionEmitter:
             refusal_code=(outcome.refusal.code if outcome.refusal else None),
             clarification_present=outcome.clarification is not None,
             latency_ms=latency_ms,
+            intent_lock=intent_lock,
+            fidelity_score=fidelity_score,
         )
 
     def emit(

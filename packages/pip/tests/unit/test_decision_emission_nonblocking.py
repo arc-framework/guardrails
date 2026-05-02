@@ -104,11 +104,15 @@ def test_emitter_logger_failure_does_not_block_pipeline() -> None:
     )
 
     async def _run() -> None:
-        # Budget: 1 second. With one ~200ms logger call this is comfortable;
-        # a regression that called event() per finding (or in a loop) would
-        # blow this budget.
+        # Budget: 3 seconds. The pipeline emits stage.started + stage.completed
+        # for every stage in STAGE_DESCRIPTORS plus the per-stage business
+        # event (intent.captured, fidelity.scored, refusal.constructed,
+        # decision, run.started, run.completed). At ~200ms per slow logger
+        # call this comes to ~12 calls × 200ms = 2.4s. The budget catches a
+        # regression that called event() per finding (or in a loop), which
+        # would blow well past 3s.
         await asyncio.wait_for(
-            pipeline.pre_process(GuardInput(text="alice@acme.com")), timeout=1.0
+            pipeline.pre_process(GuardInput(text="alice@acme.com")), timeout=3.0
         )
 
     asyncio.run(_run())
