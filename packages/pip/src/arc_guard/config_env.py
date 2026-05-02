@@ -11,7 +11,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from arc_guard_core.observability_config import ObservabilityConfig
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class GuardConfig(BaseModel):
@@ -22,6 +23,13 @@ class GuardConfig(BaseModel):
     """
 
     model_config = ConfigDict(frozen=True)
+
+    # Observability + fidelity-threshold knobs. Optional so the
+    # default pipeline keeps its existing fast path (no redactor / no
+    # buffered sampler). When set, the pipeline reads
+    # ``observability.fidelity_thresholds`` to drive the action ladder
+    # and activates the redactor / sampler / log-level floor.
+    observability: ObservabilityConfig | None = Field(default=None)
 
     # PII entity types passed to presidio-analyzer
     pii_entities: list[str] = [

@@ -55,6 +55,7 @@ from arc_guard_core.stages import (
     STAGE_DEFEND,
     STAGE_EXECUTE,
     STAGE_REFUSAL,
+    STAGE_REHYDRATE,
     STAGE_REPORT,
     STAGE_ROUTE,
     STAGE_VERIFY,
@@ -64,12 +65,16 @@ from arc_guard_core.types import GuardInput, GuardResult, RefusalEnvelope
 from arc_guard.concurrency.offload import run_off_loop
 from arc_guard.config_env import GuardConfig
 from arc_guard.decision.emitter import DecisionEmitter
+from arc_guard.fidelity.ladder import apply_fidelity_ladder
 from arc_guard.fidelity.scorer import NullFidelityScorer, score_fidelity
+from arc_guard.rehydration.apply import apply_rehydration
+from arc_guard.rehydration.verifier import NullRehydrationVerifier
 from arc_guard.flags.env_provider import EnvFlagProvider
 from arc_guard.flags.static_provider import StaticFlagProvider
 from arc_guard.inspectors.injection import InjectionInspector
 from arc_guard.inspectors.presidio import PresidioInspector
 from arc_guard.intent.capture import NullIntentEncoder, capture_intent
+from arc_guard.intent.lock import build_intent_lock
 from arc_guard.observability.attributes import BoundedRedactor
 from arc_guard.observability.sampling import RunSampler, build_run_sampler
 from arc_guard.observability.stage_runner import emit_stage_failed, stage_runner
@@ -102,6 +107,24 @@ _STRATEGIES: dict[str, ActionStrategy] = {
 # observability block). Equivalent to constructing
 # ``FidelityThresholds()`` per call but cheaper.
 _DEFAULT_FIDELITY_THRESHOLDS: Final[FidelityThresholds] = FidelityThresholds()
+
+
+def _entity_map_from_outcome(outcome: Any) -> dict[str, str]:
+    """Extract a ``placeholder → original_value`` map from a routed outcome.
+
+    Today the existing ``RuleBasedPolicyRouter`` exposes per-finding
+    transforms but does not surface the original entity values on the
+    outcome. The map is left empty in this iteration; a subsequent
+    spec wires the strategy decisions to expose the map. Returning
+    an empty dict keeps the rehydrate stage a no-op until that wiring
+    lands.
+    """
+    if outcome is None:
+        return {}
+    raw_map: Any = getattr(outcome, "entity_map", None)
+    if isinstance(raw_map, dict):
+        return {str(k): str(v) for k, v in raw_map.items() if k}
+    return {}
 
 
 class GuardPipeline:
@@ -155,7 +178,9 @@ class GuardPipeline:
         self._tracer_hook: Tracer = tracer_hook or NullTracer()
         self._intent_encoder: IntentEncoder = intent_encoder or NullIntentEncoder()
         self._fidelity_scorer: FidelityScorer = fidelity_scorer or NullFidelityScorer()
-        self._rehydration_verifier: RehydrationVerifier | None = rehydration_verifier
+        self._rehydration_verifier: RehydrationVerifier = (
+            rehydration_verifier or NullRehydrationVerifier()
+        )
         self._decision_emitter = DecisionEmitter()
         self._last_decision: Any = None  # tests / dev tooling read this
         # Validate at construction so unknown strategies fail eagerly.
@@ -594,10 +619,91 @@ class GuardPipeline:
 
             result = _dc.replace(result, fidelity_score=fidelity_score)
 
+        # Apply the threshold-driven action ladder. Reads
+        # ``observability_config.fidelity_thresholds`` (or the default
+        # tuple) and dispatches warn / clarify / refuse per band.
+        # Risk-precedence is enforced inside the ladder (no-op when
+        # ``result.action == "block"`` or ``result.refusal is not None``).
+        ladder_thresholds = (
+            observability_config.fidelity_thresholds
+            if observability_config is not None
+            else _DEFAULT_FIDELITY_THRESHOLDS
+        )
+        result = apply_fidelity_ladder(result, fidelity_score, ladder_thresholds)
+
+        # --- Rehydration safety (STAGE_REHYDRATE) ---
+        # Runs only when sanitization actually fired (entity_map is
+        # non-empty) and the run completed generation (no risk-band
+        # refusal). The verifier checks structural safety; the apply
+        # helper substitutes only the placeholders the verifier accepts.
+        # Today the entity_map is passed in from policy-router transforms
+        # via a per-run state holder; when no transform produced a map,
+        # the rehydrate stage is a no-op.
+        entity_map = _entity_map_from_outcome(outcome)
+        if entity_map and result.refusal is None:
+            with stage_runner(
+                STAGE_REHYDRATE,
+                **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
+            ):
+                rehydrate_logger = (
+                    sampler.logger if sampler is not None else self._logger_hook
+                )
+                try:
+                    verdict = self._rehydration_verifier.verify(
+                        sanitized_prompt=effective_input.text,
+                        rehydration_candidate=result.text,
+                        entity_map=entity_map,
+                    )
+                    new_text = apply_rehydration(
+                        result.text,
+                        verdict,
+                        entity_map,
+                        correlation_id=correlation_id,
+                        decision_id=decision_id,
+                        logger=rehydrate_logger,
+                        metric_sink=self._metrics_hook,
+                    )
+                    if new_text != result.text:
+                        import dataclasses as _dc
+
+                        result = _dc.replace(result, text=new_text)
+                except Exception as exc:
+                    logger.warning(
+                        "Rehydration verifier raised %s — keeping placeholders", exc,
+                    )
+
+        # --- Build the intent lock binding ---
+        # The lock contains content-addressed hashes of the original
+        # prompt, the sanitized prompt, and (when applicable) the
+        # rehydrated answer. Hashes are SHA-256 over canonicalized text;
+        # raw payloads never appear in the lock.
+        intent_lock = None
+        if captured_intent is not None:
+            rehydrated_text_for_lock: str | None
+            if result.refusal is not None:
+                # Refused before generation — there is no answer to hash.
+                rehydrated_text_for_lock = None
+            else:
+                rehydrated_text_for_lock = result.text
+            try:
+                intent_lock = build_intent_lock(
+                    original_text=guard_input.text,
+                    sanitized_text=effective_input.text,
+                    rehydrated_text=rehydrated_text_for_lock,
+                    encoder_id=(
+                        self._intent_encoder.encoder_id
+                        if not isinstance(self._intent_encoder, NullIntentEncoder)
+                        else None
+                    ),
+                )
+            except Exception as exc:
+                logger.warning("Intent-lock build raised %s — omitting lock", exc)
+                intent_lock = None
+
         # --- Decision record emission (STAGE_DECISION_EMIT) ---
         # Only emits when the policy router actually ran (``outcome`` is
         # not None). The record carries the fidelity score from the
-        # verify stage above.
+        # verify stage above and the intent lock from the defend chain.
         if outcome is not None:
             with stage_runner(
                 STAGE_DECISION_EMIT,
@@ -606,6 +712,7 @@ class GuardPipeline:
                 record = self._decision_emitter.build(
                     result, outcome, latency_ms,
                     fidelity_score=fidelity_score,
+                    intent_lock=intent_lock,
                 )
                 self._last_decision = record
                 self._decision_emitter.emit(
