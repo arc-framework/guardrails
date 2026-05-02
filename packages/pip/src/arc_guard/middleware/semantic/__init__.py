@@ -65,8 +65,8 @@ class SemanticBundle:
                 ``InjectionInspector`` is constructed.
         """
         try:
-            from sentence_transformers import SentenceTransformer  # noqa: F401
             import numpy  # noqa: F401
+            from sentence_transformers import SentenceTransformer  # noqa: F401
         except ImportError as exc:
             raise ImportError(
                 "SemanticBundle.from_sentence_transformers() requires the "

@@ -7,9 +7,8 @@ INVERSE direction relative to ``FidelityThresholds``: ``refuse > clarify > warn`
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
-
 from arc_guard_core.observability_config import DeceptionThresholds
+from pydantic import ValidationError
 
 
 def test_refuse_above_one_rejected() -> None:

@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any
 
 from arc_guard_core.deception import ConversationState
 from arc_guard_core.exceptions import JailbreakDetectorError
@@ -86,8 +85,8 @@ class ClassifierJailbreakDetector:
         device: str | None = None,
     ) -> None:
         try:
-            import transformers
             import torch
+            import transformers
         except ImportError as exc:
             raise JailbreakDetectorError(
                 "transformers + torch not installed",
@@ -167,10 +166,7 @@ class ClassifierJailbreakDetector:
         # The DeBERTa prompt-injection model outputs class 1 = injection.
         # Operators with different label conventions override the
         # detector via the Protocol directly.
-        if probs.shape[0] >= 2:
-            jailbreak_prob = float(probs[1].item())
-        else:
-            jailbreak_prob = float(probs[0].item())
+        jailbreak_prob = float(probs[1].item()) if probs.shape[0] >= 2 else float(probs[0].item())
         return jailbreak_prob
 
 

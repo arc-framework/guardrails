@@ -10,7 +10,6 @@ from arc_guard_core.evaluation import (
 
 from arc_guard.evaluation import HarnessImpl
 
-
 _ALL_CONFIGS: tuple[Configuration, ...] = (
     "raw",
     "sanitize_only",
@@ -21,7 +20,7 @@ _ALL_CONFIGS: tuple[Configuration, ...] = (
 
 def _synth_corpus() -> tuple[CorpusEntry, ...]:
     """≥ 12 entries × 5 categories synthesized for harness coverage."""
-    expected_all_pass: dict[Configuration, str] = {c: "pass" for c in _ALL_CONFIGS}
+    expected_all_pass: dict[Configuration, str] = dict.fromkeys(_ALL_CONFIGS, "pass")
     expected_jailbreak_refuse: dict[Configuration, str] = {
         "raw": "pass",
         "sanitize_only": "pass",

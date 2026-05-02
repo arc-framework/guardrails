@@ -26,6 +26,7 @@ class RefusalCode(StrEnum):
     POLICY_BLOCK = "policy_block"
     FIDELITY_DROP = "fidelity_drop"
     API_INVALID_REQUEST = "api_invalid_request"
+    API_TRANSPORT_TIMEOUT = "api_transport_timeout"
     INTERNAL_PIPELINE_ERROR = "internal_pipeline_error"
     INTERNAL_ADAPTER_ERROR = "internal_adapter_error"
     INTERNAL_REFUSAL_BUILD_ERROR = "internal_refusal_build_error"

@@ -10,7 +10,6 @@ from arc_guard_core.evaluation import (
 
 from arc_guard.evaluation import load_adversarial_corpus
 
-
 _VALID_CATEGORIES = {
     "benign",
     "privacy_sensitive",

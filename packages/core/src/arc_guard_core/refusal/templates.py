@@ -92,6 +92,15 @@ DEFAULT_REFUSAL_TEMPLATES: dict[RefusalCode, RefusalTemplate] = {
             "Verify all required fields are present and well-typed.",
         ),
     ),
+    RefusalCode.API_TRANSPORT_TIMEOUT: RefusalTemplate(
+        human_message=(
+            "The request took longer than the configured maximum and was cancelled."
+        ),
+        next_steps=(
+            "Retry with a smaller payload.",
+            "Increase the service's request_timeout_seconds setting.",
+        ),
+    ),
     RefusalCode.INTERNAL_PIPELINE_ERROR: RefusalTemplate(
         human_message=(
             "An internal pipeline-contract violation was detected; "

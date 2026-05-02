@@ -34,11 +34,6 @@ from arc_guard_core.exceptions import ConfigCrossFieldError
 from arc_guard_core.failure_modes import lookup_rule
 from arc_guard_core.fidelity import NOT_MEASURED, FidelityScore
 from arc_guard_core.jailbreak import JailbreakSignal
-from arc_guard_core.observability_config import (
-    DeceptionThresholds,
-    FidelityThresholds,
-    JailbreakThresholds,
-)
 from arc_guard_core.observability import (
     Logger,
     MetricSink,
@@ -47,16 +42,21 @@ from arc_guard_core.observability import (
     NullTracer,
     Tracer,
 )
+from arc_guard_core.observability_config import (
+    DeceptionThresholds,
+    FidelityThresholds,
+    JailbreakThresholds,
+)
 from arc_guard_core.policy import PolicyRuleSet
+from arc_guard_core.protocols.conversation_turn_inspector import (
+    ConversationTurnInspector,
+)
 from arc_guard_core.protocols.fidelity_scorer import FidelityScorer
 from arc_guard_core.protocols.flag_provider import FlagProvider
 from arc_guard_core.protocols.inspector import Inspector
 from arc_guard_core.protocols.intent_encoder import (
     IntentEncoder,
     IntentRepresentation,
-)
-from arc_guard_core.protocols.conversation_turn_inspector import (
-    ConversationTurnInspector,
 )
 from arc_guard_core.protocols.jailbreak_detector import JailbreakDetector
 from arc_guard_core.protocols.middleware import Middleware
@@ -95,25 +95,25 @@ from arc_guard.deception.ladder import apply_deception_ladder
 from arc_guard.decision.emitter import DecisionEmitter
 from arc_guard.fidelity.ladder import apply_fidelity_ladder
 from arc_guard.fidelity.scorer import NullFidelityScorer, score_fidelity
-from arc_guard.jailbreak.detector import (
-    GUARD_JAILBREAK_DETECTED_EVENT,
-    RuleBasedJailbreakDetector,
-)
-from arc_guard.jailbreak.ladder import apply_jailbreak_ladder
-from arc_guard.rehydration.apply import apply_rehydration
-from arc_guard.rehydration.verifier import NullRehydrationVerifier
 from arc_guard.flags.env_provider import EnvFlagProvider
 from arc_guard.flags.static_provider import StaticFlagProvider
 from arc_guard.inspectors.injection import InjectionInspector
 from arc_guard.inspectors.presidio import PresidioInspector
 from arc_guard.intent.capture import NullIntentEncoder, capture_intent
 from arc_guard.intent.lock import build_intent_lock
+from arc_guard.jailbreak.detector import (
+    GUARD_JAILBREAK_DETECTED_EVENT,
+    RuleBasedJailbreakDetector,
+)
+from arc_guard.jailbreak.ladder import apply_jailbreak_ladder
 from arc_guard.observability.attributes import BoundedRedactor
 from arc_guard.observability.sampling import RunSampler, build_run_sampler
 from arc_guard.observability.stage_runner import emit_stage_failed, stage_runner
 from arc_guard.policy import validate_strategies_registered
 from arc_guard.policy.router import RuleBasedPolicyRouter
 from arc_guard.refusal.builder import RefusalBuilder
+from arc_guard.rehydration.apply import apply_rehydration
+from arc_guard.rehydration.verifier import NullRehydrationVerifier
 from arc_guard.reporters.null_reporter import NullReporter
 from arc_guard.strategies.block import BlockStrategy
 from arc_guard.strategies.hash import HashStrategy

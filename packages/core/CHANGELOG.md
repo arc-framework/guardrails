@@ -2,6 +2,18 @@
 
 All notable changes to the `arc-guard-core` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.6.0] — 2026-05-03
+
+### Added
+- `RefusalCode.API_TRANSPORT_TIMEOUT` enum member — sibling of `API_INVALID_REQUEST`; emitted by transport-layer timeouts. Default `RefusalTemplate` registered with operator-facing human message + next-steps guidance.
+- `TransportError(PipelineError)` leaf exception — `__failure_mode__='closed'`, `__valid_codes__={transport.timeout, transport.payload_too_large, transport.invalid_state}`. Used by the `arc-guard-service` HTTP transport for transport-layer failures distinct from pipeline-decision territory.
+- `FAIL_RULE` entry for `TransportError` mapping to severity `error` and refusal code `API_TRANSPORT_TIMEOUT`. Posture is read from the new leaf's `__failure_mode__` ClassVar at lookup time per the foundation discipline.
+- `FAILURE_API_TRANSPORT` string constant in `arc_guard_core.failure_modes`.
+
+### Migration notes
+- Additive only on the public surface. No breaking changes; no migration required.
+- Callers handling specific refusal codes should add a branch for `API_TRANSPORT_TIMEOUT` if they want to distinguish transport-layer timeouts from other transport-layer rejections.
+
 ## [0.5.0] — 2026-05-02
 
 ### Added

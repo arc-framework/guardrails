@@ -62,7 +62,7 @@ async def test_defend_stage_emits_span_and_event() -> None:
     assert len(intent_events) == 1
     fields = intent_events[0].fields
     assert fields["encoder_id"] == "stub-emit:1"
-    assert fields["intent_size_bytes"] == len("hello".encode("utf-8"))
+    assert fields["intent_size_bytes"] == len(b"hello")
 
 
 @pytest.mark.asyncio

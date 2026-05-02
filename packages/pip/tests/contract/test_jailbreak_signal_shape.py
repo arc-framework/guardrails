@@ -5,7 +5,6 @@ from __future__ import annotations
 import dataclasses
 
 import pytest
-
 from arc_guard_core.jailbreak import JailbreakSignal
 
 

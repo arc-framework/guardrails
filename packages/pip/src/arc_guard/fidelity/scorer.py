@@ -28,7 +28,6 @@ from arc_guard_core.protocols.intent_encoder import (
 )
 
 from arc_guard.concurrency.offload import run_off_loop
-from arc_guard.intent.capture import _NullIntentMarker
 
 GUARD_FIDELITY_SCORED_EVENT: Final[str] = "guard.fidelity.scored"
 FIDELITY_SCORE_COUNTER: Final[str] = "arc_guardrails.fidelity.score"

@@ -81,7 +81,7 @@ class SemanticRehydrationVerifier(NullRehydrationVerifier):
         if structural_verdict.decision == "partial":
             accepts_map = dict(structural_verdict.per_placeholder)
         else:
-            accepts_map = {p: True for p in entity_map}
+            accepts_map = dict.fromkeys(entity_map, True)
 
         # Build the rehydrated text so we can scan it for new findings.
         rehydrated_text = rehydration_candidate

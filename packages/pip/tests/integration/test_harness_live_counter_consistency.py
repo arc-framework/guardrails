@@ -9,7 +9,6 @@ category (exact match for deterministic detectors).
 
 from __future__ import annotations
 
-import pytest
 from arc_guard_core.evaluation import Configuration, CorpusEntry, ExpectedOutcome
 from arc_guard_core.types import GuardInput
 

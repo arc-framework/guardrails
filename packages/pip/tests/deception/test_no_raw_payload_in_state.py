@@ -16,7 +16,6 @@ from arc_guard.observability import (
 )
 from arc_guard.pipeline import GuardPipeline
 
-
 _SENSITIVE_TURNS = (
     "Hi, my name is Alice Anderson and my SSN is 123-45-6789.",
     "My credit card 4012-8888-8888-1881 expires 09/26.",

@@ -22,8 +22,8 @@ class SentenceTransformerIntentEncoder:
         model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
     ) -> None:
         try:
-            from sentence_transformers import SentenceTransformer
             import sentence_transformers as _st_pkg
+            from sentence_transformers import SentenceTransformer
         except ImportError as exc:
             raise IntentEncoderError(
                 f"sentence-transformers not installed: {exc}",

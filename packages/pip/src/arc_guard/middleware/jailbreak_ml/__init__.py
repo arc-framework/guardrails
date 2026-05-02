@@ -50,8 +50,8 @@ class JailbreakMlBundle:
                 ``"mps"``). When ``None``, defaults to CPU.
         """
         try:
-            import transformers  # noqa: F401
             import torch  # noqa: F401
+            import transformers  # noqa: F401
         except ImportError as exc:
             raise ImportError(
                 "JailbreakMlBundle.from_huggingface_jailbreak() requires the "
