@@ -1,4 +1,4 @@
-"""FR-007 belt-and-suspenders: no captured artifact has a raw-payload field name.
+"""No captured artifact has a raw-payload field name (schema check).
 
 Drives the pipeline against the sensitive corpus, captures every
 artifact, and asserts that no captured field name matches a known

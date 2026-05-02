@@ -1,4 +1,4 @@
-"""tools/check_dependency_tree.py — dep-closure audit for arc-guard-core (FR-005, SC-002).
+"""tools/check_dependency_tree.py — dep-closure audit for arc-guard-core.
 
 Runs ``uv tree --package arc-guard-core`` and asserts the runtime closure
 contains only ``pydantic`` (and its transitive deps) plus stdlib. Any

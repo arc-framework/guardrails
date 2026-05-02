@@ -1,4 +1,4 @@
-"""US7 integration: custom strategy works without modifying core."""
+"""Custom-strategy integration: third-party strategy works without modifying core."""
 
 from __future__ import annotations
 

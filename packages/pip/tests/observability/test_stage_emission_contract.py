@@ -1,21 +1,22 @@
-"""SC-001: every executed stage emits one span, one event pair, one metric.
+"""Every executed stage emits one span, one event pair, one metric.
 
 Drives the pipeline against a corpus of representative inputs and asserts:
 
 - Every executed stage produced exactly one ``CapturedSpan`` named
   ``guard.stage.<name>`` with the documented attributes.
-- The matching ``guard.stage.started`` and ``guard.stage.completed`` events
-  were captured.
-- The ``arc_guardrails.stage.duration`` histogram has a sample for every
-  executed stage.
-- Run-level: ``guard.run.started`` and ``guard.run.completed`` fire once
-  each, and the ``arc_guardrails.run.duration`` histogram has a sample.
-- FR-005 monotonic-clock invariant: every stage's event ``duration_ms``
+- The matching ``guard.stage.started`` and ``guard.stage.completed``
+  events were captured.
+- The ``arc_guardrails.stage.duration`` histogram has a sample for
+  every executed stage.
+- Run-level: ``guard.run.started`` and ``guard.run.completed`` fire
+  once each, and the ``arc_guardrails.run.duration`` histogram has a
+  sample.
+- Monotonic-clock invariant: every stage's event ``duration_ms``
   matches its span's ``ended - started`` interval (within the
   ``time.monotonic_ns`` resolution).
-- FR-029 cross-system join: every span's ``correlation_id``+``decision_id``
-  match the run-level event's IDs (the ``DecisionRecord`` join is exercised
-  in the policy-routed scenario).
+- Cross-system join: every span's ``correlation_id``+``decision_id``
+  match the run-level event's IDs (the ``DecisionRecord`` join is
+  exercised in the policy-routed scenario).
 """
 
 from __future__ import annotations
@@ -110,8 +111,8 @@ async def test_every_executed_stage_emits_span_event_metric() -> None:
 
 @pytest.mark.asyncio
 async def test_correlation_and_decision_ids_match_across_emissions() -> None:
-    """FR-029 cross-system join: span attrs, log fields, metric attrs all
-    carry the same correlation_id and decision_id within a single run.
+    """Cross-system join: span attrs, log fields, metric attrs all carry
+    the same correlation_id and decision_id within a single run.
     """
     tracer = RecordingTracer()
     logger = RecordingLogger()
@@ -150,7 +151,7 @@ async def test_correlation_and_decision_ids_match_across_emissions() -> None:
 
 @pytest.mark.asyncio
 async def test_monotonic_clock_invariant() -> None:
-    """FR-005: span (ended - started) ~= event duration_ms within monotonic resolution."""
+    """span (ended - started) ~= event duration_ms within monotonic resolution."""
     tracer = RecordingTracer()
     logger = RecordingLogger()
     metric_sink = RecordingMetricSink()

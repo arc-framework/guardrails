@@ -1,4 +1,4 @@
-"""US5 integration: clarification mode recovers ≥80% of borderline inputs."""
+"""Clarification-mode integration: recovers ≥80% of borderline inputs."""
 
 from __future__ import annotations
 

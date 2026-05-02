@@ -1,4 +1,4 @@
-"""US6 integration: every pipeline run produces a complete DecisionRecord."""
+"""Decision-record integration: every pipeline run produces a complete DecisionRecord."""
 
 from __future__ import annotations
 

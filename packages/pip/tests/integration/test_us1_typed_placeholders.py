@@ -1,9 +1,10 @@
-"""US1 integration test (≥5 entity types).
+"""Typed-placeholder integration: ≥5 entity types end-to-end.
 
-Validates that an input with five distinct entity types yields exactly five
-typed placeholders, that two distinct credit-card numbers yield distinguishable
-suffixed placeholders, and that benign input passes through.
-Asserts zero raw entity bytes (substring length ≥ 4) appear in the output.
+Validates that an input with five distinct entity types yields
+exactly five typed placeholders, that two distinct credit-card
+numbers yield distinguishable suffixed placeholders, and that benign
+input passes through. Asserts zero raw entity bytes (substring length
+≥ 4) appear in the output.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ def _f(entity_type: str, start: int, end: int, risk: RiskLevel = RiskLevel.LOW) 
 
 
 # ---------------------------------------------------------------------------
-# US1 acceptance scenario 1 — 5 distinct entity types
+# Acceptance scenario 1 — 5 distinct entity types
 # ---------------------------------------------------------------------------
 
 
@@ -62,7 +63,7 @@ def test_five_distinct_entity_types_yield_five_placeholders() -> None:
 
 
 # ---------------------------------------------------------------------------
-# US1 acceptance scenario 2 — distinguishable suffixed placeholders
+# Acceptance scenario 2 — distinguishable suffixed placeholders
 # ---------------------------------------------------------------------------
 
 
@@ -83,7 +84,7 @@ def test_two_distinct_credit_cards_get_distinguishable_placeholders() -> None:
 
 
 # ---------------------------------------------------------------------------
-# US1 acceptance scenario 3 — benign input
+# Acceptance scenario 3 — benign input
 # ---------------------------------------------------------------------------
 
 
@@ -95,7 +96,7 @@ def test_benign_input_unchanged() -> None:
 
 
 # ---------------------------------------------------------------------------
-# US1 + GuardResult integration — pipeline-shape compatibility
+# GuardResult pipeline-shape compatibility check
 # ---------------------------------------------------------------------------
 
 

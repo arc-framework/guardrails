@@ -1,9 +1,9 @@
-"""50-input sensitive corpus for the US2 leak-scanner contract test.
+"""50-input sensitive corpus for the leak-scanner contract test.
 
 Mix of PII (email, SSN, credit card, phone), internal project names,
-jailbreak markers, and benign control inputs. The leak scanner asserts
-that no captured observability artifact contains any chunk of these
-inputs.
+jailbreak markers, and benign control inputs. The leak scanner
+asserts that no captured observability artifact contains any chunk
+of these inputs.
 """
 
 from __future__ import annotations

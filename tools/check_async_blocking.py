@@ -1,4 +1,4 @@
-"""tools/check_async_blocking.py — async-path blocking-call lint (FR-025, SC-007).
+"""tools/check_async_blocking.py — async-path blocking-call lint.
 
 Walks the AST of the workspace and flags blocking calls reachable from any
 ``async def`` declared in ``packages/core/`` or ``packages/pip/``. Pairs with

@@ -10,30 +10,29 @@ Batteries-included guardrails library, built on [`arc-guard-core`](../core/READM
 pip install arc-guard               # all implementations included; presidio is the only heavy dep
 ```
 
-Spec 002 ships **zero optional extras**. The NATS reporter, Unleash flag
-provider, OTEL middleware, semantic inspector, and webhook reporter were
-all trimmed per the rewrite roadmap §4 ("nice-to-have features — future
-expansion"). Specs 004 (OTEL), 005 (semantic / intent fidelity), and 007
-(transports) own their respective reintroductions.
+Currently ships **zero optional extras**. The NATS reporter, Unleash
+flag provider, OTEL middleware, semantic inspector, and webhook
+reporter were trimmed during the rewrite. They will return as separate
+distributions; see CHANGELOG.md for per-version status.
 
-## What's new in 0.3.0 (Spec 003 — Sanitization and Policy Core)
+## Recent highlights
 
 - **Composable policy routing** via `RuleBasedPolicyRouter`. Author a `PolicyRuleSet`, pass it to `GuardPipeline(policy_ruleset=...)`, and rules fire per finding with precedence-resolved conflicts.
-- **Risk-adaptive bands** — LOW / MEDIUM / HIGH / CRITICAL drive `GuardResult.action` and `refusal` per D3.
+- **Risk-adaptive bands** — LOW / MEDIUM / HIGH / CRITICAL drive `GuardResult.action` and `refusal`.
 - **Typed placeholders** — `redact` strategy emits `[CREDIT_CARD]` / `[CREDIT_CARD_1]`, `[CREDIT_CARD_2]` / etc. Custom entity types register via `register_placeholder`.
 - **Clarification flow** — opt-in: ambiguous runs return a `GuardResult.clarification` instead of blocking.
 - **Decision records** — every routed run emits a `DecisionRecord` through `Logger.event` and `MetricSink`. No raw payloads.
 - **Custom strategies** — implement the `ActionStrategy` Protocol, register via `@strategy("name")`, reference by name in your `PolicyRuleSet`. No core changes required.
 
-See [`specs/003-sanitization-policy-core/quickstart.md`](../../specs/003-sanitization-policy-core/quickstart.md) for the operator / integrator / contributor walkthroughs and [`docs/walkthrough/003-sanitization-policy-core.md`](../../docs/walkthrough/003-sanitization-policy-core.md) for the policy authoring guide.
+The active spec set under `../../specs/` documents the contracts in
+detail; `../../docs/walkthrough/` carries the per-feature operator
+guides.
 
-## Spec 001 → Spec 002 migration
+## Migration
 
-If you previously imported from `arc_guard.types`, `arc_guard.config`, `arc_guard.protocols`, or `arc_guard.registry`, your imports keep working through this release with a `DeprecationWarning` naming the new home. The old paths are removed in `arc-guard 0.3.0`. See the [migration note](../../docs/walkthrough/002-rewrite-foundation.md#migration) for the full mapping and a worked example.
+If you previously imported from `arc_guard.types`, `arc_guard.config`, `arc_guard.protocols`, or `arc_guard.registry`, your imports keep working through this release with a `DeprecationWarning` naming the new home. See `CHANGELOG.md` for the per-version removal schedule and the migration walkthroughs under `../../docs/walkthrough/` for worked examples.
 
 ## References
 
-- [Spec 002 — Rewrite Foundation](../../specs/002-rewrite-foundation/spec.md)
 - [`arc-guard-core` README](../core/README.md)
-- [Contracts](../../specs/002-rewrite-foundation/contracts/)
 - [CHANGELOG](./CHANGELOG.md)

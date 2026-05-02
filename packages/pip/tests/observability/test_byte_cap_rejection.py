@@ -1,8 +1,8 @@
-"""FR-010: BoundedRedactor rejects values exceeding ``max_attribute_bytes``.
+"""BoundedRedactor rejects values exceeding ``max_attribute_bytes``.
 
-Direct redactor unit test (rather than full pipeline drive) to keep the
-assertion crisp: a value larger than the configured cap must be dropped
-with ``reason="exceeds_byte_cap"``.
+Direct redactor unit test (rather than full pipeline drive) to keep
+the assertion crisp: a value larger than the configured cap must be
+dropped with ``reason="exceeds_byte_cap"``.
 """
 
 from __future__ import annotations

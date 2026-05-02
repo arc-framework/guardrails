@@ -1,7 +1,7 @@
 [project]
 name = "arc-guardrails-workspace"
 version = "0.0.0"
-description = "uv workspace root for the arc-guardrails rewrite (Spec 002)"
+description = "uv workspace root for the arc-guardrails rewrite"
 requires-python = ">=3.11"
 
 [tool.uv.workspace]

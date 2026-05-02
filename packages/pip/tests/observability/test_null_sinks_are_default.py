@@ -1,12 +1,9 @@
-"""FR-023: Null sinks are the default and produce no observable behavior.
+"""Null sinks are the default and produce no observable behavior.
 
 When no observability hooks are configured, the pipeline must:
 - import without warnings,
 - produce a normal ``GuardResult`` for the input,
-- NOT touch any captured-emission lists (verified by passing recording
-  sinks AS THE NULL DEFAULTS — if they were silently bypassed, this test
-  would still pass; the real assertion is that the default-constructed
-  pipeline doesn't reach into globally-installed sinks).
+- not reach into globally-installed sinks for emissions.
 """
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # arc-guardrails — packages workspace
 
-This is the rewrite foundation defined by [Spec 002](../specs/002-rewrite-foundation/spec.md). Three packages, one `uv` workspace, strict dependency direction.
+The rewrite foundation: three packages, one `uv` workspace, strict dependency direction.
 
 ## Layout
 
@@ -35,7 +35,6 @@ uv run --package arc-guard-core pytest tests/contract/
 
 ## References
 
-- [Spec 002 — Rewrite Foundation](../specs/002-rewrite-foundation/spec.md)
-- [Implementation plan](../specs/002-rewrite-foundation/plan.md)
-- [Migration walkthrough](../docs/walkthrough/002-rewrite-foundation.md)
 - Per-package READMEs: [`core/`](./core/README.md), [`pip/`](./pip/README.md), [`api/`](./api/README.md)
+- Per-package CHANGELOGs document version-level traceability.
+- The active spec set lives under `../specs/`; the migration walkthroughs live under `../docs/walkthrough/`.

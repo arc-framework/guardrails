@@ -1,6 +1,6 @@
 # arc-guard-core
 
-Zero-dep contract layer for [arc-guardrails](../../specs/002-rewrite-foundation/spec.md).
+Zero-dep contract layer for arc-guardrails.
 
 `arc-guard-core` is the contract package: typed models, Protocol interfaces, the typed exception hierarchy, the configuration schema, the registry, the pipeline shape, and the observability hook surface. Its only runtime dependency is `pydantic`. Installing it pulls **no** provider SDK, transport runtime, or model backend.
 
@@ -37,7 +37,5 @@ print(result.action)  # "pass"
 
 ## References
 
-- [Spec 002 — Rewrite Foundation](../../specs/002-rewrite-foundation/spec.md)
-- [Contracts](../../specs/002-rewrite-foundation/contracts/)
-- [Migration note](../../docs/walkthrough/002-rewrite-foundation.md)
 - [CHANGELOG](./CHANGELOG.md)
+- The active spec set lives under `../../specs/`; the migration walkthroughs live under `../../docs/walkthrough/`.

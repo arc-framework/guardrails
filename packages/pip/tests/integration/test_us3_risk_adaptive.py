@@ -1,4 +1,4 @@
-"""US3 integration: risk-adaptive bands drive aggregate behavior."""
+"""Risk-adaptive integration: bands drive aggregate behavior."""
 
 from __future__ import annotations
 

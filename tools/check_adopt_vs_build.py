@@ -9,7 +9,7 @@ referenced from an adopt-vs-build record in either:
   ``dependency: <name>``).
 
 Dev-only dependencies under ``[dependency-groups.dev]`` or ``[tool.uv]`` are
-exempt (FR-031 acceptance scenario 2).
+exempt by policy.
 
 Exit codes:
     0 — clean (no new runtime deps, or each new dep has a referenced record)

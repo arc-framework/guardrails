@@ -8,7 +8,7 @@ All notable changes to the `arc-guard` package are documented here. Format follo
 - New observability glue sub-package `arc_guard.observability/`:
   - `stage_runner` — context-manager factory wrapping each pipeline stage with span / log / metric emissions, posture-aware failure-mode application, and post-decision sampling.
   - `recording` — `RecordingTracer` / `RecordingLogger` / `RecordingMetricSink` with `CapturedSpan` / `CapturedEvent` / `CapturedMetric` dataclasses; thread-safe via internal lock; intentionally importable from production code so dependent specs can use them.
-  - `attributes` — `BoundedRedactor` default `AttributeRedactor` implementation enforcing FR-007 (no input substring), FR-010 (byte cap), FR-025 (allow-list).
+  - `attributes` — `BoundedRedactor` default `AttributeRedactor` implementation: rejects values containing input substrings, values exceeding the configured byte cap, and metric attributes outside the allow-list.
   - `leak_scanner` — pure-function `scan_for_leaks(captured, originals)` returning a list of `LeakReport` entries; substring search only, no regex / entropy.
 - New concurrency sub-package `arc_guard.concurrency/`:
   - `offload` — `run_off_loop(callable_, ..., stage, metric_sink)` wrapping `asyncio.to_thread` with an `arc_guardrails.observability.offload` counter.
@@ -20,7 +20,7 @@ All notable changes to the `arc-guard` package are documented here. Format follo
 - The async pipeline path detects sync-only inspectors / strategies and routes them through `concurrency.offload.run_off_loop` so the event loop is not blocked.
 
 ### Migration notes
-- Additive only on the public observability surface; `GuardConfig.observability` defaults preserve pre-Spec-004 behavior. Custom registry consumers that mutated registries at runtime will hit `RegistryFrozenError` and need to register before pipeline construction.
+- Additive only on the public observability surface; `GuardConfig.observability` defaults preserve prior behavior. Custom registry consumers that mutated registries at runtime will hit `RegistryFrozenError` and need to register before pipeline construction.
 
 ## [0.3.0] — 2026-05-01
 

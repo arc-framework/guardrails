@@ -1,9 +1,9 @@
-"""FR-025: BoundedRedactor enforces metric attribute allow-list.
+"""BoundedRedactor enforces the metric attribute allow-list.
 
 Span attributes pass through with byte-cap and substring-search only.
 Metric labels additionally enforce
-``ObservabilityConfig.metric_attribute_allow_list``: any key not in the
-list is dropped with ``reason="not_in_allow_list"``.
+``ObservabilityConfig.metric_attribute_allow_list``: any key not in
+the list is dropped with ``reason="not_in_allow_list"``.
 """
 
 from __future__ import annotations

@@ -1,13 +1,13 @@
 # tools/
 
-Repo-level boundary-enforcement scripts for the arc-guardrails rewrite (Spec 002).
+Repo-level boundary-enforcement scripts for the arc-guardrails rewrite.
 
-| Script | Purpose | Spec FRs |
-|---|---|---|
-| `check_import_graph.py` | Runs `import-linter` against `packages/.importlinter` and asserts loading `arc_guard_core` does not pull any forbidden provider module | FR-006, SC-003 |
-| `check_dependency_tree.py` | Audits the `arc-guard-core` runtime dependency closure for forbidden provider SDKs | FR-005, SC-002 |
-| `check_async_blocking.py` | Flags blocking calls (`time.sleep`, `subprocess.run`, model inference) reachable from async pipeline entry points | FR-025, SC-007 |
-| `check_adopt_vs_build.py` | Diffs `packages/core/pyproject.toml` runtime deps against `main`; requires every new entry to be referenced from `.specify/memory/libraries.md` or `specs/002-rewrite-foundation/decisions/` | FR-031, FR-032, SC-009 |
+| Script | Purpose |
+|---|---|
+| `check_import_graph.py` | Runs `import-linter` against `packages/.importlinter` and asserts loading `arc_guard_core` does not pull any forbidden provider module |
+| `check_dependency_tree.py` | Audits the `arc-guard-core` runtime dependency closure for forbidden provider SDKs |
+| `check_async_blocking.py` | Flags blocking calls (`time.sleep`, `subprocess.run`, model inference) reachable from async pipeline entry points |
+| `check_adopt_vs_build.py` | Diffs `packages/core/pyproject.toml` runtime deps against `main`; requires every new entry to be referenced from `.specify/memory/libraries.md` or an ADR under `specs/<feature>/decisions/` |
 
 ## How to run
 
@@ -38,7 +38,7 @@ Then verify the diff and add a CHANGELOG entry under `packages/core/CHANGELOG.md
 
 `check_adopt_vs_build.py` only enforces the rule on **runtime** dependencies
 in `arc-guard-core`. Dev tooling (linters, test runners, etc.) added under
-`[dependency-groups.dev]` is exempt by policy (FR-031 acceptance scenario 2).
+`[dependency-groups.dev]` is exempt by policy.
 
 ## CI integration
 

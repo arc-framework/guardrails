@@ -1,13 +1,20 @@
 """Default ``AttributeRedactor`` implementation: ``BoundedRedactor``.
 
-Sanitizes or rejects attribute values before they reach a backend, per
-FR-007 (no raw input substrings), FR-010 (byte cap), FR-025 (metric
-attribute allow-list). Each rejection carries a stable ``reason`` string
-suitable for the ``arc_guardrails.observability.attribute_dropped``
-metric label.
+Sanitizes or rejects attribute values before they reach a backend.
+Three rejection paths:
 
-Concurrency: thread-safe (the redactor itself is stateless except for the
-optional run-context handle, which is set per-run by the stage runner).
+- key not in the metric attribute allow-list (only checked on the
+  metric path; span attributes pass without an allow-list check),
+- value's repr exceeds the configured byte cap,
+- value's string-coerced form contains a chunk of the run's input
+  text (a runtime check that pairs with the CI-time leak scanner).
+
+Each rejection carries a stable ``reason`` string suitable for the
+``arc_guardrails.observability.attribute_dropped`` metric label.
+
+Concurrency: thread-safe (the redactor itself is stateless except for
+the optional run-context handle, which is set per-run by the stage
+runner).
 Failure mode: never raises; returns ``RedactionResult(accepted=False,
 reason=...)`` instead.
 """
@@ -33,7 +40,7 @@ _MIN_SUBSTRING_LENGTH: Final[int] = 4
 
 
 class BoundedRedactor:
-    """Sanitize-or-reject attribute values per the spec's FR-007/010/025.
+    """Sanitize-or-reject attribute values before they reach a backend.
 
     The redactor is per-pipeline (created at pipeline construction). For
     each run it receives the originals via ``set_run_originals`` so the

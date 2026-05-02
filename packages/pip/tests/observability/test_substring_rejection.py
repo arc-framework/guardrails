@@ -1,4 +1,4 @@
-"""FR-007: BoundedRedactor rejects values containing input substrings.
+"""BoundedRedactor rejects values containing input substrings.
 
 Once ``set_run_originals`` is called with the run's input text, any
 attribute value that contains a >= 4-character chunk of that text is

@@ -1,4 +1,4 @@
-"""tools/check_import_graph.py — boundary enforcement (FR-006, SC-003).
+"""tools/check_import_graph.py — boundary enforcement.
 
 Wraps ``import-linter`` against ``packages/.importlinter`` and additionally
 asserts that loading ``arc_guard_core`` at runtime does not pull any

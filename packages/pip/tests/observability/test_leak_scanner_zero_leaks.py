@@ -1,13 +1,12 @@
-"""SC-002: payload-leak scanner returns empty list across the 50-input corpus.
+"""Payload-leak scanner returns empty list across the 50-input corpus.
 
 Drives the pipeline through every input in
 ``tests/fixtures/sensitive_inputs.py``, captures all observability
 artifacts via the recording sinks, and asserts the leak scanner finds
 zero leaks against the original input as a substring source.
 
-This is the FR-007 + SC-002 enforcement: no raw input text or
-finding-matched substring may appear in any span attribute, log field,
-or metric label.
+The no-leak rule: no raw input text or finding-matched substring may
+appear in any span attribute, log field, or metric label.
 """
 
 from __future__ import annotations

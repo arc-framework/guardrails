@@ -1,7 +1,7 @@
 [project]
 name = "arc-guard-service"
 version = "0.1.0"
-description = "Thin deployment surface for arc-guardrails — scaffold only in Spec 002; Spec 007 owns full wiring"
+description = "Thin deployment surface for arc-guardrails"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "arc-guardrails maintainers" }]

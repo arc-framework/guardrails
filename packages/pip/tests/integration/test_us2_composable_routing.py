@@ -1,4 +1,4 @@
-"""US2 integration: 4 rules fire on one input (Walkthrough A.4)."""
+"""Composable-routing integration: 4 rules fire on one input."""
 
 from __future__ import annotations
 
