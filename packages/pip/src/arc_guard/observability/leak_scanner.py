@@ -17,6 +17,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
+import re
+
 from arc_guard_core.stages import STAGE_DESCRIPTORS
 
 from arc_guard.observability.recording import (
@@ -27,6 +29,18 @@ from arc_guard.observability.recording import (
 )
 
 _MIN_SUBSTRING_LENGTH = 4
+
+# Detector / encoder / scorer / verifier IDs follow the documented
+# ``<name>:<version>`` shape (e.g. ``"rule-based:1"``,
+# ``"sentence-transformers/all-MiniLM-L6-v2:1.0"``, ``"null:1"``). They
+# are system-set constants chosen by the SDK or the operator's adapter,
+# never derived from user input. The scanner skips values matching
+# this shape to avoid false positives when an input prompt happens to
+# share a 4+ char substring with a system identifier (e.g. "rule" in
+# both "rule-based:1" and the prompt "no rules.").
+_SYSTEM_ID_PATTERN: re.Pattern[str] = re.compile(
+    r"^[A-Za-z][A-Za-z0-9_\-/.]*:[A-Za-z0-9_.\-]+$"
+)
 
 
 @dataclass(frozen=True)
@@ -80,6 +94,13 @@ def _scan_value(
     # not user-derived; otherwise the scanner false-positives whenever
     # an input prompt happens to contain a stage name.
     if value in STAGE_DESCRIPTORS:
+        return []
+    # System identifiers (detector_id / encoder_id / scorer_id / etc.)
+    # follow the documented ``<name>:<version>`` shape. They are chosen
+    # by the SDK or operator adapters, never derived from user input.
+    # Skip them so the scanner doesn't false-positive when a prompt
+    # happens to share a 4+ char chunk with a system identifier.
+    if _SYSTEM_ID_PATTERN.fullmatch(value):
         return []
     reports: list[LeakReport] = []
     for original in originals:

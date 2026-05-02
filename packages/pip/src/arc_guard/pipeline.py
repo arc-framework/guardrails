@@ -26,7 +26,11 @@ from typing import Any, Final
 from arc_guard_core.exceptions import ConfigCrossFieldError
 from arc_guard_core.failure_modes import lookup_rule
 from arc_guard_core.fidelity import NOT_MEASURED, FidelityScore
-from arc_guard_core.observability_config import FidelityThresholds
+from arc_guard_core.jailbreak import JailbreakSignal
+from arc_guard_core.observability_config import (
+    FidelityThresholds,
+    JailbreakThresholds,
+)
 from arc_guard_core.observability import (
     Logger,
     MetricSink,
@@ -43,6 +47,7 @@ from arc_guard_core.protocols.intent_encoder import (
     IntentEncoder,
     IntentRepresentation,
 )
+from arc_guard_core.protocols.jailbreak_detector import JailbreakDetector
 from arc_guard_core.protocols.middleware import Middleware
 from arc_guard_core.protocols.policy_router import PolicyRouter
 from arc_guard_core.protocols.rehydration_verifier import RehydrationVerifier
@@ -60,13 +65,24 @@ from arc_guard_core.stages import (
     STAGE_ROUTE,
     STAGE_VERIFY,
 )
-from arc_guard_core.types import GuardInput, GuardResult, RefusalEnvelope
+from arc_guard_core.types import (
+    Finding,
+    GuardInput,
+    GuardResult,
+    RefusalEnvelope,
+    RiskLevel,
+)
 
 from arc_guard.concurrency.offload import run_off_loop
 from arc_guard.config_env import GuardConfig
 from arc_guard.decision.emitter import DecisionEmitter
 from arc_guard.fidelity.ladder import apply_fidelity_ladder
 from arc_guard.fidelity.scorer import NullFidelityScorer, score_fidelity
+from arc_guard.jailbreak.detector import (
+    GUARD_JAILBREAK_DETECTED_EVENT,
+    RuleBasedJailbreakDetector,
+)
+from arc_guard.jailbreak.ladder import apply_jailbreak_ladder
 from arc_guard.rehydration.apply import apply_rehydration
 from arc_guard.rehydration.verifier import NullRehydrationVerifier
 from arc_guard.flags.env_provider import EnvFlagProvider
@@ -107,6 +123,40 @@ _STRATEGIES: dict[str, ActionStrategy] = {
 # observability block). Equivalent to constructing
 # ``FidelityThresholds()`` per call but cheaper.
 _DEFAULT_FIDELITY_THRESHOLDS: Final[FidelityThresholds] = FidelityThresholds()
+_DEFAULT_JAILBREAK_THRESHOLDS: Final[JailbreakThresholds] = JailbreakThresholds()
+
+
+_JAILBREAK_CATEGORY_TO_ENTITY_TYPE = {
+    "role_play": "JAILBREAK_ROLE_PLAY",
+    "hypothetical": "JAILBREAK_HYPOTHETICAL",
+    "policy_erosion": "JAILBREAK_POLICY_EROSION",
+    "indirect_injection": "JAILBREAK_INDIRECT_INJECTION",
+    "direct_override": "JAILBREAK_DIRECT_OVERRIDE",
+}
+
+
+def _signal_to_finding(signal: JailbreakSignal) -> Finding:
+    """Convert a ``JailbreakSignal`` to a ``Finding`` for the policy router.
+
+    The detector operates at document granularity rather than tracking
+    span positions, so the finding records ``start=0, end=1`` as a
+    placeholder span. The score carries the signal's confidence so
+    downstream aggregation rules (precedence, risk-band evaluation)
+    use it directly.
+    """
+    entity_type = _JAILBREAK_CATEGORY_TO_ENTITY_TYPE[signal.category]
+    return Finding(
+        entity_type=entity_type,
+        start=0,
+        end=1,
+        risk_level=RiskLevel.CRITICAL,
+        inspector=signal.detector_id,
+        score=signal.confidence,
+        metadata={
+            "jailbreak_category": signal.category,
+            "evidence_reference": signal.evidence_reference,
+        },
+    )
 
 
 def _entity_map_from_outcome(outcome: Any) -> dict[str, str]:
@@ -164,6 +214,7 @@ class GuardPipeline:
         intent_encoder: IntentEncoder | None = None,
         fidelity_scorer: FidelityScorer | None = None,
         rehydration_verifier: RehydrationVerifier | None = None,
+        jailbreak_detector: JailbreakDetector | None = None,
     ) -> None:
         self._config = config or GuardConfig()
         self._flags = flags or EnvFlagProvider()
@@ -180,6 +231,9 @@ class GuardPipeline:
         self._fidelity_scorer: FidelityScorer = fidelity_scorer or NullFidelityScorer()
         self._rehydration_verifier: RehydrationVerifier = (
             rehydration_verifier or NullRehydrationVerifier()
+        )
+        self._jailbreak_detector: JailbreakDetector = (
+            jailbreak_detector or RuleBasedJailbreakDetector()
         )
         self._decision_emitter = DecisionEmitter()
         self._last_decision: Any = None  # tests / dev tooling read this
@@ -410,6 +464,7 @@ class GuardPipeline:
         inspectors = self._explicit_inspectors or self._build_inspector_chain()
         had_error = False
 
+        jailbreak_signals: tuple[JailbreakSignal, ...] = ()
         with stage_runner(
             STAGE_CLASSIFY, **self._stage_kwargs(correlation_id, decision_id, redactor, sampler)
         ):
@@ -435,6 +490,59 @@ class GuardPipeline:
                         metric_sink=self._metrics_hook,
                     )
                     had_error = True
+            # --- Jailbreak detector (runs alongside the inspector chain) ---
+            # Signals are emitted as Finding entries so the existing
+            # policy router's aggregation rules apply unchanged.
+            try:
+                jailbreak_signals = self._jailbreak_detector.detect(
+                    effective_input.text,
+                    conversation_state=(
+                        effective_input.context.conversation_state
+                        if effective_input.context is not None
+                        else None
+                    ),
+                )
+                if jailbreak_signals:
+                    classify_logger = (
+                        sampler.logger if sampler is not None else self._logger_hook
+                    )
+                    new_findings = list(result.findings)
+                    for signal in jailbreak_signals:
+                        new_findings.append(_signal_to_finding(signal))
+                        classify_logger.event(
+                            GUARD_JAILBREAK_DETECTED_EVENT,
+                            level="info",
+                            correlation_id=correlation_id,
+                            decision_id=decision_id,
+                            category=signal.category,
+                            confidence=signal.confidence,
+                            detector_id=signal.detector_id,
+                        )
+                        self._metrics_hook.counter(
+                            "arc_guardrails.jailbreak.detected",
+                            attributes={
+                                "category": signal.category,
+                                "stage": STAGE_CLASSIFY,
+                            },
+                        )
+                    import dataclasses as _dc
+
+                    result = _dc.replace(
+                        result, findings=tuple(new_findings),
+                    )
+            except Exception as exc:
+                logger.warning(
+                    "Jailbreak detector raised: %s — fail-open, no signal", exc,
+                )
+                emit_stage_failed(
+                    stage=STAGE_CLASSIFY,
+                    exc=exc,
+                    correlation_id=correlation_id,
+                    decision_id=decision_id,
+                    logger=self._logger_hook,
+                    metric_sink=self._metrics_hook,
+                )
+                jailbreak_signals = ()
 
         if had_error and result.bypass_reason is None:
             result = GuardResult(
@@ -619,7 +727,21 @@ class GuardPipeline:
 
             result = _dc.replace(result, fidelity_score=fidelity_score)
 
-        # Apply the threshold-driven action ladder. Reads
+        # Apply the jailbreak threshold-driven action ladder. Runs
+        # BEFORE the fidelity ladder so a strong-detector refusal
+        # (risk class) takes precedence over fidelity (additive class).
+        # Risk-precedence is enforced inside the ladder (no-op when
+        # ``result.action == "block"`` or ``result.refusal is not None``).
+        jailbreak_thresholds = (
+            observability_config.jailbreak_thresholds
+            if observability_config is not None
+            else _DEFAULT_JAILBREAK_THRESHOLDS
+        )
+        result = apply_jailbreak_ladder(
+            result, jailbreak_signals, jailbreak_thresholds,
+        )
+
+        # Apply the fidelity threshold-driven action ladder. Reads
         # ``observability_config.fidelity_thresholds`` (or the default
         # tuple) and dispatches warn / clarify / refuse per band.
         # Risk-precedence is enforced inside the ladder (no-op when

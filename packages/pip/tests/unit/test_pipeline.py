@@ -161,9 +161,23 @@ async def test_guard_disabled_bypass_reason_and_text_unchanged() -> None:
 
 
 async def test_injection_detected_action_is_redact() -> None:
+    # No-op jailbreak detector pins the test scope to the legacy
+    # InjectionInspector + redact path. The default RuleBasedJailbreakDetector
+    # would also fire on "ignore previous instructions" and dispatch to
+    # block via the jailbreak ladder; we explicitly disable it here so
+    # this test continues to exercise the redact strategy.
+    class _NoOpJailbreakDetector:
+        @property
+        def detector_id(self) -> str:
+            return "noop:1"
+
+        def detect(self, text, *, conversation_state=None):
+            return ()
+
     pipeline = GuardPipeline(
         flags=StaticFlagProvider({}),
         inspectors=[],  # will build default chain — InjectionInspector included
+        jailbreak_detector=_NoOpJailbreakDetector(),
     )
     # Explicitly pass injection inspector to avoid needing presidio
     from arc_guard.inspectors.injection import InjectionInspector
