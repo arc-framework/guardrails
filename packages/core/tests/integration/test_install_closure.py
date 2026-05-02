@@ -1,9 +1,9 @@
-"""Integration test for US1 — `core` install closure.
+"""`core` install closure: zero provider SDK imports.
 
-A fresh Python interpreter that imports only ``arc_guard_core`` must not
-pull any provider SDK into ``sys.modules``. We run this in a subprocess so
-sibling tests (which legitimately import presidio, transformers, etc. for
-inspector tests) cannot pollute the snapshot.
+A fresh Python interpreter that imports only ``arc_guard_core`` must
+not pull any provider SDK into ``sys.modules``. We run this in a
+subprocess so sibling tests (which legitimately import presidio,
+transformers, etc. for inspector tests) cannot pollute the snapshot.
 """
 
 from __future__ import annotations

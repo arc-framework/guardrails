@@ -60,7 +60,7 @@ class CapturedArtifacts:
     """Bundle of everything a recording session produced.
 
     Used by the leak scanner and the cross-system join assertions in
-    Spec 004's test harnesses.
+    the observability test harnesses.
     """
 
     spans: list[CapturedSpan] = field(default_factory=list)

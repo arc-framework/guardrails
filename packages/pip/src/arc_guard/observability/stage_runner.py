@@ -5,13 +5,14 @@ Wraps each pipeline stage with a span + ``guard.stage.started`` /
 histogram sample. Stage validity is enforced against
 ``STAGE_DESCRIPTORS`` so typos cannot leak into the metric label space.
 
-US1 (initial wiring) shipped the minimal happy-path instrumentation. US2
-adds the ``BoundedRedactor`` integration: every span attribute, log
+When a ``BoundedRedactor`` is supplied, every span attribute, log
 field, and metric label is sanitized before emission; rejected
 attributes are dropped and counted via
-``arc_guardrails.observability.attribute_dropped``. The full
-``FAIL_RULE`` posture-aware branching lands in US3 (T037); sampling and
-log-level-floor land in US6.
+``arc_guardrails.observability.attribute_dropped``. On exception, the
+``FAIL_RULE`` for the exception's MRO is looked up and a
+``guard.stage.failed`` event + counter fire at the rule's severity;
+the exception is re-raised so the caller can apply posture-specific
+behavior.
 """
 
 from __future__ import annotations
@@ -21,12 +22,56 @@ from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from typing import Any
 
+from arc_guard_core.failure_modes import lookup_rule
 from arc_guard_core.observability import Logger, MetricSink, Tracer
 from arc_guard_core.protocols.attribute_redactor import AttributeRedactor
 from arc_guard_core.stages import STAGE_DESCRIPTORS
 
 ATTRIBUTE_DROPPED_COUNTER = "arc_guardrails.observability.attribute_dropped"
 ATTRIBUTE_DROPPED_EVENT = "guard.observability.attribute_dropped"
+STAGE_FAILED_EVENT = "guard.stage.failed"
+STAGE_FAILED_COUNTER = "arc_guardrails.stage.failed"
+
+
+def emit_stage_failed(
+    *,
+    stage: str,
+    exc: BaseException,
+    correlation_id: str,
+    decision_id: str,
+    logger: Logger,
+    metric_sink: MetricSink,
+    duration_ms: float | None = None,
+) -> None:
+    """Emit the documented ``guard.stage.failed`` event + counter.
+
+    Used by both ``stage_runner``'s catch-block (for failures that
+    escape the yielded body) and by per-stage call sites that have
+    their own try/except discipline (notably the inspector loop's
+    fail-open per-inspector handling). Calling either path produces
+    the same observability emission so failure-mode coverage holds
+    regardless of where the exception was caught.
+    """
+    rule, posture = lookup_rule(type(exc))
+    failure_attrs: dict[str, Any] = {
+        "correlation_id": correlation_id,
+        "decision_id": decision_id,
+        "stage": stage,
+        "failure_class": rule.failure_class,
+        "posture": posture,
+        "exception_type": type(exc).__name__,
+    }
+    if duration_ms is not None:
+        failure_attrs["duration_ms"] = duration_ms
+    logger.event(STAGE_FAILED_EVENT, level=rule.severity, **failure_attrs)
+    metric_sink.counter(
+        STAGE_FAILED_COUNTER,
+        attributes={
+            "stage": stage,
+            "failure_class": rule.failure_class,
+            "posture": posture,
+        },
+    )
 
 
 def _redact_attributes(
@@ -93,11 +138,12 @@ def stage_runner(
     sanitized via the redactor before reaching the backend. Rejected
     attributes are dropped and counted; the stage continues without
     them. When ``redactor`` is ``None``, attributes pass through
-    untouched (the US1-MVP behavior).
+    untouched.
 
-    Failure mode: re-raises any exception unchanged. The full
-    failure-mode contract (posture-aware branching, refusal envelope
-    construction, severity-mapped log level) lands in US3.
+    Failure mode: emits ``guard.stage.failed`` and re-raises. The
+    posture-driven refusal-envelope construction and short-circuit
+    live in the pipeline so existing fail-open behavior for inspector
+    and reporter failures stays intact.
     """
     if stage not in STAGE_DESCRIPTORS:
         raise ValueError(
@@ -128,25 +174,49 @@ def stage_runner(
     )
 
     started_ns = time.monotonic_ns()
+    raised: BaseException | None = None
     with tracer.start_span(f"guard.stage.{stage}", attributes=span_attrs):
         logger.event("guard.stage.started", level="info", **span_attrs)
         try:
             yield None
-        finally:
+        except BaseException as exc:
+            raised = exc
             ended_ns = time.monotonic_ns()
             duration_ms = (ended_ns - started_ns) / 1_000_000
-            logger.event(
-                "guard.stage.completed",
-                level="info",
+            # Posture is read from the foundation ``__failure_mode__``
+            # ClassVar (the single source of truth) so stage_runner
+            # cannot drift from the foundation contract.
+            emit_stage_failed(
+                stage=stage,
+                exc=exc,
+                correlation_id=correlation_id,
+                decision_id=decision_id,
+                logger=logger,
+                metric_sink=metric_sink,
                 duration_ms=duration_ms,
-                status="ok",
-                **span_attrs,
             )
-            metric_sink.histogram(
-                "arc_guardrails.stage.duration",
-                duration_ms,
-                attributes=metric_attrs,
-            )
+            # Re-raise so the pipeline's existing try/except logic can
+            # apply the posture-specific behavior. Posture-driven
+            # short-circuit and conservative-default substitution live
+            # in the pipeline, not here, so existing fail-open behavior
+            # for InspectorError / ReporterError remains intact.
+            raise
+        finally:
+            if raised is None:
+                ended_ns = time.monotonic_ns()
+                duration_ms = (ended_ns - started_ns) / 1_000_000
+                logger.event(
+                    "guard.stage.completed",
+                    level="info",
+                    duration_ms=duration_ms,
+                    status="ok",
+                    **span_attrs,
+                )
+                metric_sink.histogram(
+                    "arc_guardrails.stage.duration",
+                    duration_ms,
+                    attributes=metric_attrs,
+                )
 
 
-__all__ = ["stage_runner"]
+__all__ = ["stage_runner", "emit_stage_failed"]

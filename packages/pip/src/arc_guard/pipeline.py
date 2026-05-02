@@ -22,6 +22,7 @@ import time
 import uuid
 from typing import Any
 
+from arc_guard_core.failure_modes import lookup_rule
 from arc_guard_core.observability import (
     Logger,
     MetricSink,
@@ -37,6 +38,7 @@ from arc_guard_core.protocols.middleware import Middleware
 from arc_guard_core.protocols.policy_router import PolicyRouter
 from arc_guard_core.protocols.reporter import Reporter
 from arc_guard_core.protocols.strategy import ActionStrategy
+from arc_guard_core.refusal.codes import RefusalCode
 from arc_guard_core.stages import (
     STAGE_CLASSIFY,
     STAGE_DECISION_EMIT,
@@ -45,7 +47,7 @@ from arc_guard_core.stages import (
     STAGE_REPORT,
     STAGE_ROUTE,
 )
-from arc_guard_core.types import GuardInput, GuardResult
+from arc_guard_core.types import GuardInput, GuardResult, RefusalEnvelope
 
 from arc_guard.config_env import GuardConfig
 from arc_guard.decision.emitter import DecisionEmitter
@@ -54,9 +56,10 @@ from arc_guard.flags.static_provider import StaticFlagProvider
 from arc_guard.inspectors.injection import InjectionInspector
 from arc_guard.inspectors.presidio import PresidioInspector
 from arc_guard.observability.attributes import BoundedRedactor
-from arc_guard.observability.stage_runner import stage_runner
+from arc_guard.observability.stage_runner import emit_stage_failed, stage_runner
 from arc_guard.policy import validate_strategies_registered
 from arc_guard.policy.router import RuleBasedPolicyRouter
+from arc_guard.refusal.builder import RefusalBuilder
 from arc_guard.reporters.null_reporter import NullReporter
 from arc_guard.strategies.block import BlockStrategy
 from arc_guard.strategies.hash import HashStrategy
@@ -191,6 +194,28 @@ class GuardPipeline:
             "redactor": redactor,
         }
 
+    def _build_closed_failure_envelope(
+        self,
+        exc: BaseException,
+        correlation_id: str,
+        decision_id: str,
+    ) -> RefusalEnvelope:
+        """Build the refusal envelope for a closed-posture stage failure.
+
+        Walks ``FAIL_RULE`` to find the rule for the exception type and
+        constructs a refusal envelope from the registered template. Any
+        uncategorized exception falls through to the unknown rule, which
+        carries ``RefusalCode.INTERNAL_UNKNOWN_ERROR``.
+        """
+        rule, _posture = lookup_rule(type(exc))
+        refusal_code = rule.refusal_code or RefusalCode.INTERNAL_UNKNOWN_ERROR
+        return RefusalBuilder().build_internal_failure(
+            refusal_code=refusal_code,
+            exception_type=type(exc).__name__,
+            correlation_id=correlation_id,
+            decision_id=decision_id,
+        )
+
     async def _run_pipeline(
         self, guard_input: GuardInput, phase: str
     ) -> GuardResult:
@@ -258,6 +283,18 @@ class GuardPipeline:
                         type(inspector).__name__,
                         exc,
                     )
+                    # Emit stage.failed for the per-inspector failure even
+                    # though the inspector loop swallows it for fail-open
+                    # continuation. Without this emission the failure
+                    # would be invisible to operators.
+                    emit_stage_failed(
+                        stage=STAGE_CLASSIFY,
+                        exc=exc,
+                        correlation_id=correlation_id,
+                        decision_id=decision_id,
+                        logger=self._logger_hook,
+                        metric_sink=self._metrics_hook,
+                    )
                     had_error = True
 
         if had_error and result.bypass_reason is None:
@@ -271,21 +308,45 @@ class GuardPipeline:
 
         # --- ActionStrategy / PolicyRouter (STAGE_ROUTE + STAGE_EXECUTE + STAGE_DECISION_EMIT) ---
         outcome_band: str = "LOW"
+        outcome: Any = None
+        latency_ms: float = 0.0
         if self._policy_ruleset is not None:
             # Opt-in policy routing: per-finding decisions, aggregated band,
             # decision-record emission.
             router = self._policy_router or RuleBasedPolicyRouter()
-            with stage_runner(
-                STAGE_ROUTE, **self._stage_kwargs(correlation_id, decision_id, redactor)
-            ):
-                t0 = time.perf_counter()
-                outcome = router.route(result, self._policy_ruleset)
-                latency_ms = (time.perf_counter() - t0) * 1000.0
-                result = self._apply_outcome(result, outcome)
-                band_obj = getattr(outcome, "aggregate_band", None)
-                outcome_band = (
-                    band_obj.value if hasattr(band_obj, "value") else str(band_obj or "LOW")
-                )
+            try:
+                with stage_runner(
+                    STAGE_ROUTE, **self._stage_kwargs(correlation_id, decision_id, redactor)
+                ):
+                    t0 = time.perf_counter()
+                    outcome = router.route(result, self._policy_ruleset)
+                    latency_ms = (time.perf_counter() - t0) * 1000.0
+                    result = self._apply_outcome(result, outcome)
+                    band_obj = getattr(outcome, "aggregate_band", None)
+                    outcome_band = (
+                        band_obj.value if hasattr(band_obj, "value") else str(band_obj or "LOW")
+                    )
+            except Exception as exc:
+                # Closed-posture short-circuit: build internal-failure
+                # refusal, populate result, skip remaining stages.
+                _rule, posture = lookup_rule(type(exc))
+                if posture == "closed":
+                    refusal = self._build_closed_failure_envelope(
+                        exc, correlation_id, decision_id,
+                    )
+                    result = GuardResult(
+                        text="",
+                        action="block",
+                        findings=result.findings,
+                        decisions=(),
+                        refusal=refusal,
+                        bypass_reason=result.bypass_reason,
+                        phase=result.phase,
+                    )
+                    outcome_band = "CRITICAL"
+                    outcome = None  # decision-emit branch skipped
+                # ``open`` or ``closed-conservative`` — log already fired
+                # in stage_runner; continue the run unchanged.
             # STAGE_REFUSAL marker — fires only when the run produced a refusal
             # envelope. The construction itself happens inside the router; this
             # marker makes the existence observable without re-doing work.
@@ -294,33 +355,54 @@ class GuardPipeline:
                     STAGE_REFUSAL, **self._stage_kwargs(correlation_id, decision_id, redactor)
                 ):
                     pass
-            with stage_runner(
-                STAGE_DECISION_EMIT, **self._stage_kwargs(correlation_id, decision_id, redactor)
-            ):
-                record = self._decision_emitter.build(result, outcome, latency_ms)
-                self._last_decision = record
-                self._decision_emitter.emit(
-                    record,
-                    logger=self._logger_hook,
-                    metrics=self._metrics_hook,
-                )
+            # Only emit decision record when the policy router actually ran.
+            # On closed-posture short-circuit, ``outcome`` is None.
+            if outcome is not None:
+                with stage_runner(
+                    STAGE_DECISION_EMIT,
+                    **self._stage_kwargs(correlation_id, decision_id, redactor),
+                ):
+                    record = self._decision_emitter.build(result, outcome, latency_ms)
+                    self._last_decision = record
+                    self._decision_emitter.emit(
+                        record,
+                        logger=self._logger_hook,
+                        metrics=self._metrics_hook,
+                    )
         elif result.findings:
             # Legacy single-strategy chain: pick one strategy from flags
             # (default ``redact``) and apply it across all findings.
-            with stage_runner(
-                STAGE_EXECUTE, **self._stage_kwargs(correlation_id, decision_id, redactor)
-            ):
-                strategy = self._resolve_strategy()
-                new_text, decisions = strategy.apply(result.text, result.findings)
-                action = getattr(strategy, "name", "redact")
-                result = GuardResult(
-                    text=new_text,
-                    action=action,
-                    findings=result.findings,
-                    decisions=tuple(decisions),
-                    bypass_reason=result.bypass_reason,
-                    phase=result.phase,
-                )
+            try:
+                with stage_runner(
+                    STAGE_EXECUTE, **self._stage_kwargs(correlation_id, decision_id, redactor)
+                ):
+                    strategy = self._resolve_strategy()
+                    new_text, decisions = strategy.apply(result.text, result.findings)
+                    action = getattr(strategy, "name", "redact")
+                    result = GuardResult(
+                        text=new_text,
+                        action=action,
+                        findings=result.findings,
+                        decisions=tuple(decisions),
+                        bypass_reason=result.bypass_reason,
+                        phase=result.phase,
+                    )
+            except Exception as exc:
+                _rule, posture = lookup_rule(type(exc))
+                if posture == "closed":
+                    refusal = self._build_closed_failure_envelope(
+                        exc, correlation_id, decision_id,
+                    )
+                    result = GuardResult(
+                        text="",
+                        action="block",
+                        findings=result.findings,
+                        decisions=(),
+                        refusal=refusal,
+                        bypass_reason=result.bypass_reason,
+                        phase=result.phase,
+                    )
+                    outcome_band = "CRITICAL"
 
         # --- Middleware after ---
         for mw in self._middlewares:
@@ -383,6 +465,9 @@ class GuardPipeline:
             ):
                 await self._reporter.report(result)
         except Exception as exc:
+            # The stage_runner already emitted stage.failed in its
+            # catch-block via the shared ``emit_stage_failed`` helper;
+            # fail-open per the foundation ``ReporterError.__failure_mode__``.
             logger.warning("Reporter.report() raised: %s", exc)
 
     async def pre_process(self, guard_input: GuardInput) -> GuardResult:

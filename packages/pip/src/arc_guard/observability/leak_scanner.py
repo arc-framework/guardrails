@@ -1,8 +1,8 @@
 """Payload-leak scanner for captured observability artifacts.
 
-Pure-function ``scan_for_leaks(captured, *, originals)`` returning a list
-of ``LeakReport`` entries. Per research §R8, this is plain substring
-search — no regex, no entropy heuristics. The threshold mirrors
+Pure-function ``scan_for_leaks(captured, *, originals)`` returning a
+list of ``LeakReport`` entries. Plain substring search — no regex, no
+entropy heuristics. The threshold mirrors
 ``BoundedRedactor._MIN_SUBSTRING_LENGTH`` so the runtime enforcer and
 the CI auditor agree on what counts as a leak.
 
@@ -63,14 +63,19 @@ def _scan_value(
     field_path: str,
     originals: tuple[str, ...],
 ) -> list[LeakReport]:
-    text = str(value)
-    if not text:
+    # Only scan string values: numeric durations / counts / IDs cannot
+    # carry user text, and their string representations produce false
+    # positives when they coincidentally share digits with numeric inputs
+    # (e.g. a 5.001ms histogram value matches "5.00" in a phone number).
+    if not isinstance(value, str):
+        return []
+    if not value:
         return []
     reports: list[LeakReport] = []
     for original in originals:
         if not original or len(original) < _MIN_SUBSTRING_LENGTH:
             continue
-        hit, chunk = _has_chunk(text, original)
+        hit, chunk = _has_chunk(value, original)
         if hit:
             reports.append(
                 LeakReport(
@@ -135,7 +140,7 @@ def scan_for_leaks(
     """Scan every captured artifact for fragments of the originals.
 
     ``originals`` is the input text plus any finding-matched substrings.
-    Returns an empty list when the artifacts are clean — the FR-007
+    Returns an empty list when the artifacts are clean — the no-leak
     pass condition.
     """
     originals_tuple: tuple[str, ...] = tuple(o for o in originals if o)

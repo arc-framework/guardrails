@@ -1,11 +1,13 @@
-"""FR-011 enforcement: every leaf exception has a FAIL_RULE entry.
+"""Every leaf exception has a FAIL_RULE entry, and every FAIL_RULE key
+has a foundation ``__failure_mode__`` ClassVar.
 
 Reflects over ``arc_guard_core.exceptions``, walks every concrete leaf
 subclass (filtering second-level group classes per the existing
-``test_failure_modes.py`` discipline), and asserts each appears as a key
-in ``FAIL_RULE``. New leaf exceptions added later that lack a
-``FAIL_RULE`` entry fail this test. Also asserts every ``FAIL_RULE`` key
-has a ``__failure_mode__`` ClassVar (single-source-of-truth check).
+``test_failure_modes.py`` discipline), and asserts each appears as a
+key in ``FAIL_RULE``. Adding a new leaf without a ``FAIL_RULE`` entry
+fails this test. The reverse check (every key has a ``__failure_mode__``
+ClassVar) protects the single-source-of-truth invariant: posture is
+read from the foundation, never redeclared in the rule table.
 """
 
 from __future__ import annotations

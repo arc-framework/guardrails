@@ -71,5 +71,45 @@ class RefusalBuilder:
             metadata={"firing_rule_id": firing_rule.id},
         )
 
+    def build_internal_failure(
+        self,
+        refusal_code: RefusalCode,
+        exception_type: str,
+        correlation_id: str,
+        decision_id: str,
+    ) -> RefusalEnvelope:
+        """Build a refusal envelope for an internal pipeline failure.
+
+        Used by the pipeline's posture-driven short-circuit path when a
+        ``closed``-posture exception escapes a stage. No firing
+        ``PolicyRule`` exists for these — the refusal is constructed
+        directly from the registered template for the rule's
+        ``refusal_code``.
+        """
+        try:
+            template = get_refusal_template(refusal_code)
+        except KeyError as exc:
+            raise RefusalEnvelopeError(
+                f"unknown refusal code {refusal_code!r}",
+                code="refusal.unknown_code",
+                details={"code": str(refusal_code)},
+                cause=exc,
+            ) from exc
+
+        next_steps = template.next_steps or ("Contact support if the issue persists.",)
+        return RefusalEnvelope(
+            code=str(refusal_code),
+            trigger=exception_type,
+            policy="internal-failure",
+            human_message=template.human_message,
+            decisions=(),
+            next_steps=tuple(next_steps),
+            metadata={
+                "correlation_id": correlation_id,
+                "decision_id": decision_id,
+                "exception_type": exception_type,
+            },
+        )
+
 
 __all__ = ["RefusalBuilder"]
