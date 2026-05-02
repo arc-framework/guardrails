@@ -56,6 +56,7 @@ from arc_guard.flags.static_provider import StaticFlagProvider
 from arc_guard.inspectors.injection import InjectionInspector
 from arc_guard.inspectors.presidio import PresidioInspector
 from arc_guard.observability.attributes import BoundedRedactor
+from arc_guard.observability.sampling import RunSampler, build_run_sampler
 from arc_guard.observability.stage_runner import emit_stage_failed, stage_runner
 from arc_guard.policy import validate_strategies_registered
 from arc_guard.policy.router import RuleBasedPolicyRouter
@@ -184,13 +185,22 @@ class GuardPipeline:
         correlation_id: str,
         decision_id: str,
         redactor: BoundedRedactor | None = None,
+        sampler: RunSampler | None = None,
     ) -> dict[str, Any]:
+        if sampler is not None:
+            tracer: Any = sampler.tracer
+            logger_hook: Any = sampler.logger
+            metric_sink: Any = sampler.metric_sink
+        else:
+            tracer = self._tracer_hook
+            logger_hook = self._logger_hook
+            metric_sink = self._metrics_hook
         return {
             "correlation_id": correlation_id,
             "decision_id": decision_id,
-            "tracer": self._tracer_hook,
-            "logger": self._logger_hook,
-            "metric_sink": self._metrics_hook,
+            "tracer": tracer,
+            "logger": logger_hook,
+            "metric_sink": metric_sink,
             "redactor": redactor,
         }
 
@@ -240,8 +250,20 @@ class GuardPipeline:
         redactor = BoundedRedactor(observability_config) if observability_config else None
         if redactor is not None:
             redactor.set_run_originals((guard_input.text,))
+        # Per-run sampler: buffered tracer + log-level-floor logger.
+        # At run end we call ``sampler.finalize(refusal_present=...)``
+        # to either flush or drop the buffered emissions.
+        sampler: RunSampler | None = None
+        if observability_config is not None:
+            sampler = build_run_sampler(
+                observability_config,
+                tracer=self._tracer_hook,
+                logger=self._logger_hook,
+                metric_sink=self._metrics_hook,
+            )
         run_total_started = time.monotonic_ns()
-        self._logger_hook.event(
+        run_logger = sampler.logger if sampler is not None else self._logger_hook
+        run_logger.event(
             "guard.run.started",
             level="info",
             correlation_id=correlation_id,
@@ -272,7 +294,7 @@ class GuardPipeline:
         had_error = False
 
         with stage_runner(
-            STAGE_CLASSIFY, **self._stage_kwargs(correlation_id, decision_id, redactor)
+            STAGE_CLASSIFY, **self._stage_kwargs(correlation_id, decision_id, redactor, sampler)
         ):
             for inspector in inspectors:
                 try:
@@ -316,7 +338,8 @@ class GuardPipeline:
             router = self._policy_router or RuleBasedPolicyRouter()
             try:
                 with stage_runner(
-                    STAGE_ROUTE, **self._stage_kwargs(correlation_id, decision_id, redactor)
+                    STAGE_ROUTE,
+                    **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
                 ):
                     t0 = time.perf_counter()
                     outcome = router.route(result, self._policy_ruleset)
@@ -352,7 +375,8 @@ class GuardPipeline:
             # marker makes the existence observable without re-doing work.
             if result.refusal is not None:
                 with stage_runner(
-                    STAGE_REFUSAL, **self._stage_kwargs(correlation_id, decision_id, redactor)
+                    STAGE_REFUSAL,
+                    **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
                 ):
                     pass
             # Only emit decision record when the policy router actually ran.
@@ -360,7 +384,7 @@ class GuardPipeline:
             if outcome is not None:
                 with stage_runner(
                     STAGE_DECISION_EMIT,
-                    **self._stage_kwargs(correlation_id, decision_id, redactor),
+                    **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
                 ):
                     record = self._decision_emitter.build(result, outcome, latency_ms)
                     self._last_decision = record
@@ -374,7 +398,8 @@ class GuardPipeline:
             # (default ``redact``) and apply it across all findings.
             try:
                 with stage_runner(
-                    STAGE_EXECUTE, **self._stage_kwargs(correlation_id, decision_id, redactor)
+                    STAGE_EXECUTE,
+                    **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
                 ):
                     strategy = self._resolve_strategy()
                     new_text, decisions = strategy.apply(result.text, result.findings)
@@ -418,13 +443,14 @@ class GuardPipeline:
                 correlation_id=correlation_id,
                 decision_id=decision_id,
                 redactor=redactor,
+                sampler=sampler,
             )
         )
 
         # --- Run-level completion event + total latency histogram ---
         total_ms = (time.monotonic_ns() - run_total_started) / 1_000_000
         risk_band = outcome_band
-        self._logger_hook.event(
+        run_logger.event(
             "guard.run.completed",
             level="info",
             correlation_id=correlation_id,
@@ -433,6 +459,7 @@ class GuardPipeline:
             risk_band=risk_band,
             total_duration_ms=total_ms,
         )
+        # Metrics are never sampled — they go directly to the real sink.
         self._metrics_hook.histogram(
             "arc_guardrails.run.duration",
             total_ms,
@@ -449,6 +476,18 @@ class GuardPipeline:
             },
         )
 
+        # --- Sampler finalization ---
+        # Decide whether to flush or drop the buffered span / event
+        # emissions. Refusal-class runs always flush when the
+        # ``refusal_always_emits`` knob is on. Failure events were
+        # already forwarded immediately by the buffered logger so
+        # they survive the discard branch.
+        if sampler is not None:
+            sampler.finalize(
+                refusal_present=result.refusal is not None,
+                correlation_id=correlation_id,
+            )
+
         return result
 
     async def _fire_report(
@@ -458,10 +497,12 @@ class GuardPipeline:
         correlation_id: str = "",
         decision_id: str = "",
         redactor: BoundedRedactor | None = None,
+        sampler: RunSampler | None = None,
     ) -> None:
         try:
             with stage_runner(
-                STAGE_REPORT, **self._stage_kwargs(correlation_id, decision_id, redactor)
+                STAGE_REPORT,
+                **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
             ):
                 await self._reporter.report(result)
         except Exception as exc:
