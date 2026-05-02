@@ -86,14 +86,14 @@ async def test_new_stages_compose_with_observability_wrappers() -> None:
             if isinstance(value, str):
                 assert "hello" != value or value == "hello"  # value is allowed only if explicitly that string for stage; here we check it didn't sneak into other fields
     # Specifically the 'stage' attribute is one of the documented stage names.
+    # Use STAGE_DESCRIPTORS as the source-of-truth so future additive
+    # stage extensions don't break this test.
+    from arc_guard_core.stages import STAGE_DESCRIPTORS
+
     for s in tracer.captured_spans:
         stage_val = s.attributes.get("stage")
         if stage_val is not None:
-            assert stage_val in {
-                "validate", "defend", "classify", "sanitize", "route",
-                "execute", "refusal", "verify", "rehydrate",
-                "decision_emit", "report",
-            }
+            assert stage_val in STAGE_DESCRIPTORS
 
 
 @pytest.mark.asyncio

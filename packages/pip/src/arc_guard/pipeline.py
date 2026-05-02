@@ -23,11 +23,19 @@ import time
 import uuid
 from typing import Any, Final
 
+from arc_guard_core.deception import (
+    NOT_MEASURED as DECEPTION_NOT_MEASURED,
+)
+from arc_guard_core.deception import (
+    ConversationState,
+    DeceptionScore,
+)
 from arc_guard_core.exceptions import ConfigCrossFieldError
 from arc_guard_core.failure_modes import lookup_rule
 from arc_guard_core.fidelity import NOT_MEASURED, FidelityScore
 from arc_guard_core.jailbreak import JailbreakSignal
 from arc_guard_core.observability_config import (
+    DeceptionThresholds,
     FidelityThresholds,
     JailbreakThresholds,
 )
@@ -47,6 +55,9 @@ from arc_guard_core.protocols.intent_encoder import (
     IntentEncoder,
     IntentRepresentation,
 )
+from arc_guard_core.protocols.conversation_turn_inspector import (
+    ConversationTurnInspector,
+)
 from arc_guard_core.protocols.jailbreak_detector import JailbreakDetector
 from arc_guard_core.protocols.middleware import Middleware
 from arc_guard_core.protocols.policy_router import PolicyRouter
@@ -56,6 +67,7 @@ from arc_guard_core.protocols.strategy import ActionStrategy
 from arc_guard_core.refusal.codes import RefusalCode
 from arc_guard_core.stages import (
     STAGE_CLASSIFY,
+    STAGE_DECEPTION_INSPECT,
     STAGE_DECISION_EMIT,
     STAGE_DEFEND,
     STAGE_EXECUTE,
@@ -75,6 +87,11 @@ from arc_guard_core.types import (
 
 from arc_guard.concurrency.offload import run_off_loop
 from arc_guard.config_env import GuardConfig
+from arc_guard.deception.inspector import (
+    GUARD_DECEPTION_SCORED_EVENT,
+    StatefulConversationInspector,
+)
+from arc_guard.deception.ladder import apply_deception_ladder
 from arc_guard.decision.emitter import DecisionEmitter
 from arc_guard.fidelity.ladder import apply_fidelity_ladder
 from arc_guard.fidelity.scorer import NullFidelityScorer, score_fidelity
@@ -124,6 +141,26 @@ _STRATEGIES: dict[str, ActionStrategy] = {
 # ``FidelityThresholds()`` per call but cheaper.
 _DEFAULT_FIDELITY_THRESHOLDS: Final[FidelityThresholds] = FidelityThresholds()
 _DEFAULT_JAILBREAK_THRESHOLDS: Final[JailbreakThresholds] = JailbreakThresholds()
+_DEFAULT_DECEPTION_THRESHOLDS: Final[DeceptionThresholds] = DeceptionThresholds()
+
+
+def _band_for_deception_score(
+    score: DeceptionScore, thresholds: DeceptionThresholds,
+) -> str:
+    """Classify a ``DeceptionScore`` into the documented band string.
+
+    INVERSE direction: higher = more risk; ordering is
+    ``refuse > clarify > warn``.
+    """
+    if score.sentinel != "measured" or score.value is None:
+        return "not_measured"
+    if score.value >= thresholds.refuse:
+        return "refuse"
+    if score.value >= thresholds.clarify:
+        return "clarify"
+    if score.value >= thresholds.warn:
+        return "warn"
+    return "above_warn"
 
 
 _JAILBREAK_CATEGORY_TO_ENTITY_TYPE = {
@@ -215,6 +252,7 @@ class GuardPipeline:
         fidelity_scorer: FidelityScorer | None = None,
         rehydration_verifier: RehydrationVerifier | None = None,
         jailbreak_detector: JailbreakDetector | None = None,
+        conversation_turn_inspector: ConversationTurnInspector | None = None,
     ) -> None:
         self._config = config or GuardConfig()
         self._flags = flags or EnvFlagProvider()
@@ -234,6 +272,9 @@ class GuardPipeline:
         )
         self._jailbreak_detector: JailbreakDetector = (
             jailbreak_detector or RuleBasedJailbreakDetector()
+        )
+        self._conversation_turn_inspector: ConversationTurnInspector = (
+            conversation_turn_inspector or StatefulConversationInspector()
         )
         self._decision_emitter = DecisionEmitter()
         self._last_decision: Any = None  # tests / dev tooling read this
@@ -290,7 +331,13 @@ class GuardPipeline:
         return self._strategies.get(name, self._strategies["redact"])
 
     def _apply_outcome(self, result: GuardResult, outcome: Any) -> GuardResult:
-        """Build the new GuardResult from a RoutedOutcome."""
+        """Build the new GuardResult from a RoutedOutcome.
+
+        Preserves the additive fields (``fidelity_score``,
+        ``fidelity_warning``, ``deception_score``, ``conversation_state``)
+        from the prior result so downstream stages that re-bind via
+        this helper don't lose state.
+        """
         return GuardResult(
             text=outcome.transformed_text,
             action=outcome.aggregate_action,
@@ -300,6 +347,10 @@ class GuardPipeline:
             clarification=outcome.clarification,
             bypass_reason=result.bypass_reason,
             phase=result.phase,
+            fidelity_score=result.fidelity_score,
+            fidelity_warning=result.fidelity_warning,
+            deception_score=result.deception_score,
+            conversation_state=result.conversation_state,
         )
 
     def _run_ids(self, guard_input: GuardInput) -> tuple[str, str]:
@@ -553,6 +604,74 @@ class GuardPipeline:
                 phase=result.phase,
             )
 
+        # --- Deception inspection (STAGE_DECEPTION_INSPECT) ---
+        # Runs after STAGE_CLASSIFY and before STAGE_SANITIZE so
+        # deception signals are part of the policy-router input. Reads
+        # the prior state from ``effective_input.context.conversation_state``
+        # (None for single-turn mode); calls the inspector; attaches
+        # both the score AND the updated state to result via
+        # ``dataclasses.replace`` (top-level fields on GuardResult, NOT
+        # under result.context).
+        prior_state: ConversationState | None = (
+            effective_input.context.conversation_state
+            if effective_input.context is not None
+            else None
+        )
+        deception_score: DeceptionScore = DECEPTION_NOT_MEASURED
+        updated_state: ConversationState | None = None
+        try:
+            with stage_runner(
+                STAGE_DECEPTION_INSPECT,
+                **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
+            ):
+                deception_score, updated_state = (
+                    self._conversation_turn_inspector.inspect_turn(
+                        effective_input.text, prior_state=prior_state,
+                    )
+                )
+                deception_logger = (
+                    sampler.logger if sampler is not None else self._logger_hook
+                )
+                deception_band = _band_for_deception_score(
+                    deception_score,
+                    observability_config.deception_thresholds
+                    if observability_config is not None
+                    else _DEFAULT_DECEPTION_THRESHOLDS,
+                )
+                deception_logger.event(
+                    GUARD_DECEPTION_SCORED_EVENT,
+                    level="info",
+                    correlation_id=correlation_id,
+                    decision_id=decision_id,
+                    score_value=deception_score.value,
+                    score_sentinel=deception_score.sentinel,
+                    band=deception_band,
+                    turn_count=updated_state.turn_count,
+                )
+                self._metrics_hook.counter(
+                    "arc_guardrails.deception.score",
+                    attributes={
+                        "band": deception_band,
+                        "sentinel": deception_score.sentinel,
+                    },
+                )
+        except Exception as exc:
+            logger.warning(
+                "Deception inspector raised %s — degrading to sentinel", exc,
+            )
+            deception_score = DECEPTION_NOT_MEASURED
+            updated_state = None
+
+        # Attach both score and updated state to result so the
+        # operator's integration can thread the state forward.
+        import dataclasses as _dc_dec
+
+        result = _dc_dec.replace(
+            result,
+            deception_score=deception_score,
+            conversation_state=updated_state,
+        )
+
         # --- ActionStrategy / PolicyRouter (STAGE_ROUTE + STAGE_EXECUTE + STAGE_DECISION_EMIT) ---
         outcome_band: str = "LOW"
         outcome: Any = None
@@ -590,6 +709,10 @@ class GuardPipeline:
                         refusal=refusal,
                         bypass_reason=result.bypass_reason,
                         phase=result.phase,
+                        fidelity_score=result.fidelity_score,
+                        fidelity_warning=result.fidelity_warning,
+                        deception_score=result.deception_score,
+                        conversation_state=result.conversation_state,
                     )
                     outcome_band = "CRITICAL"
                     outcome = None  # decision-emit branch skipped
@@ -659,6 +782,10 @@ class GuardPipeline:
                         decisions=tuple(decisions),
                         bypass_reason=result.bypass_reason,
                         phase=result.phase,
+                        fidelity_score=result.fidelity_score,
+                        fidelity_warning=result.fidelity_warning,
+                        deception_score=result.deception_score,
+                        conversation_state=result.conversation_state,
                     )
             except Exception as exc:
                 _rule, posture = lookup_rule(type(exc))
@@ -674,6 +801,10 @@ class GuardPipeline:
                         refusal=refusal,
                         bypass_reason=result.bypass_reason,
                         phase=result.phase,
+                        fidelity_score=result.fidelity_score,
+                        fidelity_warning=result.fidelity_warning,
+                        deception_score=result.deception_score,
+                        conversation_state=result.conversation_state,
                     )
                     outcome_band = "CRITICAL"
 
@@ -739,6 +870,19 @@ class GuardPipeline:
         )
         result = apply_jailbreak_ladder(
             result, jailbreak_signals, jailbreak_thresholds,
+        )
+
+        # Apply the deception threshold-driven action ladder. Runs
+        # AFTER the jailbreak ladder (jailbreak is single-turn risk;
+        # deception is multi-turn additive signal). Risk-precedence is
+        # enforced inside the ladder.
+        deception_ladder_thresholds = (
+            observability_config.deception_thresholds
+            if observability_config is not None
+            else _DEFAULT_DECEPTION_THRESHOLDS
+        )
+        result = apply_deception_ladder(
+            result, deception_score, deception_ladder_thresholds,
         )
 
         # Apply the fidelity threshold-driven action ladder. Reads
