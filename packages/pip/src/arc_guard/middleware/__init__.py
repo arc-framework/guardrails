@@ -1,9 +1,11 @@
 """arc_guard.middleware — pipeline middleware implementations.
 
-The OTEL adapter lives at ``arc_guard.middleware.otel`` and is gated
-by the ``arc-guard[otel]`` extra. The semantic backend lives at
-``arc_guard.middleware.semantic`` and is gated by the
-``arc-guard[semantic]`` extra. Top-level lazy-import factories ensure a
+The OTEL adapter lives at ``arc_guard.middleware.otel`` (gated by
+``arc-guard[otel]``); the semantic backend at
+``arc_guard.middleware.semantic`` (gated by ``arc-guard[semantic]``);
+the canned ML jailbreak backend at
+``arc_guard.middleware.jailbreak_ml`` (gated by
+``arc-guard[jailbreak-ml]``). Top-level lazy-import factories ensure a
 bare ``import arc_guard.middleware`` succeeds whether or not the
 extras are installed; the import-error message is friendly when the
 operator calls a factory without the matching extra.
@@ -14,6 +16,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from arc_guard.middleware.jailbreak_ml import JailbreakMlBundle  # noqa: F401
     from arc_guard.middleware.otel import OtelObservability  # noqa: F401
     from arc_guard.middleware.semantic import SemanticBundle  # noqa: F401
 
@@ -66,4 +69,33 @@ def from_sentence_transformers(
     )
 
 
-__all__ = ["from_otel_sdk", "from_sentence_transformers"]
+def from_huggingface_jailbreak(
+    *,
+    model_name: str = "protectai/deberta-v3-base-prompt-injection-v2",
+    device: str | None = None,
+) -> Any:
+    """Build the canned ML jailbreak detector.
+
+    Returns a ``JailbreakMlBundle`` whose ``.detector`` attribute plugs
+    into ``GuardPipeline(jailbreak_detector=...)`` directly.
+
+    Raises:
+        ImportError: when ``arc-guard[jailbreak-ml]`` is not installed.
+    """
+    try:
+        from arc_guard.middleware.jailbreak_ml import JailbreakMlBundle
+    except ImportError as exc:
+        raise ImportError(
+            "from_huggingface_jailbreak() requires the [jailbreak-ml] extra. "
+            "Install with: pip install arc-guard[jailbreak-ml]"
+        ) from exc
+    return JailbreakMlBundle.from_huggingface_jailbreak(
+        model_name=model_name, device=device,
+    )
+
+
+__all__ = [
+    "from_otel_sdk",
+    "from_sentence_transformers",
+    "from_huggingface_jailbreak",
+]
