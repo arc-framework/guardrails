@@ -2,6 +2,25 @@
 
 All notable changes to the `arc-guard` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.5.0] — 2026-05-02
+
+### Added
+- New `arc_guard.intent/` sub-package: `NullIntentEncoder` default, `capture_intent` stage helper, `build_intent_lock` content-addressed audit-binding builder, and a `canonicalize` helper (NFC → strip → collapse whitespace → lowercase → UTF-8) used by the lock hashing.
+- New `arc_guard.fidelity/` sub-package: `NullFidelityScorer` default returning the `not_measured` sentinel, `apply_fidelity_ladder(result, score, thresholds)` helper that respects FR-013 risk-precedence (no-op when `result.action == "block"` or `result.refusal is not None`).
+- New `arc_guard.rehydration/` sub-package: `NullRehydrationVerifier` running the two structural checks (placeholder provenance + 16-char structural-shift window), `apply_rehydration(text, verdict, entity_map)` implementing accept / reject / partial paths with the documented `guard.rehydration.applied` and `guard.rehydration.rejected` events.
+- New `arc_guard[semantic]` install extra: `sentence-transformers>=2.2`, `numpy>=1.24`. Ships `SemanticBundle.from_sentence_transformers()` factory with `SentenceTransformerIntentEncoder`, `CosineFidelityScorer`, and `SemanticRehydrationVerifier` (extends the structural verifier with a Check 3 safety-regression pass via the foundation `InjectionInspector`).
+- `GuardPipeline` accepts new optional kwargs `intent_encoder`, `fidelity_scorer`, `rehydration_verifier` (Protocol implementations following the `policy_router` bare-name convention; not observability sinks). Construction-time `scorer.compatible_with(encoder)` validation raises `ConfigCrossFieldError` on mismatch.
+- Pipeline emits `STAGE_DEFEND` (pre-sanitize), `STAGE_VERIFY` (post-execute, pre-decision-emit), `STAGE_REHYDRATE` (post-verify when sanitization fired) spans + the documented event/counter trio (`guard.intent.captured`, `guard.fidelity.scored`, `guard.rehydration.applied`/`rejected`, `arc_guardrails.fidelity.score`, `arc_guardrails.rehydration.verdict`, `arc_guardrails.fidelity.duration`). Encoder calls go through `concurrency.offload.run_off_loop` so the asyncio event loop is not blocked.
+- `DecisionRecord` emitted by the pipeline carries the new `intent_lock` and `fidelity_score` fields when the defend stage ran.
+- Performance benchmark `tests/perf/test_fidelity_overhead.py` (marked `@pytest.mark.slow`) measures null-default and canned-backend fidelity overhead.
+
+### Changed
+- Depends on `arc-guard-core>=0.4.0` for the new Protocols, exception leaves, `FidelityScore`, `IntentLock`, `FidelityThresholds`, `STAGE_DEFEND`/`STAGE_VERIFY`/`STAGE_REHYDRATE` constants, and the `RefusalCode.FIDELITY_DROP` rename.
+
+### Migration notes
+- Additive only on the public pipeline surface; default behavior with no `intent_encoder` / `fidelity_scorer` / `rehydration_verifier` configured produces the documented `not_measured` sentinel score and a structural-only rehydration verdict — existing callers see no behavior change.
+- Operators on `arc-guard[otel]` see the new stages in their OTEL spans and the new events/counters/histogram in their metric pipeline; no contract changes to the OTEL adapter.
+
 ## [0.4.0] — 2026-05-02
 
 ### Added

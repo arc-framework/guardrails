@@ -27,11 +27,14 @@ from arc_guard_core.exceptions import (
     ConfigSchemaError,
     EntityProviderError,
     FailureMode,
+    FidelityScorerError,
     FlagProviderError,
     InspectorError,
+    IntentEncoderError,
     PipelineContractValidationError,
     PolicyRouterError,
     RefusalEnvelopeError,
+    RehydrationVerifierError,
     ReporterError,
     StrategyError,
 )
@@ -52,6 +55,9 @@ FAILURE_REFUSAL_ENVELOPE: Final[str] = "refusal_envelope"
 FAILURE_REPORTER: Final[str] = "reporter"
 FAILURE_FLAG_PROVIDER: Final[str] = "flag_provider"
 FAILURE_ENTITY_PROVIDER: Final[str] = "entity_provider"
+FAILURE_INTENT_ENCODER: Final[str] = "intent_encoder"
+FAILURE_FIDELITY_SCORER: Final[str] = "fidelity_scorer"
+FAILURE_REHYDRATION_VERIFIER: Final[str] = "rehydration_verifier"
 FAILURE_UNKNOWN: Final[str] = "unknown"
 
 
@@ -110,6 +116,15 @@ FAIL_RULE: dict[type[Exception], FailureRule] = {
     EntityProviderError: FailureRule(
         FAILURE_ENTITY_PROVIDER, "error", RefusalCode.INTERNAL_ENTITY_PROVIDER_ERROR,
     ),
+    IntentEncoderError: FailureRule(
+        FAILURE_INTENT_ENCODER, "warn", None,
+    ),
+    FidelityScorerError: FailureRule(
+        FAILURE_FIDELITY_SCORER, "warn", None,
+    ),
+    RehydrationVerifierError: FailureRule(
+        FAILURE_REHYDRATION_VERIFIER, "error", RefusalCode.FIDELITY_DROP,
+    ),
 }
 
 UNKNOWN_RULE: Final[FailureRule] = FailureRule(
@@ -145,6 +160,9 @@ __all__ = [
     "FAILURE_REPORTER",
     "FAILURE_FLAG_PROVIDER",
     "FAILURE_ENTITY_PROVIDER",
+    "FAILURE_INTENT_ENCODER",
+    "FAILURE_FIDELITY_SCORER",
+    "FAILURE_REHYDRATION_VERIFIER",
     "FAILURE_UNKNOWN",
     "Severity",
     "FailureRule",

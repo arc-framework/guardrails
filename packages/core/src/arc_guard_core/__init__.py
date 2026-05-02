@@ -22,12 +22,15 @@ from arc_guard_core.exceptions import (
     ConfigSchemaError,
     EntityProviderError,
     FailureMode,
+    FidelityScorerError,
     FlagProviderError,
     InspectorError,
+    IntentEncoderError,
     PipelineContractValidationError,
     PipelineError,
     PolicyRouterError,
     RefusalEnvelopeError,
+    RehydrationVerifierError,
     ReporterError,
     StrategyError,
     ValidationError,
@@ -38,11 +41,14 @@ from arc_guard_core.failure_modes import (
     FAILURE_API_VALIDATION,
     FAILURE_CONFIG,
     FAILURE_ENTITY_PROVIDER,
+    FAILURE_FIDELITY_SCORER,
     FAILURE_FLAG_PROVIDER,
     FAILURE_INSPECTOR,
+    FAILURE_INTENT_ENCODER,
     FAILURE_PIPELINE_CONTRACT,
     FAILURE_POLICY_ROUTER,
     FAILURE_REFUSAL_ENVELOPE,
+    FAILURE_REHYDRATION_VERIFIER,
     FAILURE_REPORTER,
     FAILURE_STRATEGY,
     FAILURE_UNKNOWN,
@@ -52,6 +58,8 @@ from arc_guard_core.failure_modes import (
     Severity,
     lookup_rule,
 )
+from arc_guard_core.fidelity import NOT_MEASURED, FidelityScore
+from arc_guard_core.intent_lock import IntentLock
 from arc_guard_core.observability import (
     Logger,
     MetricSink,
@@ -60,7 +68,11 @@ from arc_guard_core.observability import (
     NullTracer,
     Tracer,
 )
-from arc_guard_core.observability_config import LogLevelFloor, ObservabilityConfig
+from arc_guard_core.observability_config import (
+    FidelityThresholds,
+    LogLevelFloor,
+    ObservabilityConfig,
+)
 from arc_guard_core.pipeline import GuardPipeline
 from arc_guard_core.placeholders import (
     DEFAULT_PLACEHOLDERS,
@@ -79,11 +91,17 @@ from arc_guard_core.policy import (
 from arc_guard_core.protocols import (
     ActionStrategy,
     EntityProvider,
+    FidelityScorer,
     FlagProvider,
     Guard,
     Inspector,
+    IntentEncoder,
+    IntentRepresentation,
     Middleware,
     PolicyRouter,
+    RehydrationDecision,
+    RehydrationVerdict,
+    RehydrationVerifier,
     Reporter,
 )
 from arc_guard_core.protocols.attribute_redactor import (
@@ -101,13 +119,16 @@ from arc_guard_core.registry import EntityRegistry, register_entity
 from arc_guard_core.stages import (
     STAGE_CLASSIFY,
     STAGE_DECISION_EMIT,
+    STAGE_DEFEND,
     STAGE_DESCRIPTORS,
     STAGE_EXECUTE,
     STAGE_REFUSAL,
+    STAGE_REHYDRATE,
     STAGE_REPORT,
     STAGE_ROUTE,
     STAGE_SANITIZE,
     STAGE_VALIDATE,
+    STAGE_VERIFY,
 )
 from arc_guard_core.types import (
     ClarificationRequest,
@@ -121,7 +142,7 @@ from arc_guard_core.types import (
     RiskLevel,
 )
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     # version
@@ -173,6 +194,12 @@ __all__ = [
     "Middleware",
     "EntityProvider",
     "PolicyRouter",
+    "IntentEncoder",
+    "IntentRepresentation",
+    "FidelityScorer",
+    "RehydrationVerifier",
+    "RehydrationVerdict",
+    "RehydrationDecision",
     # observability hooks
     "Tracer",
     "Logger",
@@ -198,7 +225,15 @@ __all__ = [
     "FlagProviderError",
     "EntityProviderError",
     "RefusalEnvelopeError",
+    "IntentEncoderError",
+    "FidelityScorerError",
+    "RehydrationVerifierError",
     "FailureMode",
+    # fidelity types
+    "FidelityScore",
+    "NOT_MEASURED",
+    "FidelityThresholds",
+    "IntentLock",
     # observability config
     "ObservabilityConfig",
     "LogLevelFloor",
@@ -220,17 +255,23 @@ __all__ = [
     "FAILURE_REPORTER",
     "FAILURE_FLAG_PROVIDER",
     "FAILURE_ENTITY_PROVIDER",
+    "FAILURE_INTENT_ENCODER",
+    "FAILURE_FIDELITY_SCORER",
+    "FAILURE_REHYDRATION_VERIFIER",
     "FAILURE_UNKNOWN",
     # attribute redaction
     "AttributeRedactor",
     "RedactionResult",
     # stages
     "STAGE_VALIDATE",
+    "STAGE_DEFEND",
     "STAGE_CLASSIFY",
     "STAGE_SANITIZE",
     "STAGE_ROUTE",
     "STAGE_EXECUTE",
     "STAGE_REFUSAL",
+    "STAGE_VERIFY",
+    "STAGE_REHYDRATE",
     "STAGE_DECISION_EMIT",
     "STAGE_REPORT",
     "STAGE_DESCRIPTORS",

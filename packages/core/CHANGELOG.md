@@ -2,6 +2,27 @@
 
 All notable changes to the `arc-guard-core` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.4.0] — 2026-05-02
+
+### Added
+- Three new pipeline stage constants in `arc_guard_core.stages`: `STAGE_DEFEND` (intent capture pre-sanitization), `STAGE_VERIFY` (fidelity-score computation post-generation), `STAGE_REHYDRATE` (safety-checked reinsertion). Appended additively to `STAGE_DESCRIPTORS`; existing call sites unchanged.
+- New Protocol modules under `arc_guard_core.protocols/`: `intent_encoder.py` (`IntentEncoder` runtime-checkable Protocol + `IntentRepresentation` opaque type alias), `fidelity_scorer.py` (`FidelityScorer` Protocol with `compatible_with(encoder)` pairing check), `rehydration_verifier.py` (`RehydrationVerifier` Protocol + `RehydrationVerdict` frozen dataclass with three-way `accept` / `reject` / `partial` decision discriminator).
+- `arc_guard_core.fidelity` module: `FidelityScore` frozen dataclass with `value: float | None` + `sentinel: Literal["measured", "not_measured"]` discriminator, `measured(value)` / `not_measured()` classmethod constructors, module-level `NOT_MEASURED` singleton.
+- `arc_guard_core.intent_lock.IntentLock` frozen dataclass: SHA-256 hex digests of canonicalized original intent, sanitized prompt, rehydrated answer, plus `encoder_id`. Content-addressed audit binding for `DecisionRecord`; the lock contains zero raw text.
+- `arc_guard_core.observability_config.FidelityThresholds` nested pydantic model: frozen, `extra="forbid"`, three fields (`warn`/`clarify`/`refuse`) each `Field(ge=0.0, le=1.0)` with a `model_validator(mode="after")` enforcing `warn > clarify > refuse`. Hung off `ObservabilityConfig.fidelity_thresholds` with default `(0.7, 0.5, 0.3)`.
+- Three new exception leaves in `arc_guard_core.exceptions`: `IntentEncoderError(AdapterError)` with `__failure_mode__='closed-conservative'`, `FidelityScorerError(AdapterError)` with `__failure_mode__='open'`, `RehydrationVerifierError(PipelineError)` with `__failure_mode__='closed'`. Each declares its own `__valid_codes__` set.
+- Three new `FAIL_RULE` entries in `arc_guard_core.failure_modes`: `IntentEncoderError → (intent_encoder, warn, None)`, `FidelityScorerError → (fidelity_scorer, warn, None)`, `RehydrationVerifierError → (rehydration_verifier, error, RefusalCode.FIDELITY_DROP)`. Posture is read from `__failure_mode__` ClassVar at lookup time per the foundation discipline.
+- `GuardResult` gains two additive optional fields: `fidelity_score: FidelityScore | None = None` and `fidelity_warning: bool = False` (typed boolean indicator set by the fidelity threshold ladder).
+- `DecisionRecord` gains two additive optional fields: `intent_lock: IntentLock | None = None` and `fidelity_score: FidelityScore | None = None`.
+
+### Changed
+- Renamed `RefusalCode.FIDELITY_DROP_PLACEHOLDER` → `RefusalCode.FIDELITY_DROP` (placeholder reservation upgraded to live code). The placeholder member was a reservation, never a stable consumer-facing surface; the rename keeps the contract-snapshot delta minimal. The default `RefusalTemplate` for `FIDELITY_DROP` now contains real human-message + next-steps text instead of the previous "(reserved)" stub.
+- `ObservabilityConfig` gains `fidelity_thresholds: FidelityThresholds = Field(default_factory=FidelityThresholds)` (additive — existing constructors continue to work).
+
+### Migration notes
+- Callers that referenced `RefusalCode.FIDELITY_DROP_PLACEHOLDER` (none expected per the 0.3.0 CHANGELOG which described it as a reservation) update to `RefusalCode.FIDELITY_DROP`.
+- All other surface changes are additive; no other public types break.
+
 ## [0.3.0] — 2026-05-02
 
 ### Added

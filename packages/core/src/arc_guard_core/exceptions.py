@@ -225,6 +225,57 @@ class EntityProviderError(AdapterError):
     })
 
 
+# ---------------------------------------------------------------------------
+# Intent fidelity & rehydration leaves
+# ---------------------------------------------------------------------------
+
+
+class IntentEncoderError(AdapterError):
+    """Encoder failure — wraps model load, timeout, inference errors.
+
+    Posture ``closed-conservative``: the pipeline degrades to the
+    ``FidelityScore.NOT_MEASURED`` sentinel and continues; no refusal.
+    """
+
+    __failure_mode__: ClassVar[FailureMode] = "closed-conservative"
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
+        "intent_encoder.timeout",
+        "intent_encoder.model_load_failed",
+        "intent_encoder.inference_failed",
+    })
+
+
+class FidelityScorerError(AdapterError):
+    """Scorer failure — wraps incompatible-pair and scoring errors.
+
+    Posture ``open``: the pipeline logs + counts but does not refuse;
+    the score defaults to the sentinel.
+    """
+
+    __failure_mode__: ClassVar[FailureMode] = "open"
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
+        "fidelity_scorer.incompatible_pair",
+        "fidelity_scorer.scoring_failed",
+    })
+
+
+class RehydrationVerifierError(PipelineError):
+    """Verifier failure — wraps the documented rejection reasons.
+
+    Posture ``closed``: the pipeline keeps placeholders (rejects
+    rehydration) and records the reason on the decision record;
+    catastrophic verifier failures produce a ``FIDELITY_DROP`` refusal.
+    """
+
+    __failure_mode__: ClassVar[FailureMode] = "closed"
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
+        "rehydration_verifier.invented_placeholder",
+        "rehydration_verifier.structural_shift",
+        "rehydration_verifier.safety_regression",
+        "rehydration_verifier.verifier_failed",
+    })
+
+
 __all__ = [
     "ArcGuardError",
     "ConfigError",
@@ -244,5 +295,8 @@ __all__ = [
     "ReporterError",
     "FlagProviderError",
     "EntityProviderError",
+    "IntentEncoderError",
+    "FidelityScorerError",
+    "RehydrationVerifierError",
     "FailureMode",
 ]

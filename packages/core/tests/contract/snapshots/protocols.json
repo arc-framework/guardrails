@@ -79,6 +79,49 @@
   {
     "has_concurrency_line": true,
     "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "compatible_with",
+        "params": [
+          {
+            "annotation": "IntentEncoder",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "encoder"
+          }
+        ],
+        "return": "bool"
+      },
+      {
+        "is_async": false,
+        "name": "score",
+        "params": [
+          {
+            "annotation": "IntentRepresentation",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "intent"
+          },
+          {
+            "annotation": "IntentRepresentation",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "answer"
+          }
+        ],
+        "return": "FidelityScore"
+      }
+    ],
+    "module": "arc_guard_core.protocols.fidelity_scorer",
+    "name": "FidelityScorer",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
     "has_thread_safety_line": true,
     "kind": "protocol",
     "methods": [
@@ -191,6 +234,30 @@
     ],
     "module": "arc_guard_core.protocols.inspector",
     "name": "Inspector",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "encode",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "text"
+          }
+        ],
+        "return": "IntentRepresentation"
+      }
+    ],
+    "module": "arc_guard_core.protocols.intent_encoder",
+    "name": "IntentEncoder",
     "stability": "stable"
   },
   {
@@ -394,6 +461,42 @@
     ],
     "module": "arc_guard_core.protocols.policy_router",
     "name": "PolicyRouter",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "verify",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "KEYWORD_ONLY",
+            "name": "sanitized_prompt"
+          },
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "KEYWORD_ONLY",
+            "name": "rehydration_candidate"
+          },
+          {
+            "annotation": "Mapping[str, str]",
+            "default": "<empty>",
+            "kind": "KEYWORD_ONLY",
+            "name": "entity_map"
+          }
+        ],
+        "return": "RehydrationVerdict"
+      }
+    ],
+    "module": "arc_guard_core.protocols.rehydration_verifier",
+    "name": "RehydrationVerifier",
     "stability": "stable"
   },
   {

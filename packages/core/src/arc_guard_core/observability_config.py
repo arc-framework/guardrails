@@ -30,6 +30,36 @@ _REQUIRED_METRIC_ATTRIBUTES: frozenset[str] = frozenset({
 })
 
 
+class FidelityThresholds(BaseModel):
+    """Operator-tunable fidelity threshold tuple.
+
+    The three values gate the fidelity-driven action ladder:
+
+    - ``score >= warn`` — informational only.
+    - ``clarify <= score < warn`` — set ``GuardResult.fidelity_warning = True``.
+    - ``refuse <= score < clarify`` — populate ``GuardResult.clarification``.
+    - ``score < refuse`` — populate ``GuardResult.refusal`` and block.
+
+    Defaults (0.7, 0.5, 0.3) are illustrative — operators tune for their
+    deployment's measured drift profile.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    warn: float = Field(default=0.7, ge=0.0, le=1.0)
+    clarify: float = Field(default=0.5, ge=0.0, le=1.0)
+    refuse: float = Field(default=0.3, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def _ordered(self) -> FidelityThresholds:
+        if not (self.warn > self.clarify > self.refuse):
+            raise ValueError(
+                f"FidelityThresholds requires warn > clarify > refuse; "
+                f"got warn={self.warn}, clarify={self.clarify}, refuse={self.refuse}"
+            )
+        return self
+
+
 class ObservabilityConfig(BaseModel):
     """Per-pipeline observability knobs.
 
@@ -46,6 +76,7 @@ class ObservabilityConfig(BaseModel):
         default=_DEFAULT_METRIC_ATTRIBUTE_ALLOW_LIST,
     )
     max_attribute_bytes: int = Field(default=1024, ge=64)
+    fidelity_thresholds: FidelityThresholds = Field(default_factory=FidelityThresholds)
 
     @model_validator(mode="after")
     def _validate_required_metric_attributes(self) -> ObservabilityConfig:
@@ -60,5 +91,6 @@ class ObservabilityConfig(BaseModel):
 
 __all__ = [
     "LogLevelFloor",
+    "FidelityThresholds",
     "ObservabilityConfig",
 ]

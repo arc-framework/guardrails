@@ -14,21 +14,27 @@ from __future__ import annotations
 from typing import Final
 
 STAGE_VALIDATE: Final[str] = "validate"
+STAGE_DEFEND: Final[str] = "defend"
 STAGE_CLASSIFY: Final[str] = "classify"
 STAGE_SANITIZE: Final[str] = "sanitize"
 STAGE_ROUTE: Final[str] = "route"
 STAGE_EXECUTE: Final[str] = "execute"
 STAGE_REFUSAL: Final[str] = "refusal"
+STAGE_VERIFY: Final[str] = "verify"
+STAGE_REHYDRATE: Final[str] = "rehydrate"
 STAGE_DECISION_EMIT: Final[str] = "decision_emit"
 STAGE_REPORT: Final[str] = "report"
 
 STAGE_DESCRIPTORS: frozenset[str] = frozenset({
     STAGE_VALIDATE,
+    STAGE_DEFEND,
     STAGE_CLASSIFY,
     STAGE_SANITIZE,
     STAGE_ROUTE,
     STAGE_EXECUTE,
     STAGE_REFUSAL,
+    STAGE_VERIFY,
+    STAGE_REHYDRATE,
     STAGE_DECISION_EMIT,
     STAGE_REPORT,
 })
@@ -36,11 +42,14 @@ STAGE_DESCRIPTORS: frozenset[str] = frozenset({
 
 __all__ = [
     "STAGE_VALIDATE",
+    "STAGE_DEFEND",
     "STAGE_CLASSIFY",
     "STAGE_SANITIZE",
     "STAGE_ROUTE",
     "STAGE_EXECUTE",
     "STAGE_REFUSAL",
+    "STAGE_VERIFY",
+    "STAGE_REHYDRATE",
     "STAGE_DECISION_EMIT",
     "STAGE_REPORT",
     "STAGE_DESCRIPTORS",

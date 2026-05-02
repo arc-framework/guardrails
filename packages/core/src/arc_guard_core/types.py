@@ -15,7 +15,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    from arc_guard_core.fidelity import FidelityScore
 
 
 class RiskLevel(IntEnum):
@@ -182,6 +185,14 @@ class GuardResult:
             ``"error"`` — an inspector raised; the pipeline fell through fail-open.
             ``None`` — pipeline ran cleanly.
         phase: ``"pre_process"`` (input) or ``"post_process"`` (output).
+        fidelity_score: Populated when the run completed generation and the
+            verify stage ran. May be the ``not_measured`` sentinel when no
+            concrete encoder is configured. ``None`` when the run refused
+            before generation.
+        fidelity_warning: Typed indicator set to ``True`` by the fidelity
+            threshold ladder when the score lands in the warn band
+            (``clarify <= score.value < warn``). Informational only;
+            ``action`` is unaffected when only this flag is set.
     """
 
     text: str
@@ -192,6 +203,8 @@ class GuardResult:
     clarification: ClarificationRequest | None = None
     bypass_reason: Literal["disabled", "error", None] = None
     phase: Literal["pre_process", "post_process"] = "pre_process"
+    fidelity_score: FidelityScore | None = None
+    fidelity_warning: bool = False
 
     def __post_init__(self) -> None:
         # Clarification is a recovery path; it is mutually exclusive with a

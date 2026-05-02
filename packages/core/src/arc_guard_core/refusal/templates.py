@@ -52,9 +52,16 @@ DEFAULT_REFUSAL_TEMPLATES: dict[RefusalCode, RefusalTemplate] = {
         human_message="This request was blocked by policy.",
         next_steps=("Adjust the request and try again.",),
     ),
-    RefusalCode.FIDELITY_DROP_PLACEHOLDER: RefusalTemplate(
-        human_message="(reserved for fidelity-drop refusals — detector not yet implemented)",
-        next_steps=(),
+    RefusalCode.FIDELITY_DROP: RefusalTemplate(
+        human_message=(
+            "The model's answer no longer addressed the original request closely "
+            "enough to be returned safely; the response was withheld."
+        ),
+        next_steps=(
+            "Rephrase the question more directly.",
+            "Split a multi-part request into separate, focused questions.",
+            "Simplify or narrow the prompt's scope.",
+        ),
     ),
     RefusalCode.API_INVALID_REQUEST: RefusalTemplate(
         human_message="The request payload was rejected at the API boundary.",

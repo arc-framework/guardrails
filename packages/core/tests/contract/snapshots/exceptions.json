@@ -90,6 +90,18 @@
     ]
   },
   {
+    "failure_mode": "open",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "FidelityScorerError",
+    "parent": "AdapterError",
+    "stability": "stable",
+    "valid_codes": [
+      "fidelity_scorer.incompatible_pair",
+      "fidelity_scorer.scoring_failed"
+    ]
+  },
+  {
     "failure_mode": "closed-conservative",
     "kind": "exception",
     "module": "arc_guard_core.exceptions",
@@ -112,6 +124,19 @@
       "inspector.malformed_finding",
       "inspector.timeout",
       "inspector.unhandled"
+    ]
+  },
+  {
+    "failure_mode": "closed-conservative",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "IntentEncoderError",
+    "parent": "AdapterError",
+    "stability": "stable",
+    "valid_codes": [
+      "intent_encoder.inference_failed",
+      "intent_encoder.model_load_failed",
+      "intent_encoder.timeout"
     ]
   },
   {
@@ -160,6 +185,20 @@
     "valid_codes": [
       "refusal.build_failed",
       "refusal.unknown_code"
+    ]
+  },
+  {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "RehydrationVerifierError",
+    "parent": "PipelineError",
+    "stability": "stable",
+    "valid_codes": [
+      "rehydration_verifier.invented_placeholder",
+      "rehydration_verifier.safety_regression",
+      "rehydration_verifier.structural_shift",
+      "rehydration_verifier.verifier_failed"
     ]
   },
   {

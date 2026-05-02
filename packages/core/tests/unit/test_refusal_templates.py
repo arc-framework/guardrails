@@ -16,11 +16,8 @@ def test_every_code_has_a_default_template() -> None:
         assert code in DEFAULT_REFUSAL_TEMPLATES, f"missing template for {code}"
 
 
-def test_every_default_human_message_non_empty_or_reserved() -> None:
+def test_every_default_human_message_non_empty() -> None:
     for code, tmpl in DEFAULT_REFUSAL_TEMPLATES.items():
-        if code is RefusalCode.FIDELITY_DROP_PLACEHOLDER:
-            # Reserved (detector not yet implemented); placeholder text is allowed.
-            continue
         assert tmpl.human_message, f"empty human_message for {code}"
 
 
