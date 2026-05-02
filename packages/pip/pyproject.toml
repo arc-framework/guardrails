@@ -85,4 +85,7 @@ disable_error_code = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-addopts = "-ra -q --strict-markers"
+addopts = "-ra -q --strict-markers -m 'not slow'"
+markers = [
+    "slow: long-running benchmark; excluded from default CI, run via `pytest -m slow`",
+]
