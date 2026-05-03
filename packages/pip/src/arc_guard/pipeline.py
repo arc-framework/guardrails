@@ -76,6 +76,9 @@ from arc_guard_core.policy import PolicyRuleSet
 from arc_guard_core.protocols.conversation_turn_inspector import (
     ConversationTurnInspector,
 )
+from arc_guard_core.protocols.explainable_inspector import (
+    ExplainableInspector,
+)
 from arc_guard_core.protocols.fidelity_scorer import FidelityScorer
 from arc_guard_core.protocols.flag_provider import FlagProvider
 from arc_guard_core.protocols.inspector import Inspector
@@ -650,6 +653,17 @@ class GuardPipeline:
                         metric_sink=self._metrics_hook,
                     )
                     had_error = True
+                    # Conditional InspectorFailed lifecycle event — fires
+                    # only on uncaught inspector exception; pipeline still
+                    # fail-opens. Traceback id is the exception's repr hash
+                    # so operators can correlate to a stack-traced log line
+                    # without the lifecycle event carrying full traceback.
+                    await self._emit_via_ctx(
+                        guard_input, InspectorFailed,
+                        inspector_name=type(inspector).__name__,
+                        exception_class=type(exc).__name__,
+                        traceback_id=f"tb_{abs(hash(repr(exc))) & 0xFFFFFFFF:08x}",
+                    )
                 # Per-inspector lifecycle event with timing + count.
                 _findings_after = len(result.findings)
                 _inspector_event = await self._emit_via_ctx(
@@ -661,7 +675,8 @@ class GuardPipeline:
                 if _inspector_event is not None:
                     # Emit one FindingProduced per finding produced by THIS
                     # inspector. Walk the new tail of the findings list.
-                    for f in result.findings[_findings_before:_findings_after]:
+                    _new_findings = result.findings[_findings_before:_findings_after]
+                    for f in _new_findings:
                         _fp_ev = await self._emit_via_ctx(
                             guard_input, LifecycleFindingProduced,
                             parent_id_override=_inspector_event.id,
@@ -674,6 +689,22 @@ class GuardPipeline:
                         if _fp_ev is not None:
                             # Index by (start,end) so later stages can resolve.
                             _finding_event_ids[(f.start, f.end)] = _fp_ev.id
+                    if isinstance(inspector, ExplainableInspector) and _new_findings:
+                        try:
+                            _explanations = inspector.explain_matches(
+                                result.text, _new_findings
+                            )
+                        except Exception:
+                            _explanations = []
+                        for _ex in _explanations:
+                            await self._emit_via_ctx(
+                                guard_input, InspectorMatchExplain,
+                                parent_id_override=_inspector_event.id,
+                                inspector=type(inspector).__name__,
+                                pattern_id=_ex.pattern_id,
+                                matched_span=(_ex.finding.start, _ex.finding.end),
+                                explanation=_ex.explanation,
+                            )
             # --- Jailbreak detector (runs alongside the inspector chain) ---
             # Signals are emitted as Finding entries so the existing
             # policy router's aggregation rules apply unchanged.
@@ -896,6 +927,23 @@ class GuardPipeline:
                 resolved_action=str(result.action),
                 router=type(router).__name__,
             )
+            if outcome is not None:
+                _fired_ids = set(getattr(outcome, "fired_rule_ids", ()) or ())
+                _action_is_user_visible = str(result.action) != "pass"
+                _entity_types_in_findings = {f.entity_type for f in result.findings}
+                for _rule in self._policy_ruleset.rules:
+                    if _rule.id in _fired_ids:
+                        _r_outcome = "matched"
+                    elif _rule.match in _entity_types_in_findings:
+                        _r_outcome = "not_matched"
+                    else:
+                        _r_outcome = "not_applicable"
+                    await self._emit_via_ctx(
+                        guard_input, PolicyRuleEvaluated,
+                        rule_id=_rule.id,
+                        outcome=_r_outcome,
+                        contributed_to_action=(_r_outcome == "matched" and _action_is_user_visible),
+                    )
             # STAGE_REFUSAL marker — fires only when the run produced a refusal
             # envelope. The construction itself happens inside the router; this
             # marker makes the existence observable AND records the refusal's
@@ -1033,16 +1081,39 @@ class GuardPipeline:
                         _emitter is not None
                         and _emitter.policy.should_capture_sanitized()
                     )
+                    _capture_raw = (
+                        _emitter is not None
+                        and _emitter.policy.should_capture_raw_input()
+                    )
+                    _placeholder_map: dict[str, str] = {}
                     for f in result.findings:
+                        placeholder = f"[{f.entity_type}]"
                         await self._emit_via_ctx(
                             guard_input, SanitizationApplied,
                             parent_id_override=_stage_exec_ev.id,
                             entity_type=f.entity_type,
-                            placeholder=f"[{f.entity_type}]",
+                            placeholder=placeholder,
                             span=(f.start, f.end),
                             finding_id=_finding_event_ids.get((f.start, f.end), ""),
                             text_after=result.text if _capture_text else None,
                         )
+                        if _capture_raw:
+                            # Pre-sanitization slice that produced the
+                            # placeholder. Only included when raw-input
+                            # capture is opted in (security-sensitive).
+                            _placeholder_map[placeholder] = (
+                                effective_input.text[f.start:f.end]
+                            )
+                    # PlaceholderMapBuilt — per-request summary, conditional
+                    # event. Carries entity_types + count always; the raw
+                    # placeholder→original map only when raw capture is on.
+                    await self._emit_via_ctx(
+                        guard_input, PlaceholderMapBuilt,
+                        parent_id_override=_stage_exec_ev.id,
+                        placeholder_count=len(result.findings),
+                        entity_types=sorted({f.entity_type for f in result.findings}),
+                        map=_placeholder_map if _capture_raw else None,
+                    )
 
         # --- Fidelity score (STAGE_VERIFY) ---
         # Runs after the existing execute / refusal-construction flow
@@ -1188,6 +1259,20 @@ class GuardPipeline:
                         import dataclasses as _dc
 
                         result = _dc.replace(result, text=new_text)
+                    if not isinstance(self._rehydration_verifier, NullRehydrationVerifier):
+                        _decision_to_outcome = {
+                            "accept": "verified",
+                            "reject": "rejected",
+                            "partial": "partial",
+                        }
+                        await self._emit_via_ctx(
+                            guard_input, RehydrationVerified,
+                            verifier_id=type(self._rehydration_verifier).__name__,
+                            outcome=_decision_to_outcome.get(verdict.decision, "verified"),
+                            rejection_reason=(
+                                verdict.reason if verdict.decision == "reject" else None
+                            ),
+                        )
                 except Exception as exc:
                     logger.warning(
                         "Rehydration verifier raised %s — keeping placeholders", exc,

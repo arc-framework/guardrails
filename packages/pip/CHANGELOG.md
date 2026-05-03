@@ -2,6 +2,22 @@
 
 All notable changes to the `arc-guard` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.8.0] — 2026-05-04
+
+### Added
+- `GuardPipeline(lifecycle_hook=…)` constructor argument — defaults to `NullLifecycleSink`, so existing callers see identical behavior. When wired, the pipeline emits typed `LifecycleEvent`s through the sink at every pointcut (stage boundaries, inspector runs, finding production, sanitization, policy resolution, strategy execution, decision emission, refusal construction, fidelity scoring, rehydration, report flush).
+- Three concrete `LifecycleSink` implementations under `arc_guard.observability`:
+  - `RingBufferLifecycleSink` — per-rid OrderedDict-backed drop-oldest buffer (default capacity 5,000 rids); rid-level eviction so partial requests never appear in the lookup; exposes a `drop_counter` attribute.
+  - `SqliteLifecycleSink` — stdlib `sqlite3` + JSON1, retention-driven cleanup (configurable max-rows AND max-age, whichever is stricter); per-rid query path uses an indexed lookup.
+  - `CompositeLifecycleSink` — sequential fan-out across N child sinks with per-child failure isolation and per-child failure counters; query() falls through tier-by-tier and reports which tier served the response.
+- `BroadcastingLifecycleSink` — wraps a child sink + a subscriber registry so the api SSE feed can publish each event to live subscribers without coupling the sink contract to transport details. Marked Provisional.
+- `ExplainableInspector` capability implementation on `InjectionInspector` — re-tests built-in / extra patterns at each finding's span and returns `InspectorMatchExplanation` records, which the pipeline emits as `InspectorMatchExplain` lifecycle events.
+- Pipeline-internal lifecycle emission via `GuardContext.metadata["_lifecycle_emitter"]` — when the api transport stashes a `LifecycleEmitter` there, pipeline-internal events share the same `rid` + monotonic `seq` counter as transport-layer events, producing one connected event graph per request.
+
+### Migration notes
+- Default behavior unchanged: `lifecycle_hook` defaults to `NullLifecycleSink`. Callers do not need to update construction sites.
+- Existing `Logger.event(...)` / `Reporter.report(...)` / `MetricSink.counter(...)` / `Tracer.start_span(...)` calls are preserved unchanged. Lifecycle emission is purely additive — verified by `tests/contract/test_lifecycle_does_not_change_existing_events.py` (byte-identical Logger snapshot with vs. without the hook wired).
+
 ## [0.7.1] — 2026-05-03
 
 ### Removed

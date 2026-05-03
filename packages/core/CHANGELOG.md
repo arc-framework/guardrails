@@ -2,6 +2,22 @@
 
 All notable changes to the `arc-guard-core` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.7.0] — 2026-05-04
+
+### Added
+- New `arc_guard_core.lifecycle` subpackage:
+  - `LifecycleSink` runtime-checkable Protocol — the 4th observability hook (sibling to `Logger` / `Tracer` / `MetricSink`).
+  - `LifecycleEventBase` frozen dataclass (`id`, `parent_id`, `seq`, `ts`, `rid`, `event_type`) and 28 typed event dataclasses forming the `LifecycleEvent` tagged union (23 base events: `RequestStarted`, `PreProcessStarted`, `PostProcessStarted`, `PreProcessCompleted`, `PostProcessCompleted`, `StageRan`, `IntentCaptured`, `InspectorRan`, `FindingProduced`, `JailbreakDetected`, `DeceptionScored`, `FidelityScored`, `SanitizationApplied`, `PolicyResolved`, `StrategyExecuted`, `DecisionEmitted`, `RefusalProduced`, `BackendCalled`, `BackendResponded`, `PayloadRewritten`, `ResponseAssembled`, `RequestCompleted`, `ReportFlushed`; 5 conditional events: `PolicyRuleEvaluated`, `InspectorFailed`, `PlaceholderMapBuilt`, `RehydrationVerified`, `InspectorMatchExplain`).
+  - `NullLifecycleSink` default implementation — no-op; absorbs all sink errors per Protocol contract.
+  - `LifecycleEmitter` — per-rid emitter with monotonic `seq` counter shared between transport and pipeline emission sites.
+  - `PayloadCapturePolicy` Protocol with `should_capture_sanitized()` / `should_capture_raw_input()` methods, plus `NullPayloadCapturePolicy` default (captures nothing). Policies gate optional richer event content; defaults are constitutionally aligned with Principle V (events MUST avoid raw sensitive payloads by default).
+  - `new_event_id()` ULID-based event id generator.
+- New optional Protocol `arc_guard_core.protocols.ExplainableInspector` — opt-in capability for inspectors to surface match metadata via `explain_matches(text, new_findings) -> list[InspectorMatchExplanation]`. Used by regex-based inspectors to populate `InspectorMatchExplain` events.
+
+### Migration notes
+- Additive only on the public surface. No breaking changes; no migration required.
+- Existing inspectors that do not implement `ExplainableInspector` continue to work unchanged; pipelines silently skip the optional `InspectorMatchExplain` emission for them.
+
 ## [0.6.0] — 2026-05-03
 
 ### Added

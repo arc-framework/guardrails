@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
+from arc_guard_core.protocols.explainable_inspector import (
+    InspectorMatchExplanation,
+)
 from arc_guard_core.types import Finding, GuardResult, RiskLevel
 
 _LOG = logging.getLogger(__name__)
@@ -42,6 +46,9 @@ class InjectionInspector:
     def __init__(self, extra_patterns: list[re.Pattern[str]] | None = None) -> None:
         self.extra_patterns = extra_patterns or []
         self._all_patterns = _BUILTIN_PATTERNS + self.extra_patterns
+        self._pattern_ids: list[str] = [
+            f"injection_builtin_{i}" for i in range(len(_BUILTIN_PATTERNS))
+        ] + [f"injection_extra_{i}" for i in range(len(self.extra_patterns))]
 
     async def inspect(self, result: GuardResult) -> GuardResult:
         """Inspect for prompt injection patterns.
@@ -81,3 +88,24 @@ class InjectionInspector:
         except Exception:
             _LOG.exception("InjectionInspector encountered an unexpected error")
             return result
+
+    def explain_matches(
+        self, text: str, new_findings: Sequence[Finding]
+    ) -> list[InspectorMatchExplanation]:
+        """Re-test patterns at each finding's span to identify which pattern fired."""
+        out: list[InspectorMatchExplanation] = []
+        for f in new_findings:
+            if f.entity_type != "INJECTION":
+                continue
+            span_text = text[f.start:f.end]
+            for pattern, pattern_id in zip(self._all_patterns, self._pattern_ids, strict=True):
+                if pattern.fullmatch(span_text) or pattern.search(span_text):
+                    out.append(
+                        InspectorMatchExplanation(
+                            finding=f,
+                            pattern_id=pattern_id,
+                            explanation=f"matched pattern {pattern.pattern!r}",
+                        )
+                    )
+                    break
+        return out

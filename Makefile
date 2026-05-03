@@ -214,6 +214,10 @@ docker-build:
 
 docker-up:
 	docker compose -f $(COMPOSE_FILE) --profile dev up --build -d
+	@echo "waiting for api to respond on http://127.0.0.1:8766/ ..."
+	@until curl -sf http://127.0.0.1:8766/ >/dev/null 2>&1; do sleep 1; done
+	@echo "waiting for sqlite-ui (dev profile) to respond on http://127.0.0.1:8081/ ..."
+	@until curl -sf http://127.0.0.1:8081/ >/dev/null 2>&1; do sleep 1; done
 	@echo
 	@echo "Stack up (dev profile):"
 	@echo "  api         http://127.0.0.1:8766"
@@ -232,6 +236,8 @@ docker-up:
 
 docker-up-prod:
 	docker compose -f $(COMPOSE_FILE) --profile prod up --build -d
+	@echo "waiting for api to respond on http://127.0.0.1:8766/ ..."
+	@until curl -sf http://127.0.0.1:8766/ >/dev/null 2>&1; do sleep 1; done
 	@echo
 	@echo "Stack up (prod profile — DB browser suppressed):"
 	@echo "  api      http://127.0.0.1:8766"
@@ -250,14 +256,16 @@ docker-down:
 docker-logs:
 	docker compose -f $(COMPOSE_FILE) logs -f api
 
-# docker-nuke — full teardown. Removes containers, named volumes (the
-# llama3.2 model cache AND the lifecycle event history!), and every image
-# this project has ever built (current + stale tags from earlier renames).
-# Use when you want a clean slate or to free disk space. The next docker-up
-# rebuilds everything and re-pulls llama3.2.
+# docker-nuke — full teardown. DESTRUCTIVE: deletes the llama3.2 model cache
+# (~2GB) AND the entire lifecycle event history stored in api_lifecycle-data.
+# Removes every image this project has ever built (current + stale tags from
+# earlier renames). Use when you want a clean slate or to free disk space.
+# The next docker-up rebuilds everything and re-pulls llama3.2.
 docker-nuke:
-	@echo "tearing down containers and named volumes..."
-	-docker compose -f $(COMPOSE_FILE) down --volumes --remove-orphans
+	@echo "tearing down containers and named volumes (deletes lifecycle event history)..."
+	-docker compose -f $(COMPOSE_FILE) --profile dev --profile prod down --volumes --remove-orphans
+	@echo "removing any orphaned project volumes..."
+	-docker volume rm api_lifecycle-data api_ollama-models 2>/dev/null || true
 	@echo "removing project images..."
 	-docker image rm $(DOCKER_IMAGE) arc-guard-api:dev api-api:latest 2>/dev/null || true
 	@echo "done. next 'make docker-up' will rebuild from scratch and re-pull llama3.2 (~2GB)."

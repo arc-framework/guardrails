@@ -7,6 +7,10 @@ from arc_guard_core.protocols.conversation_turn_inspector import (
 )
 from arc_guard_core.protocols.entity_provider import EntityProvider
 from arc_guard_core.protocols.evaluation_harness import EvaluationHarness
+from arc_guard_core.protocols.explainable_inspector import (
+    ExplainableInspector,
+    InspectorMatchExplanation,
+)
 from arc_guard_core.protocols.fidelity_scorer import FidelityScorer
 from arc_guard_core.protocols.flag_provider import FlagProvider
 from arc_guard_core.protocols.guard import Guard
@@ -44,4 +48,6 @@ __all__ = [
     "JailbreakDetector",
     "ConversationTurnInspector",
     "EvaluationHarness",
+    "ExplainableInspector",
+    "InspectorMatchExplanation",
 ]

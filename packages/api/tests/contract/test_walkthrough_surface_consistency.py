@@ -62,6 +62,24 @@ def test_walkthrough_public_surface_names_in_manifest(walkthrough: Path) -> None
         # Sub-module / sub-package classes documented in walkthroughs
         "RuleBasedPolicyRouter", "JailbreakMlBundle", "SemanticBundle",
         "InjectionInspector", "RegistryFrozenError",
+        # arc_guard_core.lifecycle subpackage (28 events + Protocol + helpers)
+        "LifecycleSink", "LifecycleEvent", "LifecycleEventBase", "LifecycleEmitter",
+        "NullLifecycleSink", "PayloadCapturePolicy",
+        "RequestStarted", "PreProcessStarted", "PostProcessStarted",
+        "PreProcessCompleted", "PostProcessCompleted", "StageRan", "IntentCaptured",
+        "InspectorRan", "FindingProduced", "JailbreakDetected", "DeceptionScored",
+        "FidelityScored", "SanitizationApplied", "PolicyResolved", "StrategyExecuted",
+        "DecisionEmitted", "RefusalProduced", "BackendCalled", "BackendResponded",
+        "PayloadRewritten", "ResponseAssembled", "RequestCompleted", "ReportFlushed",
+        "PolicyRuleEvaluated", "InspectorFailed", "PlaceholderMapBuilt",
+        "RehydrationVerified", "InspectorMatchExplain",
+        # Concrete sinks in arc_guard.observability
+        "RingBufferLifecycleSink", "SqliteLifecycleSink", "CompositeLifecycleSink",
+        "BroadcastingLifecycleSink",
+        # Protocol capability for inspectors
+        "ExplainableInspector",
+        # Field names of LifecycleEventBase mentioned in prose
+        "event_type", "parent_id",
     }
 
     # Strip module-path prefixes (e.g. arc_guard_core.RefusalCode → RefusalCode).
