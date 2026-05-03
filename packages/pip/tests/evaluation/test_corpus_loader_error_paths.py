@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from arc_guard_core.exceptions import CorpusValidationError
 
 from arc_guard.evaluation import load_adversarial_corpus

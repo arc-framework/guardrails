@@ -436,6 +436,11 @@
   },
   {
     "kind": "unknown",
+    "name": "FAILURE_API_TRANSPORT",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
     "name": "FAILURE_API_VALIDATION",
     "stability": "stable"
   },
@@ -1357,6 +1362,10 @@
       {
         "name": "API_INVALID_REQUEST",
         "value": "api_invalid_request"
+      },
+      {
+        "name": "API_TRANSPORT_TIMEOUT",
+        "value": "api_transport_timeout"
       },
       {
         "name": "INTERNAL_PIPELINE_ERROR",

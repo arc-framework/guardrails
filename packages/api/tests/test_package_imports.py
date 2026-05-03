@@ -19,12 +19,32 @@ def test_api_does_not_pull_extra_provider_deps_beyond_pip() -> None:
     """arc_guard_service may transitively pull what arc-guard pulls (e.g.
     presidio), but it MUST NOT pull anything its own dependencies don't
     require — fastapi, uvicorn, etc. are gated behind the [fastapi] extra.
-    """
-    import arc_guard_service  # noqa: F401
-    import arc_guard_service.settings  # noqa: F401
-    import arc_guard_service.validators  # noqa: F401
 
-    # FastAPI / uvicorn should NOT load with the default install
-    forbidden_default = {"fastapi", "uvicorn"}
-    loaded = forbidden_default & set(sys.modules)
-    assert loaded == set(), f"default install pulled: {loaded}"
+    Runs in a subprocess so the assertion holds regardless of what other
+    tests in the same session have already imported.
+    """
+    import subprocess
+    import textwrap
+
+    script = textwrap.dedent(
+        """
+        import sys
+
+        import arc_guard_service  # noqa: F401
+        import arc_guard_service.settings  # noqa: F401
+        import arc_guard_service.validators  # noqa: F401
+
+        forbidden_default = {"fastapi", "uvicorn"}
+        loaded = forbidden_default & set(sys.modules)
+        if loaded:
+            raise SystemExit(f"default install pulled: {loaded}")
+        """,
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, (
+        f"default-install isolation failed:\n{result.stdout}\n{result.stderr}"
+    )

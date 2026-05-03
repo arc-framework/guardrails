@@ -11,7 +11,22 @@ See ``specs/002-rewrite-foundation/contracts/public-types.university`` and
 from __future__ import annotations
 
 from arc_guard_core.config import GuardConfig
+from arc_guard_core.deception import (
+    NOT_MEASURED as DECEPTION_NOT_MEASURED,
+)
+from arc_guard_core.deception import (
+    ConversationState,
+    DeceptionScore,
+)
 from arc_guard_core.decision import DecisionRecord, FindingSummary
+from arc_guard_core.evaluation import (
+    Configuration,
+    ConfigurationMetrics,
+    CorpusCategory,
+    CorpusEntry,
+    EvaluationReport,
+    ExpectedOutcome,
+)
 from arc_guard_core.exceptions import (
     AdapterBoundaryValidationError,
     AdapterError,
@@ -37,11 +52,13 @@ from arc_guard_core.exceptions import (
     RehydrationVerifierError,
     ReporterError,
     StrategyError,
+    TransportError,
     ValidationError,
 )
 from arc_guard_core.failure_modes import (
     FAIL_RULE,
     FAILURE_ADAPTER_VALIDATION,
+    FAILURE_API_TRANSPORT,
     FAILURE_API_VALIDATION,
     FAILURE_CONFIG,
     FAILURE_CONVERSATION_TURN_INSPECTOR,
@@ -65,21 +82,6 @@ from arc_guard_core.failure_modes import (
     FailureRule,
     Severity,
     lookup_rule,
-)
-from arc_guard_core.deception import (
-    NOT_MEASURED as DECEPTION_NOT_MEASURED,
-)
-from arc_guard_core.deception import (
-    ConversationState,
-    DeceptionScore,
-)
-from arc_guard_core.evaluation import (
-    Configuration,
-    ConfigurationMetrics,
-    CorpusCategory,
-    CorpusEntry,
-    EvaluationReport,
-    ExpectedOutcome,
 )
 from arc_guard_core.fidelity import NOT_MEASURED, FidelityScore
 from arc_guard_core.intent_lock import IntentLock
@@ -172,7 +174,7 @@ from arc_guard_core.types import (
     RiskLevel,
 )
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     # version
@@ -265,6 +267,7 @@ __all__ = [
     "ConversationTurnInspectorError",
     "EvaluationHarnessError",
     "CorpusValidationError",
+    "TransportError",
     "FailureMode",
     # fidelity types
     "FidelityScore",
@@ -315,6 +318,7 @@ __all__ = [
     "FAILURE_CONVERSATION_TURN_INSPECTOR",
     "FAILURE_EVALUATION_HARNESS",
     "FAILURE_CORPUS_VALIDATION",
+    "FAILURE_API_TRANSPORT",
     "FAILURE_UNKNOWN",
     # attribute redaction
     "AttributeRedactor",

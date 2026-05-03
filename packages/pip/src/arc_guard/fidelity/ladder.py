@@ -34,7 +34,6 @@ from arc_guard_core.types import (
     RefusalEnvelope,
 )
 
-
 _FIDELITY_CLARIFICATION_REPHRASE = (
     "Rephrase the question more directly so the model can address it cleanly."
 )

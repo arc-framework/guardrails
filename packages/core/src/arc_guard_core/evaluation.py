@@ -113,12 +113,13 @@ class ConfigurationMetrics:
             raise ValueError(
                 "ConfigurationMetrics latency fields must be >= 0"
             )
-        if self.fidelity_score_median is not None:
-            if not (0.0 <= self.fidelity_score_median <= 1.0):
-                raise ValueError(
-                    "ConfigurationMetrics.fidelity_score_median must be in [0.0, 1.0] "
-                    "or None"
-                )
+        if self.fidelity_score_median is not None and not (
+            0.0 <= self.fidelity_score_median <= 1.0
+        ):
+            raise ValueError(
+                "ConfigurationMetrics.fidelity_score_median must be in [0.0, 1.0] "
+                "or None"
+            )
 
 
 @dataclass(frozen=True)

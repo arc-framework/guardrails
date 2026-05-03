@@ -278,6 +278,19 @@
     ]
   },
   {
+    "failure_mode": "closed",
+    "kind": "exception",
+    "module": "arc_guard_core.exceptions",
+    "name": "TransportError",
+    "parent": "PipelineError",
+    "stability": "stable",
+    "valid_codes": [
+      "transport.invalid_state",
+      "transport.payload_too_large",
+      "transport.timeout"
+    ]
+  },
+  {
     "failure_mode": null,
     "kind": "exception",
     "module": "arc_guard_core.exceptions",

@@ -31,7 +31,6 @@ from __future__ import annotations
 
 from arc_guard_core.evaluation import Configuration, CorpusEntry, ExpectedOutcome
 
-
 _PASS_ALL: dict[Configuration, ExpectedOutcome] = {
     "raw": "pass",
     "sanitize_only": "pass",

@@ -1,0 +1,17 @@
+[project]
+name = "arc-guard-example-sidecar-http"
+version = "0.1.0"
+description = "Example: arc-guard-service deployed as an HTTP sidecar."
+requires-python = ">=3.11"
+dependencies = [
+    "arc-guard-service[fastapi]",
+    "httpx",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+include = ["client.sh"]

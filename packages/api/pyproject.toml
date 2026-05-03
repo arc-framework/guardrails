@@ -1,6 +1,6 @@
 [project]
 name = "arc-guard-service"
-version = "0.1.0"
+version = "0.2.0"
 description = "Thin deployment surface for arc-guardrails"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -16,6 +16,9 @@ fastapi = [
     "fastapi>=0.110",
     "uvicorn>=0.30",
 ]
+
+[project.scripts]
+arc-guard-service = "arc_guard_service.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -49,4 +52,7 @@ files = ["src", "tests"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-addopts = "-ra -q --strict-markers"
+addopts = "-ra -q --strict-markers -m 'not slow'"
+markers = [
+    "slow: long-running benchmark; excluded from default CI, run via `pytest -m slow`",
+]

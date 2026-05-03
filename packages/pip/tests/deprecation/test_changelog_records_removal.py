@@ -8,7 +8,7 @@ import pytest
 
 from arc_guard._legacy import LEGACY_SYMBOLS
 
-CHANGELOG = Path(__file__).resolve().parents[2] / "CHANGELOG.university"
+CHANGELOG = Path(__file__).resolve().parents[2] / "CHANGELOG.md"
 
 
 def test_changelog_exists() -> None:
@@ -22,7 +22,7 @@ def changelog_text() -> str:
 
 def test_changelog_records_deprecation_section(changelog_text: str) -> None:
     assert "Deprecated" in changelog_text or "deprecated" in changelog_text.lower(), (
-        "CHANGELOG.university must include a Deprecated section while shims are live"
+        "CHANGELOG.md must include a Deprecated section while shims are live"
     )
 
 
@@ -34,5 +34,5 @@ def test_changelog_mentions_removal_release(changelog_text: str) -> None:
     versions = {entry.removed_in for entry in LEGACY_SYMBOLS.values()}
     for version in versions:
         assert version in changelog_text, (
-            f"CHANGELOG.university must reference removal version {version} (US4 acceptance scenario 3)"
+            f"CHANGELOG.md must reference removal version {version} (US4 acceptance scenario 3)"
         )

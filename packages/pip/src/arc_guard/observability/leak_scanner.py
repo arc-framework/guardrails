@@ -13,11 +13,10 @@ fail CI if any captured emission contains a fragment of the originals.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
-
-import re
 
 from arc_guard_core.stages import STAGE_DESCRIPTORS
 

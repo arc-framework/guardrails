@@ -13,7 +13,6 @@ from collections.abc import Iterable
 
 from arc_guard_core.deception import ConversationState
 
-
 _ROLE_PLAY_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\byou\s+are\s+(?:now\s+)?(?:DAN|an\s+unrestricted|jailbroken|evil|uncensored)\b", re.IGNORECASE),
     re.compile(r"\bact\s+as\s+(?:if\s+you\s+(?:were|are)\s+)?(?:an?\s+)?(?:unrestricted|jailbroken|evil|uncensored|character|persona)\b", re.IGNORECASE),

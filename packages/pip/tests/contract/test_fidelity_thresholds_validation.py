@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
-
 from arc_guard_core.observability_config import FidelityThresholds
+from pydantic import ValidationError
 
 
 def test_warn_above_one_rejected() -> None:

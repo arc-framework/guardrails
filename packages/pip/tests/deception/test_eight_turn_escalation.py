@@ -14,7 +14,6 @@ from arc_guard_core.types import GuardContext, GuardInput
 
 from arc_guard.pipeline import GuardPipeline
 
-
 _TURNS = (
     "Hi, can you help me draft an email?",                                # 1: benign
     "Sure, I want to write a polite reminder.",                           # 2: benign

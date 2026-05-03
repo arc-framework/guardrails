@@ -2,6 +2,17 @@
 
 All notable changes to the `arc-guard` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.7.0] — 2026-05-03
+
+### Added
+- Re-exports follow `arc-guard-core` 0.6.0 surface — `TransportError`, `RefusalCode.API_TRANSPORT_TIMEOUT`, `FAILURE_API_TRANSPORT` are visible to downstream consumers via the established `arc_guard_core` re-export path. No new pip-package symbols.
+
+### Changed
+- Dependency floor bumped to `arc-guard-core>=0.6.0` to pick up the new transport-layer leaf exception and refusal code.
+
+### Migration notes
+- Additive only on the public surface. No breaking changes; no migration required.
+
 ## [0.6.0] — 2026-05-02
 
 ### Added

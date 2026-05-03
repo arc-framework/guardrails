@@ -341,6 +341,28 @@ class CorpusValidationError(ValidationError):
     })
 
 
+# ---------------------------------------------------------------------------
+# Transport-layer leaf
+# ---------------------------------------------------------------------------
+
+
+class TransportError(PipelineError):
+    """Transport-layer failure — timeout, oversized payload, malformed transport state.
+
+    Posture ``closed``: transport failures produce a structured refusal
+    envelope (``RefusalCode.API_TRANSPORT_TIMEOUT`` for timeouts,
+    ``API_INVALID_REQUEST`` for oversized / malformed payloads). They
+    do not silently degrade.
+    """
+
+    __failure_mode__: ClassVar[FailureMode] = "closed"
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
+        "transport.timeout",
+        "transport.payload_too_large",
+        "transport.invalid_state",
+    })
+
+
 __all__ = [
     "ArcGuardError",
     "ConfigError",
@@ -367,5 +389,6 @@ __all__ = [
     "ConversationTurnInspectorError",
     "EvaluationHarnessError",
     "CorpusValidationError",
+    "TransportError",
     "FailureMode",
 ]

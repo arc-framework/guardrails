@@ -1,6 +1,6 @@
 [project]
 name = "arc-guard-core"
-version = "0.5.0"
+version = "0.6.0"
 description = "Zero-dep contract layer for arc-guardrails (typed models, Protocols, exception hierarchy, pipeline shape)"
 readme = "README.md"
 requires-python = ">=3.11"

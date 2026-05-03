@@ -41,6 +41,7 @@ from arc_guard_core.exceptions import (
     RehydrationVerifierError,
     ReporterError,
     StrategyError,
+    TransportError,
 )
 from arc_guard_core.refusal.codes import RefusalCode
 
@@ -66,6 +67,7 @@ FAILURE_JAILBREAK_DETECTOR: Final[str] = "jailbreak_detector"
 FAILURE_CONVERSATION_TURN_INSPECTOR: Final[str] = "conversation_turn_inspector"
 FAILURE_EVALUATION_HARNESS: Final[str] = "evaluation_harness"
 FAILURE_CORPUS_VALIDATION: Final[str] = "corpus_validation"
+FAILURE_API_TRANSPORT: Final[str] = "api_transport"
 FAILURE_UNKNOWN: Final[str] = "unknown"
 
 
@@ -145,6 +147,9 @@ FAIL_RULE: dict[type[Exception], FailureRule] = {
     CorpusValidationError: FailureRule(
         FAILURE_CORPUS_VALIDATION, "error", RefusalCode.API_INVALID_REQUEST,
     ),
+    TransportError: FailureRule(
+        FAILURE_API_TRANSPORT, "error", RefusalCode.API_TRANSPORT_TIMEOUT,
+    ),
 }
 
 UNKNOWN_RULE: Final[FailureRule] = FailureRule(
@@ -187,6 +192,7 @@ __all__ = [
     "FAILURE_CONVERSATION_TURN_INSPECTOR",
     "FAILURE_EVALUATION_HARNESS",
     "FAILURE_CORPUS_VALIDATION",
+    "FAILURE_API_TRANSPORT",
     "FAILURE_UNKNOWN",
     "Severity",
     "FailureRule",

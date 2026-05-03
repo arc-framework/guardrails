@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from arc_guard_core.evaluation import ConfigurationMetrics, EvaluationReport
+from arc_guard_core.evaluation import EvaluationReport
 
 # Stable column ordering (header → field name).
 _COLUMNS: tuple[tuple[str, str], ...] = (
