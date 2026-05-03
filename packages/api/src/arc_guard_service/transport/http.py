@@ -99,14 +99,15 @@ def _resolve_pipeline_factory(dotted: str) -> Any:
     return factory()
 
 
-def _build_default_pipeline() -> Any:
+def _build_default_pipeline(lifecycle_hook: Any | None = None) -> Any:
     """Build a GuardPipeline with the recommended defaults for the api.
 
     Pre-builds Injection + Presidio inspectors ONCE so the analyzer engine
     isn't recreated per request. Wires LogReporter so non-clean decisions
     surface as WARNING lines, and StdlibBridgeLogger so in-pipeline events
-    appear at INFO. Both can be replaced by setting
-    ``ServiceSettings.pipeline_factory`` to a custom dotted path.
+    appear at INFO. The optional `lifecycle_hook` is passed through to enable
+    per-request DAG capture for the operator dashboard. All can be replaced by
+    setting ``ServiceSettings.pipeline_factory`` to a custom dotted path.
     """
     from arc_guard.config_env import GuardConfig
     from arc_guard.inspectors.injection import InjectionInspector
@@ -122,7 +123,77 @@ def _build_default_pipeline() -> Any:
         config=config,
         reporter=LogReporter(),
         logger_hook=StdlibBridgeLogger(logging.getLogger("arc-guard.sdk")),
+        lifecycle_hook=lifecycle_hook,
     )
+
+
+def _start_sink_background_tasks(sink: Any) -> None:
+    """Walk a (possibly composite) sink and call `start_cleanup_task` on
+    every child that exposes one. Called from the FastAPI lifespan so the
+    cleanup tasks attach to the running event loop.
+    """
+    candidates: list[Any] = [sink]
+    children = getattr(sink, "_sinks", None)
+    if children is not None:
+        candidates.extend(children)
+    for s in candidates:
+        starter = getattr(s, "start_cleanup_task", None)
+        if callable(starter):
+            try:
+                starter()
+            except Exception as exc:  # pragma: no cover
+                _LOG.warning(
+                    "lifecycle sink %s.start_cleanup_task() raised: %s",
+                    type(s).__name__, exc,
+                )
+
+
+def _build_default_lifecycle_sink(
+    settings: ServiceSettings, broadcaster: Any | None = None
+) -> Any:
+    """Construct the recommended lifecycle sink composite for the api.
+
+    Children, in order:
+      1. RingBufferLifecycleSink — in-memory, sub-ms lookup, drop-oldest
+      2. SqliteLifecycleSink — file-backed, restart-survivable (when
+         `lifecycle_sqlite_path` is configured; pass None to skip)
+      3. BroadcastingLifecycleSink — fan-out to live SSE subscribers
+         (when one is supplied)
+
+    Lookups walk children in order; ring buffer answers in microseconds for
+    recent rids, SQLite answers in milliseconds for older ones. The
+    composite handles per-child failure isolation; one failing child does
+    NOT prevent siblings from receiving the emission.
+    """
+    from arc_guard.observability.composite_lifecycle_sink import (
+        CompositeLifecycleSink,
+    )
+    from arc_guard.observability.ring_buffer_lifecycle_sink import (
+        RingBufferLifecycleSink,
+    )
+
+    children: list[Any] = [
+        RingBufferLifecycleSink(capacity=settings.lifecycle_buffer_capacity),
+    ]
+    if settings.lifecycle_sqlite_path:
+        from arc_guard.observability.sqlite_lifecycle_sink import (
+            SqliteLifecycleSink,
+        )
+
+        children.append(
+            SqliteLifecycleSink(
+                path=settings.lifecycle_sqlite_path,
+                max_rows=settings.lifecycle_sqlite_max_rows,
+                max_age_days=settings.lifecycle_sqlite_max_age_days,
+                cleanup_interval_seconds=settings.lifecycle_sqlite_cleanup_interval_seconds,
+            )
+        )
+    if broadcaster is not None:
+        children.append(broadcaster)
+
+    if len(children) == 1:
+        return children[0]
+    return CompositeLifecycleSink(children)
 
 
 def _result_to_dict(result: Any) -> dict[str, Any]:
@@ -155,16 +226,38 @@ def create_app(
 
     settings = settings or ServiceSettings()
 
+    # Build the lifecycle sink stack ONCE per app. The same composite is
+    # passed to GuardPipeline (so it receives every emission) AND used to
+    # back the GET /events SSE endpoint and GET /lifecycle/{rid} replay
+    # endpoint. When `lifecycle_enabled=False`, every consumer falls back to
+    # the NullLifecycleSink and the SSE/replay endpoints are not mounted.
+    from arc_guard_core.lifecycle import NullLifecycleSink
+
+    lifecycle_sink: Any = NullLifecycleSink()
+    sse_registry: Any = None
+    if settings.lifecycle_enabled:
+        from arc_guard_service.transport.events import (
+            BroadcastingLifecycleSink,
+            SubscriberRegistry,
+        )
+
+        sse_registry = SubscriberRegistry(
+            queue_capacity=settings.lifecycle_sse_subscriber_queue_capacity
+        )
+        broadcaster = BroadcastingLifecycleSink(sse_registry)
+        lifecycle_sink = _build_default_lifecycle_sink(settings, broadcaster)
+
     if pipeline is None:
         if settings.pipeline_factory:
             pipeline = _resolve_pipeline_factory(settings.pipeline_factory)
         else:
-            pipeline = _build_default_pipeline()
+            pipeline = _build_default_pipeline(lifecycle_hook=lifecycle_sink)
     _LOG.info(
-        "arc-guard api ready (backend=%s chat_completions=%s docs=%s)",
+        "arc-guard api ready (backend=%s chat_completions=%s docs=%s lifecycle=%s)",
         settings.backend,
         settings.enable_chat_completions,
         settings.enable_docs,
+        settings.lifecycle_enabled,
     )
 
     timeout_counter: list[int] = [0]
@@ -184,6 +277,9 @@ def create_app(
 
     @asynccontextmanager
     async def _lifespan(_app: Any) -> Any:
+        # Start any per-sink background tasks (e.g., SqliteLifecycleSink's
+        # retention cleanup loop) once the asyncio event loop is up.
+        _start_sink_background_tasks(lifecycle_sink)
         if settings.enable_chat_completions:
             httpx = _import_httpx()
             client = httpx.AsyncClient(timeout=settings.backend_timeout_seconds)
@@ -192,8 +288,12 @@ def create_app(
                 yield
             finally:
                 await client.aclose()
+                await lifecycle_sink.close()
         else:
-            yield
+            try:
+                yield
+            finally:
+                await lifecycle_sink.close()
 
     app = fastapi.FastAPI(
         title="arc-guard-service",
@@ -288,6 +388,9 @@ def create_app(
         )
 
     if settings.enable_chat_completions:
+        from arc_guard_service.observability import (
+            SettingsBackedPayloadCapturePolicy,
+        )
         from arc_guard_service.transport.openai import build_router
 
         # The OpenAI router needs the shared httpx client; we wrap it in a
@@ -302,12 +405,29 @@ def create_app(
                     )
                 return await client.post(*args, **kwargs)
 
+        capture_policy = SettingsBackedPayloadCapturePolicy(
+            capture_payloads=settings.lifecycle_capture_payloads,
+            capture_raw_input=settings.lifecycle_capture_raw_input,
+        )
         openai_router = build_router(
             settings=settings,
             pipeline=pipeline,
             http_client=_LazyClient(),
+            lifecycle_sink=lifecycle_sink,
+            payload_capture_policy=capture_policy,
         )
         app.include_router(openai_router)
+
+    if settings.lifecycle_enabled and sse_registry is not None:
+        from arc_guard_service.transport.events import build_events_router
+        from arc_guard_service.transport.lifecycle import build_lifecycle_router
+
+        events_router = build_events_router(registry=sse_registry)
+        app.include_router(events_router)
+        lifecycle_router = build_lifecycle_router(
+            settings=settings, lifecycle_sink=lifecycle_sink
+        )
+        app.include_router(lifecycle_router)
 
     app.add_middleware(
         RequestTimeoutMiddleware,
@@ -326,6 +446,8 @@ def create_app(
     }
     app.state.arc_guard_pipeline = pipeline
     app.state.arc_guard_settings = settings
+    app.state.arc_guard_lifecycle_sink = lifecycle_sink
+    app.state.arc_guard_sse_registry = sse_registry
 
     return app
 

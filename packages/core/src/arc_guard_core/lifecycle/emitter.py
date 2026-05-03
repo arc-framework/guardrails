@@ -1,0 +1,95 @@
+"""Per-rid lifecycle event emitter.
+
+Threading model: the api transport creates ONE `LifecycleEmitter` per
+HTTP request, then passes it to the pipeline through
+`GuardContext.metadata["_lifecycle_emitter"]`. The pipeline reads the
+emitter when present and emits its own lifecycle events using the SAME
+seq counter and rid as the transport-layer events.
+
+This keeps the spec contract intact: every event for one rid has a
+strictly increasing `seq` and a stable `rid`, regardless of which layer
+(transport or pipeline-internal) emitted it.
+
+Lives in `arc_guard_core` (not `arc_guard`) so both the pipeline and the
+api transport can import it without crossing the layered-import boundary.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any
+
+from arc_guard_core.lifecycle._ulid import new_event_id
+from arc_guard_core.lifecycle.config import (
+    NullPayloadCapturePolicy,
+    PayloadCapturePolicy,
+)
+from arc_guard_core.lifecycle.events import LifecycleEventBase
+from arc_guard_core.lifecycle.sink import LifecycleSink
+
+
+class LifecycleEmitter:
+    """Constructs typed lifecycle events with monotonic per-rid seq numbers
+    and emits them through the configured sink.
+
+    Concurrency: not thread-safe. One emitter per HTTP request.
+    Failure mode: open. Sink failures are absorbed by the sink itself; the
+    emitter does not catch.
+
+    Carries a `PayloadCapturePolicy` so emission sites (in transport AND
+    in the pipeline) can consult the same flags without re-walking
+    settings. Default policy captures nothing.
+    """
+
+    __slots__ = ("_sink", "_rid", "_seq", "_policy")
+
+    def __init__(
+        self,
+        sink: LifecycleSink,
+        rid: str,
+        policy: PayloadCapturePolicy | None = None,
+    ) -> None:
+        self._sink = sink
+        self._rid = rid
+        self._seq = 0
+        self._policy: PayloadCapturePolicy = policy or NullPayloadCapturePolicy()
+
+    @property
+    def rid(self) -> str:
+        return self._rid
+
+    @property
+    def sink(self) -> LifecycleSink:
+        return self._sink
+
+    @property
+    def policy(self) -> PayloadCapturePolicy:
+        return self._policy
+
+    @property
+    def next_seq_value(self) -> int:
+        """Peek at the next seq without incrementing. Useful for tests."""
+        return self._seq
+
+    async def emit(
+        self,
+        event_class: type[LifecycleEventBase],
+        *,
+        parent_id: str | None,
+        **fields: Any,
+    ) -> LifecycleEventBase:
+        seq = self._seq
+        self._seq += 1
+        event = event_class(  # type: ignore[call-arg]
+            id=new_event_id(),
+            parent_id=parent_id,
+            seq=seq,
+            ts=datetime.now(timezone.utc),
+            rid=self._rid,
+            **fields,
+        )
+        await self._sink.emit(event)
+        return event
+
+
+__all__ = ["LifecycleEmitter"]

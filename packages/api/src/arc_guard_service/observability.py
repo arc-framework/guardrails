@@ -43,4 +43,28 @@ class StdlibBridgeLogger:
         )
 
 
-__all__ = ["StdlibBridgeLogger"]
+class SettingsBackedPayloadCapturePolicy:
+    """Implements `PayloadCapturePolicy` by reading from `ServiceSettings`.
+
+    Constructed once per app boot and shared across every per-request
+    `LifecycleEmitter`. The policy is read-only — settings changes after
+    boot are NOT picked up (same posture as the rest of `ServiceSettings`).
+    """
+
+    def __init__(
+        self,
+        *,
+        capture_payloads: bool,
+        capture_raw_input: bool,
+    ) -> None:
+        self._capture_payloads = capture_payloads
+        self._capture_raw_input = capture_raw_input
+
+    def should_capture_sanitized(self) -> bool:
+        return self._capture_payloads
+
+    def should_capture_raw_input(self) -> bool:
+        return self._capture_raw_input
+
+
+__all__ = ["StdlibBridgeLogger", "SettingsBackedPayloadCapturePolicy"]

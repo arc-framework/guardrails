@@ -124,13 +124,22 @@ class RequestTimeoutMiddleware:
         *,
         timeout_seconds: float,
         on_timeout: Callable[[], None] | None = None,
+        skip_paths: tuple[str, ...] = ("/events",),
     ) -> None:
         self.app = app
         self.timeout_seconds = timeout_seconds
         self.on_timeout = on_timeout
+        # Long-poll / Server-Sent-Event endpoints are infinite by design;
+        # applying a per-request timeout would terminate them after the
+        # window. Such paths bypass the timeout entirely.
+        self.skip_paths = skip_paths
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        if scope.get("path") in self.skip_paths:
             await self.app(scope, receive, send)
             return
 

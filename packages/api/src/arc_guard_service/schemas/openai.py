@@ -134,6 +134,14 @@ class ArcGuardEnvelope(BaseModel):
             "the request (the backend was never called)."
         ),
     )
+    rid: str | None = Field(
+        default=None,
+        description=(
+            "The request correlation id. Use this to fetch the full lifecycle "
+            "event tree from `GET /lifecycle/{rid}`. Same value also exposed "
+            "via the `x-request-id` response header."
+        ),
+    )
 
 
 class ChatCompletionResponse(BaseModel):

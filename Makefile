@@ -13,7 +13,7 @@ TOOLS_DIR    := tools
 .PHONY: help init install install-minimal \
         smoke examples example-library example-sidecar example-cli example-fastapi example-api \
         api-up api-down api-logs demo \
-        docker-build docker-up docker-down docker-logs docker-nuke \
+        docker-build docker-up docker-up-prod docker-down docker-logs docker-nuke \
         test test-core test-pip test-api \
         lint lint-core lint-pip lint-api \
         typecheck typecheck-core typecheck-pip typecheck-api \
@@ -48,7 +48,8 @@ help:
 	@echo
 	@echo "Docker (full Compose stack — api + ollama + llama3.2):"
 	@echo "  docker-build       build the arc-guard-service image"
-	@echo "  docker-up          boot the stack (auto-pulls llama3.2 ~2GB on first run)"
+	@echo "  docker-up          boot dev profile (api + ollama + sqlite-web DB browser); auto-pulls llama3.2 ~2GB on first run"
+	@echo "  docker-up-prod     boot prod profile (DB browser suppressed)"
 	@echo "  docker-down        stop the stack"
 	@echo "  docker-logs        follow the api container's logs"
 	@echo "  docker-nuke        DESTRUCTIVE: stop stack + remove volumes + remove project images (frees ~5-6GB)"
@@ -196,10 +197,11 @@ demo:
 
 # ---------- Docker — full stack with Ollama ----------
 #
-# docker-build  : build the arc-guard-service image
-# docker-up     : full Compose stack — arc-guard-service + ollama + auto-pulled llama3.2
-# docker-down   : stop the stack
-# docker-logs   : tail the api container's logs
+# docker-build      : build the arc-guard-service image
+# docker-up         : DEV profile — api + ollama + auto-pulled llama3.2 + sqlite-web DB browser
+# docker-up-prod    : PROD profile — api + ollama only (sqlite-web suppressed)
+# docker-down       : stop the stack
+# docker-logs       : tail the api container's logs
 #
 # For api without an LLM, use `make api-up` locally — faster than running
 # the container in isolation.
@@ -211,31 +213,48 @@ docker-build:
 	docker build -f packages/api/Dockerfile -t $(DOCKER_IMAGE) .
 
 docker-up:
-	docker compose -f $(COMPOSE_FILE) up --build -d
+	docker compose -f $(COMPOSE_FILE) --profile dev up --build -d
 	@echo
-	@echo "Stack up:"
-	@echo "  api      http://127.0.0.1:8766"
-	@echo "  ollama   http://127.0.0.1:11434"
+	@echo "Stack up (dev profile):"
+	@echo "  api         http://127.0.0.1:8766"
+	@echo "  ollama      http://127.0.0.1:11434"
+	@echo "  sqlite-ui   http://127.0.0.1:8081  (DB browser; dev profile only)"
 	@echo
-	@echo "  Guard endpoint:  POST http://127.0.0.1:8766/v1/guard"
-	@echo "  Chat endpoint:   POST http://127.0.0.1:8766/v1/chat/completions"
-	@echo "  Swagger:         http://127.0.0.1:8766/docs"
-	@echo "  OpenAPI:         http://127.0.0.1:8766/openapi.json"
-	@echo "  Health:          http://127.0.0.1:8766/"
+	@echo "  Guard endpoint:    POST http://127.0.0.1:8766/v1/guard"
+	@echo "  Chat endpoint:     POST http://127.0.0.1:8766/v1/chat/completions"
+	@echo "  Live events:       GET  http://127.0.0.1:8766/events"
+	@echo "  Lifecycle replay:  GET  http://127.0.0.1:8766/lifecycle/{rid}"
+	@echo "  Swagger:           http://127.0.0.1:8766/docs"
+	@echo "  OpenAPI:           http://127.0.0.1:8766/openapi.json"
+	@echo "  Health:            http://127.0.0.1:8766/"
 	@echo
 	@echo "First run pulls llama3.2 (~2GB); follow with: docker compose -f $(COMPOSE_FILE) logs -f ollama-pull"
 
+docker-up-prod:
+	docker compose -f $(COMPOSE_FILE) --profile prod up --build -d
+	@echo
+	@echo "Stack up (prod profile — DB browser suppressed):"
+	@echo "  api      http://127.0.0.1:8766"
+	@echo "  ollama   http://127.0.0.1:11434"
+	@echo
+	@echo "  Guard endpoint:    POST http://127.0.0.1:8766/v1/guard"
+	@echo "  Chat endpoint:     POST http://127.0.0.1:8766/v1/chat/completions"
+	@echo "  Live events:       GET  http://127.0.0.1:8766/events"
+	@echo "  Lifecycle replay:  GET  http://127.0.0.1:8766/lifecycle/{rid}"
+	@echo "  Swagger:           http://127.0.0.1:8766/docs"
+	@echo "  Health:            http://127.0.0.1:8766/"
+
 docker-down:
-	docker compose -f $(COMPOSE_FILE) down
+	docker compose -f $(COMPOSE_FILE) --profile dev --profile prod down
 
 docker-logs:
 	docker compose -f $(COMPOSE_FILE) logs -f api
 
 # docker-nuke — full teardown. Removes containers, named volumes (the
-# llama3.2 model cache!), and every image this project has ever built
-# (current + stale tags from earlier renames). Use when you want a clean
-# slate or to free disk space. The next docker-up rebuilds everything
-# and re-pulls llama3.2.
+# llama3.2 model cache AND the lifecycle event history!), and every image
+# this project has ever built (current + stale tags from earlier renames).
+# Use when you want a clean slate or to free disk space. The next docker-up
+# rebuilds everything and re-pulls llama3.2.
 docker-nuke:
 	@echo "tearing down containers and named volumes..."
 	-docker compose -f $(COMPOSE_FILE) down --volumes --remove-orphans

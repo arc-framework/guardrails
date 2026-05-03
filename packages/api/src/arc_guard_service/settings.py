@@ -88,5 +88,32 @@ class ServiceSettings(BaseSettings):
     openai_api_key: str = ""
     backend_timeout_seconds: float = Field(default=60.0, gt=0.0, le=600.0)
 
+    # Per-request lifecycle observation.
+    # Defaults wire the in-memory ring buffer + persistent SQLite composite so
+    # operators get live SSE + cross-restart replay out of the box. Disable by
+    # setting `lifecycle_enabled=False` to fall back to the NullLifecycleSink.
+    lifecycle_enabled: bool = True
+    lifecycle_buffer_capacity: int = Field(default=5000, ge=1, le=1_000_000)
+    # Ring-only by default — no assumed filesystem path. Docker / production
+    # deployments opt into persistent storage via the env var:
+    #   ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH=/data/lifecycle.db
+    # Setting this to None (default) keeps lifecycle storage in-memory only.
+    lifecycle_sqlite_path: str | None = None
+    lifecycle_sqlite_max_rows: int = Field(default=500_000, ge=1_000)
+    lifecycle_sqlite_max_age_days: int = Field(default=7, ge=1, le=365)
+    lifecycle_sqlite_cleanup_interval_seconds: float = Field(
+        default=60.0, gt=0.0, le=3600.0
+    )
+    lifecycle_sse_subscriber_queue_capacity: int = Field(
+        default=1000, ge=10, le=100_000
+    )
+    lifecycle_lookup_timeout_seconds: float = Field(default=5.0, gt=0.0, le=60.0)
+    # Payload capture is OFF by default — events carry sizes/lengths only.
+    # Enable `lifecycle_capture_payloads` to capture POST-sanitization text.
+    # Enable `lifecycle_capture_raw_input` (separately, security-sensitive) to
+    # capture the raw inbound text on RequestStarted.
+    lifecycle_capture_payloads: bool = False
+    lifecycle_capture_raw_input: bool = False
+
 
 __all__ = ["ServiceSettings"]

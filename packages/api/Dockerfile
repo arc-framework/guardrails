@@ -11,7 +11,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     ARC_GUARD_SERVICE_BIND=0.0.0.0 \
     ARC_GUARD_SERVICE_PORT=8766 \
     ARC_GUARD_SERVICE_BACKEND=echo \
-    ARC_GUARD_SERVICE_LOG_LEVEL=INFO
+    ARC_GUARD_SERVICE_LOG_LEVEL=INFO \
+    ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH=/data/lifecycle.db
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       curl \
@@ -33,6 +34,9 @@ RUN cd /app/packages && \
       --editable ./core \
       --editable ./pip \
       --editable './api[fastapi]'
+
+RUN mkdir -p /data
+VOLUME /data
 
 EXPOSE 8766
 
