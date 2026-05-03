@@ -7,9 +7,25 @@ non-zero with a friendly install hint otherwise.
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 
 from arc_guard_service.settings import ServiceSettings
+
+
+def _configure_root_logging(level: str) -> None:
+    """Set up readable, single-format logging for the api process.
+
+    Quiets known-noisy third-party loggers (Presidio loads ~30 recognizers
+    at INFO on every analyzer init; httpx logs every outbound request)
+    so the operator-facing log stream stays focused on guard activity.
+    """
+    logging.basicConfig(
+        level=level.upper(),
+        format="%(asctime)s %(levelname)-7s %(name)s %(message)s",
+    )
+    for noisy in ("presidio-analyzer", "httpx", "httpcore"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -49,6 +65,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     settings = _settings_from_args(args)
+    _configure_root_logging(settings.log_level)
 
     try:
         from arc_guard_service.transport.http import create_app

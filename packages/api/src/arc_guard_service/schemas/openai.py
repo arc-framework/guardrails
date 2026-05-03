@@ -16,8 +16,6 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-# ----- request side -----
-
 
 class ChatMessage(BaseModel):
     """One message in the OpenAI chat conversation."""
@@ -48,7 +46,11 @@ class ChatCompletionRequest(BaseModel):
     model: str = Field(description="Model id to invoke on the configured backend.")
     messages: list[ChatMessage] = Field(
         min_length=1,
-        description="Conversation history, ordered oldest-first. Must contain at least one message; arc-guard inspects the LAST user message on the inbound side.",
+        description=(
+            "Conversation history, ordered oldest-first. Must contain at least "
+            "one message; arc-guard inspects the LAST user message on the "
+            "inbound side."
+        ),
     )
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     top_p: float | None = Field(default=None, ge=0.0, le=1.0)
@@ -65,9 +67,6 @@ class ChatCompletionRequest(BaseModel):
         default=None,
         description="Opaque end-user id; passed through to the backend if supplied.",
     )
-
-
-# ----- response side -----
 
 
 class ChatCompletionChoice(BaseModel):
@@ -97,14 +96,20 @@ class ArcGuardPhase(BaseModel):
     )
     findings: list[str] = Field(
         default_factory=list,
-        description="Entity types fired by inspectors (e.g. `EMAIL_ADDRESS`, `INJECTION`, `JAILBREAK_DIRECT_OVERRIDE`).",
+        description=(
+            "Entity types fired by inspectors (e.g. `EMAIL_ADDRESS`, "
+            "`INJECTION`, `JAILBREAK_DIRECT_OVERRIDE`)."
+        ),
     )
     refusal_code: str | None = Field(
         default=None,
         description="Refusal code if the phase produced a refusal envelope (e.g. `jailbreak_strong`).",
     )
     sanitized: bool = Field(
-        description="True when this phase mutated the text (redact / hash / tokenize), false for pass / block."
+        description=(
+            "True when this phase mutated the text (redact / hash / tokenize), "
+            "false for pass / block."
+        )
     )
 
 
@@ -117,11 +122,17 @@ class ArcGuardEnvelope(BaseModel):
         description="Which phase blocked, if any.",
     )
     pre_process: ArcGuardPhase | None = Field(
-        description="Inbound user-message phase. Always populated unless the request was rejected before guard ran."
+        description=(
+            "Inbound user-message phase. Always populated unless the request "
+            "was rejected before guard ran."
+        )
     )
     post_process: ArcGuardPhase | None = Field(
         default=None,
-        description="Outbound assistant-message phase. Null when pre_process blocked the request (the backend was never called).",
+        description=(
+            "Outbound assistant-message phase. Null when pre_process blocked "
+            "the request (the backend was never called)."
+        ),
     )
 
 
@@ -142,9 +153,6 @@ class ChatCompletionResponse(BaseModel):
     )
 
 
-# ----- error envelope (kept for /docs) -----
-
-
 class RefusalEnvelopeBody(BaseModel):
     """Shape of a 4xx/5xx error body returned when arc-guard or the transport blocks."""
 
@@ -158,15 +166,12 @@ class RefusalEnvelopeBody(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-# ----- root descriptor -----
-
-
 class ServiceDescriptor(BaseModel):
     """What `GET /` returns — a tiny health/identity payload."""
 
     service: str
     backend: str
-    endpoint: str
+    endpoints: list[str]
 
 
 __all__ = [

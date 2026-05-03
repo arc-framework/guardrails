@@ -110,6 +110,7 @@ dependencies = [
 [package.optional-dependencies]
 fastapi = [
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "uvicorn" },
 ]
 
@@ -117,6 +118,7 @@ fastapi = [
 requires-dist = [
     { name = "arc-guard", editable = "pip" },
     { name = "fastapi", marker = "extra == 'fastapi'", specifier = ">=0.110" },
+    { name = "httpx", marker = "extra == 'fastapi'", specifier = ">=0.27" },
     { name = "pydantic-settings", specifier = ">=2.0" },
     { name = "uvicorn", marker = "extra == 'fastapi'", specifier = ">=0.30" },
 ]

@@ -1,12 +1,17 @@
-# Local end-to-end stack: arc-guard api + Ollama.
+# Local end-to-end stack: arc-guard-service + Ollama.
+#
+# Boots the arc-guard-service container with the OpenAI-compatible
+# /v1/chat/completions endpoint pointed at a sidecar Ollama instance,
+# pre-pulled with llama3.2.
 #
 # Usage:
-#   docker compose -f examples/api/docker-compose.yml up --build
-#   ollama (in the running container) auto-pulls llama3.2 on first start.
-#
-#   curl http://localhost:8766/v1/chat/completions \
+#   make docker-up
+#   curl http://127.0.0.1:8766/v1/chat/completions \
 #     -H 'Content-Type: application/json' \
 #     -d '{"model":"llama3.2","messages":[{"role":"user","content":"hello"}]}'
+#
+# Swagger UI: http://127.0.0.1:8766/docs
+# OpenAPI:    http://127.0.0.1:8766/openapi.json
 
 services:
   ollama:
@@ -34,14 +39,15 @@ services:
   api:
     build:
       context: ../..
-      dockerfile: examples/api/Dockerfile
+      dockerfile: packages/api/Dockerfile
     ports:
       - "8766:8766"
     environment:
-      BACKEND: ollama
-      OLLAMA_URL: http://ollama:11434/v1/chat/completions
-      API_HOST: 0.0.0.0
-      API_PORT: "8766"
+      ARC_GUARD_SERVICE_BIND: 0.0.0.0
+      ARC_GUARD_SERVICE_PORT: "8766"
+      ARC_GUARD_SERVICE_BACKEND: ollama
+      ARC_GUARD_SERVICE_OLLAMA_URL: http://ollama:11434/v1/chat/completions
+      ARC_GUARD_SERVICE_LOG_LEVEL: INFO
     depends_on:
       ollama:
         condition: service_healthy

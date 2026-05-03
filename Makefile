@@ -133,11 +133,12 @@ example-fastapi:
 example-api:
 	cd $(PACKAGES_DIR) && uv run --package arc-guard-service --extra fastapi pytest ../$(EXAMPLES_DIR)/api
 
-# ---------- OpenAI-compatible api (live demo) ----------
+# ---------- arc-guard-service (live local) ----------
 #
-# api-up boots the api at 127.0.0.1:8766 with BACKEND=echo (no real LLM
-# needed). Set BACKEND=ollama or BACKEND=openai before `make api-up` to
-# point at a real model. api-down uses lsof to find the listening process —
+# api-up boots the SDK package itself (arc-guard-service) at
+# 127.0.0.1:8766 with BACKEND=echo. Set ARC_GUARD_SERVICE_BACKEND=ollama
+# or =openai before `make api-up` to point the chat-completions endpoint
+# at a real model. api-down uses lsof to find the listening process —
 # more robust than pid files across subshell-cwd weirdness.
 
 API_PORT ?= 8766
@@ -148,18 +149,19 @@ api-up:
 	@if lsof -ti:$(API_PORT) >/dev/null 2>&1; then \
 	  echo "port $(API_PORT) already in use (pid $$(lsof -ti:$(API_PORT)))"; exit 1; \
 	fi
-	@cd $(PACKAGES_DIR) && nohup uv run --package arc-guard-service --extra fastapi \
-	  uvicorn --app-dir ../$(EXAMPLES_DIR)/api main:app \
-	  --host $(API_HOST) --port $(API_PORT) \
+	@cd $(PACKAGES_DIR) && \
+	  ARC_GUARD_SERVICE_BIND=$(API_HOST) ARC_GUARD_SERVICE_PORT=$(API_PORT) \
+	  nohup uv run --package arc-guard-service --extra fastapi \
+	  python -m arc_guard_service \
 	  > ../$(API_LOG_FILE) 2>&1 &
 	@until lsof -ti:$(API_PORT) >/dev/null 2>&1; do sleep 1; done
 	@echo "api up at http://$(API_HOST):$(API_PORT) (pid $$(lsof -ti:$(API_PORT))). log: $(API_LOG_FILE)"
 	@echo
-	@echo "  Endpoint:  POST http://$(API_HOST):$(API_PORT)/v1/chat/completions"
-	@echo "  Swagger:   http://$(API_HOST):$(API_PORT)/docs"
-	@echo "  ReDoc:     http://$(API_HOST):$(API_PORT)/redoc"
-	@echo "  OpenAPI:   http://$(API_HOST):$(API_PORT)/openapi.json"
-	@echo "  Health:    http://$(API_HOST):$(API_PORT)/"
+	@echo "  Guard endpoint:  POST http://$(API_HOST):$(API_PORT)/v1/guard"
+	@echo "  Chat endpoint:   POST http://$(API_HOST):$(API_PORT)/v1/chat/completions"
+	@echo "  Swagger:         http://$(API_HOST):$(API_PORT)/docs"
+	@echo "  OpenAPI:         http://$(API_HOST):$(API_PORT)/openapi.json"
+	@echo "  Health:          http://$(API_HOST):$(API_PORT)/"
 
 api-down:
 	@PID=$$(lsof -ti:$(API_PORT) 2>/dev/null); \
@@ -193,19 +195,19 @@ demo:
 
 # ---------- Docker — full stack with Ollama ----------
 #
-# docker-build  : build the api image (verifies the Dockerfile)
-# docker-up     : full Compose stack — api + ollama + auto-pulled llama3.2
+# docker-build  : build the arc-guard-service image
+# docker-up     : full Compose stack — arc-guard-service + ollama + auto-pulled llama3.2
 # docker-down   : stop the stack
 # docker-logs   : tail the api container's logs
 #
 # For api without an LLM, use `make api-up` locally — faster than running
 # the container in isolation.
 
-DOCKER_IMAGE := arc-guard-api:dev
-COMPOSE_FILE := $(EXAMPLES_DIR)/api/docker-compose.yml
+DOCKER_IMAGE := arc-guard-service:dev
+COMPOSE_FILE := packages/api/docker-compose.yml
 
 docker-build:
-	docker build -f $(EXAMPLES_DIR)/api/Dockerfile -t $(DOCKER_IMAGE) .
+	docker build -f packages/api/Dockerfile -t $(DOCKER_IMAGE) .
 
 docker-up:
 	docker compose -f $(COMPOSE_FILE) up --build -d
@@ -214,11 +216,11 @@ docker-up:
 	@echo "  api      http://127.0.0.1:8766"
 	@echo "  ollama   http://127.0.0.1:11434"
 	@echo
-	@echo "  Endpoint:  POST http://127.0.0.1:8766/v1/chat/completions"
-	@echo "  Swagger:   http://127.0.0.1:8766/docs"
-	@echo "  ReDoc:     http://127.0.0.1:8766/redoc"
-	@echo "  OpenAPI:   http://127.0.0.1:8766/openapi.json"
-	@echo "  Health:    http://127.0.0.1:8766/"
+	@echo "  Guard endpoint:  POST http://127.0.0.1:8766/v1/guard"
+	@echo "  Chat endpoint:   POST http://127.0.0.1:8766/v1/chat/completions"
+	@echo "  Swagger:         http://127.0.0.1:8766/docs"
+	@echo "  OpenAPI:         http://127.0.0.1:8766/openapi.json"
+	@echo "  Health:          http://127.0.0.1:8766/"
 	@echo
 	@echo "First run pulls llama3.2 (~2GB); follow with: docker compose -f $(COMPOSE_FILE) logs -f ollama-pull"
 
