@@ -13,7 +13,7 @@ TOOLS_DIR    := tools
 .PHONY: help init install install-minimal \
         smoke examples example-library example-sidecar example-cli example-fastapi example-api \
         api-up api-down api-logs demo \
-        docker-build docker-up docker-down docker-logs \
+        docker-build docker-up docker-down docker-logs docker-nuke \
         test test-core test-pip test-api \
         lint lint-core lint-pip lint-api \
         typecheck typecheck-core typecheck-pip typecheck-api \
@@ -47,10 +47,11 @@ help:
 	@echo "  demo               POST benign / injection / pii to the running api"
 	@echo
 	@echo "Docker (full Compose stack — api + ollama + llama3.2):"
-	@echo "  docker-build       build the arc-guard-api image"
+	@echo "  docker-build       build the arc-guard-service image"
 	@echo "  docker-up          boot the stack (auto-pulls llama3.2 ~2GB on first run)"
 	@echo "  docker-down        stop the stack"
 	@echo "  docker-logs        follow the api container's logs"
+	@echo "  docker-nuke        DESTRUCTIVE: stop stack + remove volumes + remove project images (frees ~5-6GB)"
 	@echo
 	@echo "Per-package quality gates:"
 	@echo "  test               pytest for core + pip + api"
@@ -229,6 +230,18 @@ docker-down:
 
 docker-logs:
 	docker compose -f $(COMPOSE_FILE) logs -f api
+
+# docker-nuke — full teardown. Removes containers, named volumes (the
+# llama3.2 model cache!), and every image this project has ever built
+# (current + stale tags from earlier renames). Use when you want a clean
+# slate or to free disk space. The next docker-up rebuilds everything
+# and re-pulls llama3.2.
+docker-nuke:
+	@echo "tearing down containers and named volumes..."
+	-docker compose -f $(COMPOSE_FILE) down --volumes --remove-orphans
+	@echo "removing project images..."
+	-docker image rm $(DOCKER_IMAGE) arc-guard-api:dev api-api:latest 2>/dev/null || true
+	@echo "done. next 'make docker-up' will rebuild from scratch and re-pull llama3.2 (~2GB)."
 
 # ---------- Tests ----------
 #
