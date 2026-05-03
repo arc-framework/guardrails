@@ -1,0 +1,52 @@
+# Local end-to-end stack: arc-guard api + Ollama.
+#
+# Usage:
+#   docker compose -f examples/api/docker-compose.yml up --build
+#   ollama (in the running container) auto-pulls llama3.2 on first start.
+#
+#   curl http://localhost:8766/v1/chat/completions \
+#     -H 'Content-Type: application/json' \
+#     -d '{"model":"llama3.2","messages":[{"role":"user","content":"hello"}]}'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["OLLAMA_HOST=http://ollama:11434 ollama pull llama3.2"]
+    restart: "no"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: examples/api/Dockerfile
+    ports:
+      - "8766:8766"
+    environment:
+      BACKEND: ollama
+      OLLAMA_URL: http://ollama:11434/v1/chat/completions
+      API_HOST: 0.0.0.0
+      API_PORT: "8766"
+    depends_on:
+      ollama:
+        condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
+
+volumes:
+  ollama-models:
