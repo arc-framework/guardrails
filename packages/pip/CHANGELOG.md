@@ -2,6 +2,14 @@
 
 All notable changes to the `arc-guard` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.7.1] — 2026-05-03
+
+### Removed
+- The pre-rewrite `python/arc-guardrails/` directory (deprecation README, orphaned `pyproject.toml`, `uv.lock`, and the duplicate `tests/`) and the stale `python/arc-common/` duplicate (the canonical `arc-common` distribution is unaffected — it lives in the arc-platform repo and was never imported from this SDK repo's copy). The functional source migration to `packages/pip/` happened in `arc-guard 0.2.x` → `0.3.0`; this entry only records the cleanup of the empty distribution shells. Pre-rewrite research notes are archived at `docs/archive/pre-rewrite-analysis/`.
+
+### Migration notes
+- No code changes. No public-surface change. Operators pinned to `arc-guard` 0.7.x see no behavior difference.
+
 ## [0.7.0] — 2026-05-03
 
 ### Added
