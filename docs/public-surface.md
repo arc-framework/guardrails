@@ -534,6 +534,61 @@ the spec/version where that contract was introduced.
   stability_band: stable
   introduced_in: '011'
   stabilized_in: '011'
+- name: RequestSummary
+  kind: class
+  stability_band: provisional
+  introduced_in: '012'
+  stabilized_in: 'TBD'
+- name: RequestPage
+  kind: class
+  stability_band: provisional
+  introduced_in: '012'
+  stabilized_in: 'TBD'
+- name: RequestPageFilters
+  kind: class
+  stability_band: provisional
+  introduced_in: '012'
+  stabilized_in: 'TBD'
+- name: RequestWorkspaceManifest
+  kind: class
+  stability_band: provisional
+  introduced_in: '012'
+  stabilized_in: 'TBD'
+- name: WorkspaceResourcesAvailability
+  kind: class
+  stability_band: provisional
+  introduced_in: '012'
+  stabilized_in: 'TBD'
+- name: WorkspaceResourceLinks
+  kind: class
+  stability_band: provisional
+  introduced_in: '012'
+  stabilized_in: 'TBD'
+- name: RequestDecisionEnvelope
+  kind: class
+  stability_band: provisional
+  introduced_in: '012'
+  stabilized_in: 'TBD'
+- name: RequestDebugEntry
+  kind: class
+  stability_band: provisional
+  introduced_in: '012'
+  stabilized_in: 'TBD'
+- name: RequestDebugPage
+  kind: class
+  stability_band: provisional
+  introduced_in: '012'
+  stabilized_in: 'TBD'
+- name: encode_debug_cursor
+  kind: function
+  stability_band: provisional
+  introduced_in: '012'
+  stabilized_in: 'TBD'
+- name: decode_debug_cursor
+  kind: function
+  stability_band: provisional
+  introduced_in: '012'
+  stabilized_in: 'TBD'
 ```
 
 ## Package: arc_guard

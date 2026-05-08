@@ -1535,6 +1535,328 @@
     "stability": "stable"
   },
   {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "rid",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "seq",
+        "required": true,
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "ts",
+        "required": true,
+        "type": "datetime"
+      },
+      {
+        "default": null,
+        "name": "channel",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "severity",
+        "required": true,
+        "type": "typing.Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']"
+      },
+      {
+        "default": null,
+        "name": "message",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "metadata",
+        "required": true,
+        "type": "dict[str, typing.Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_debug",
+    "name": "RequestDebugEntry",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "rid",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "items",
+        "required": true,
+        "type": "tuple[arc_guard_core.schemas.request_debug.RequestDebugEntry, ...]"
+      },
+      {
+        "default": null,
+        "name": "next_cursor",
+        "required": true,
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "name": "page_size",
+        "required": true,
+        "type": "int"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_debug",
+    "name": "RequestDebugPage",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "rid",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "decision_id",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "recorded_at",
+        "required": true,
+        "type": "datetime"
+      },
+      {
+        "default": null,
+        "name": "decision",
+        "required": true,
+        "type": "dict[str, typing.Any]"
+      },
+      {
+        "default": null,
+        "name": "payload_size_bytes",
+        "required": true,
+        "type": "int"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_decision",
+    "name": "RequestDecisionEnvelope",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "items",
+        "required": true,
+        "type": "tuple[arc_guard_core.schemas.request_summary.RequestSummary, ...]"
+      },
+      {
+        "default": null,
+        "name": "page",
+        "required": true,
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "page_size",
+        "required": true,
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "total",
+        "required": true,
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "has_more",
+        "required": true,
+        "type": "bool"
+      },
+      {
+        "default": null,
+        "name": "filters",
+        "required": true,
+        "type": "RequestPageFilters"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_summary",
+    "name": "RequestPage",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "None",
+        "name": "since",
+        "required": false,
+        "type": "datetime.datetime | None"
+      },
+      {
+        "default": "None",
+        "name": "until",
+        "required": false,
+        "type": "datetime.datetime | None"
+      },
+      {
+        "default": "()",
+        "name": "status",
+        "required": false,
+        "type": "tuple[typing.Literal['live', 'completed', 'errored'], ...]"
+      },
+      {
+        "default": "()",
+        "name": "action",
+        "required": false,
+        "type": "tuple[typing.Literal['pass', 'block', 'redact', 'clarify', 'refuse'], ...]"
+      },
+      {
+        "default": "()",
+        "name": "risk_band",
+        "required": false,
+        "type": "tuple[typing.Literal['low', 'med', 'high'], ...]"
+      },
+      {
+        "default": "None",
+        "name": "rid_prefix",
+        "required": false,
+        "type": "str | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_summary",
+    "name": "RequestPageFilters",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "rid",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "started_at",
+        "required": true,
+        "type": "datetime"
+      },
+      {
+        "default": null,
+        "name": "last_event_at",
+        "required": true,
+        "type": "datetime"
+      },
+      {
+        "default": null,
+        "name": "status",
+        "required": true,
+        "type": "typing.Literal['live', 'completed', 'errored']"
+      },
+      {
+        "default": "None",
+        "name": "final_action",
+        "required": false,
+        "type": "typing.Optional[typing.Literal['pass', 'block', 'redact', 'clarify', 'refuse']]"
+      },
+      {
+        "default": "None",
+        "name": "max_risk",
+        "required": false,
+        "type": "float | None"
+      },
+      {
+        "default": "None",
+        "name": "duration_ms",
+        "required": false,
+        "type": "int | None"
+      },
+      {
+        "default": "None",
+        "name": "refusal_code",
+        "required": false,
+        "type": "str | None"
+      },
+      {
+        "default": "None",
+        "name": "decision_id",
+        "required": false,
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "name": "live",
+        "required": true,
+        "type": "bool"
+      },
+      {
+        "default": "None",
+        "name": "stage",
+        "required": false,
+        "type": "typing.Optional[typing.Literal['validate', 'defend', 'classify', 'deception_inspect', 'sanitize', 'route', 'execute', 'refusal', 'verify', 'rehydrate', 'decision_emit', 'report']]"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_summary",
+    "name": "RequestSummary",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "summary",
+        "required": true,
+        "type": "RequestSummary"
+      },
+      {
+        "default": null,
+        "name": "resources",
+        "required": true,
+        "type": "WorkspaceResourcesAvailability"
+      },
+      {
+        "default": null,
+        "name": "links",
+        "required": true,
+        "type": "WorkspaceResourceLinks"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_summary",
+    "name": "RequestWorkspaceManifest",
+    "stability": "stable"
+  },
+  {
     "base": "StrEnum",
     "kind": "enum",
     "module": "arc_guard_core.policy",
@@ -1798,6 +2120,88 @@
   {
     "kind": "unknown",
     "name": "UNKNOWN_RULE",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "lifecycle",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "decision",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "debug",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "live_stream",
+        "required": true,
+        "type": "str"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_summary",
+    "name": "WorkspaceResourceLinks",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "lifecycle",
+        "required": true,
+        "type": "bool"
+      },
+      {
+        "default": null,
+        "name": "decision",
+        "required": true,
+        "type": "bool"
+      },
+      {
+        "default": null,
+        "name": "debug",
+        "required": true,
+        "type": "bool"
+      },
+      {
+        "default": null,
+        "name": "live_stream",
+        "required": true,
+        "type": "bool"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_summary",
+    "name": "WorkspaceResourcesAvailability",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.schemas.request_debug",
+    "name": "decode_debug_cursor",
+    "signature": "(token: 'str', *, expected_rid: 'str') -> 'int'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.schemas.request_debug",
+    "name": "encode_debug_cursor",
+    "signature": "(*, rid: 'str', seq: 'int') -> 'str'",
     "stability": "stable"
   },
   {

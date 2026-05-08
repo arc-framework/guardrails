@@ -1,6 +1,6 @@
 [project]
 name = "arc-guard-service"
-version = "0.5.0"
+version = "0.6.0"
 description = "Thin deployment surface for arc-guardrails"
 readme = "README.md"
 requires-python = ">=3.11"

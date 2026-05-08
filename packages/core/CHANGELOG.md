@@ -2,6 +2,22 @@
 
 All notable changes to the `arc-guard-core` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.9.0] — 2026-05-08
+
+### Added
+- New `arc_guard_core.schemas` subpackage carrying the operator-dashboard read models (Provisional band):
+  - `RequestSummary` — explorer-table row; `stage` field is a `Literal` bound to `STAGE_DESCRIPTORS` with a runtime drift check.
+  - `RequestPage`, `RequestPageFilters` — paginated `GET /requests` envelope and effective-filter echo.
+  - `RequestWorkspaceManifest`, `WorkspaceResourcesAvailability`, `WorkspaceResourceLinks` — workspace-detail manifest returned by `GET /requests/{rid}` (renamed from the earlier draft term `RequestWorkspaceResources`).
+  - `RequestDecisionEnvelope` — DecisionRecord retrieval envelope.
+  - `RequestDebugEntry`, `RequestDebugPage` — per-rid debug-entry envelope and cursor-paginated page.
+  - `encode_debug_cursor` / `decode_debug_cursor` helpers — opaque base64-urlsafe-JSON cursor format `{"seq": int, "rid": str}`. Decode raises `ValueError` on any malformed token or rid mismatch; the FastAPI handler maps to HTTP 400.
+- All eleven names re-export at the top-level `arc_guard_core` namespace per the public-surface manifest.
+
+### Migration notes
+- Additive only. No breaking changes; no migration required.
+- The schema-version probe in `arc_guard.observability.sqlite_lifecycle_sink` (pip) now recognizes v2 and forward-applies migration on construction; pre-existing v1 databases gain three new tables (`request_summaries`, `decision_records`, `debug_entries`) without losing data.
+
 ## [0.8.0] — 2026-05-08
 
 ### Added

@@ -107,15 +107,17 @@ def test_persists_across_construction_when_file_backed(tmp_path: Path) -> None:
     assert result[0].rid == "persistent-rid"
 
 
-def test_schema_version_set_to_1_on_first_open(tmp_path: Path) -> None:
+def test_schema_version_set_to_2_on_first_open(tmp_path: Path) -> None:
+    """Schema is at v2 after the dashboard-data-plane migration. The
+    forward-only migration adds three new tables and upserts the meta row;
+    re-opening preserves v2 without duplicating the row."""
     db = tmp_path / "lc.db"
     sink = SqliteLifecycleSink(str(db))
-    assert sink.schema_version == "1"
+    assert sink.schema_version == "2"
     asyncio.run(sink.close())
 
-    # Re-opening must not re-write the version (INSERT OR IGNORE protects this).
     sink2 = SqliteLifecycleSink(str(db))
-    assert sink2.schema_version == "1"
+    assert sink2.schema_version == "2"
     asyncio.run(sink2.close())
 
 

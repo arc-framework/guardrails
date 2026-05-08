@@ -150,6 +150,19 @@ from arc_guard_core.refusal.templates import (
     register_refusal_template,
 )
 from arc_guard_core.registry import EntityRegistry, register_entity
+from arc_guard_core.schemas import (
+    RequestDebugEntry,
+    RequestDebugPage,
+    RequestDecisionEnvelope,
+    RequestPage,
+    RequestPageFilters,
+    RequestSummary,
+    RequestWorkspaceManifest,
+    WorkspaceResourceLinks,
+    WorkspaceResourcesAvailability,
+    decode_debug_cursor,
+    encode_debug_cursor,
+)
 from arc_guard_core.stages import (
     STAGE_CLASSIFY,
     STAGE_DECEPTION_INSPECT,
@@ -343,4 +356,16 @@ __all__ = [
     "STAGE_DECISION_EMIT",
     "STAGE_REPORT",
     "STAGE_DESCRIPTORS",
+    # dashboard data plane (012)
+    "RequestSummary",
+    "RequestPage",
+    "RequestPageFilters",
+    "RequestWorkspaceManifest",
+    "WorkspaceResourcesAvailability",
+    "WorkspaceResourceLinks",
+    "RequestDecisionEnvelope",
+    "RequestDebugEntry",
+    "RequestDebugPage",
+    "encode_debug_cursor",
+    "decode_debug_cursor",
 ]

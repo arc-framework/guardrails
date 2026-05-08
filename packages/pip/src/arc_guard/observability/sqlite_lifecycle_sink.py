@@ -39,9 +39,10 @@ from arc_guard_core.lifecycle import (
 
 _LOG = logging.getLogger("arc_guard.lifecycle.sqlite")
 
-_SCHEMA_VERSION = "1"
+_SCHEMA_VERSION = "2"
 
-_SCHEMA_SQL = """
+# v1 schema — the original lifecycle store.
+_SCHEMA_SQL_V1 = """
 CREATE TABLE IF NOT EXISTS lifecycle_meta (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -59,6 +60,61 @@ CREATE TABLE IF NOT EXISTS lifecycle_events (
 
 CREATE INDEX IF NOT EXISTS idx_lifecycle_events_rid ON lifecycle_events(rid);
 CREATE INDEX IF NOT EXISTS idx_lifecycle_events_created_at ON lifecycle_events(created_at);
+"""
+
+# v2 schema — three new tables for the dashboard data plane.
+# Forward-only migration: every statement uses IF NOT EXISTS so re-running
+# is idempotent. Retention coupling lives in `_run_cleanup_once`, which
+# evicts rows from these tables in lockstep with `lifecycle_events`.
+_SCHEMA_SQL_V2 = """
+CREATE TABLE IF NOT EXISTS request_summaries (
+    rid TEXT PRIMARY KEY,
+    started_at TEXT NOT NULL,
+    last_event_at TEXT NOT NULL,
+    status TEXT NOT NULL,
+    final_action TEXT,
+    max_risk REAL,
+    duration_ms INTEGER,
+    refusal_code TEXT,
+    decision_id TEXT,
+    live INTEGER NOT NULL DEFAULT 1,
+    stage TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_request_summaries_started_at
+    ON request_summaries(started_at);
+CREATE INDEX IF NOT EXISTS idx_request_summaries_status_started
+    ON request_summaries(status, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_request_summaries_final_action
+    ON request_summaries(final_action);
+
+CREATE TABLE IF NOT EXISTS decision_records (
+    rid TEXT NOT NULL,
+    decision_id TEXT NOT NULL,
+    recorded_at TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    payload_size_bytes INTEGER NOT NULL,
+    PRIMARY KEY (rid, decision_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_decision_records_rid
+    ON decision_records(rid);
+CREATE INDEX IF NOT EXISTS idx_decision_records_recorded_at
+    ON decision_records(recorded_at);
+
+CREATE TABLE IF NOT EXISTS debug_entries (
+    rid TEXT NOT NULL,
+    seq INTEGER NOT NULL,
+    ts TEXT NOT NULL,
+    channel TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    message TEXT NOT NULL,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    PRIMARY KEY (rid, seq)
+);
+
+CREATE INDEX IF NOT EXISTS idx_debug_entries_ts
+    ON debug_entries(ts);
 """
 
 
@@ -160,9 +216,20 @@ class SqliteLifecycleSink:
         )
         self._conn.row_factory = sqlite3.Row
         self._conn.execute("PRAGMA journal_mode=WAL")
-        self._conn.executescript(_SCHEMA_SQL)
+        self._migrate_schema()
+
+    def _migrate_schema(self) -> None:
+        """Forward-only schema migration. Every statement uses IF NOT EXISTS
+        so re-running is a no-op. After v1 + v2 DDL, the meta row is upserted
+        to the current `_SCHEMA_VERSION` so subsequent reads see the correct
+        version regardless of which migrations were run."""
+        self._conn.executescript(_SCHEMA_SQL_V1)
+        self._conn.executescript(_SCHEMA_SQL_V2)
+        # UPSERT — the original code used INSERT OR IGNORE, which left existing
+        # rows at "1" forever. Use ON CONFLICT to bring the value forward.
         self._conn.execute(
-            "INSERT OR IGNORE INTO lifecycle_meta(key, value) VALUES('schema_version', ?)",
+            "INSERT INTO lifecycle_meta(key, value) VALUES('schema_version', ?)"
+            " ON CONFLICT(key) DO UPDATE SET value = excluded.value",
             (_SCHEMA_VERSION,),
         )
 
@@ -233,20 +300,57 @@ class SqliteLifecycleSink:
             pass
 
     def _run_cleanup_once(self) -> int:
-        """Delete rows older than `max_age_days` OR beyond `max_rows`.
-        Returns the number of rows deleted."""
+        """Delete rows older than `max_age_days` OR beyond `max_rows` from
+        `lifecycle_events`, then evict the same set of `rid`s from the three
+        dashboard tables (`debug_entries`, `decision_records`,
+        `request_summaries`) in the same transaction. Returns the number of
+        `lifecycle_events` rows deleted."""
         try:
             now = time.time()
             cutoff = now - self._max_age_seconds
-            cur = self._conn.execute(
-                "DELETE FROM lifecycle_events"
-                " WHERE created_at < ?"
-                "    OR rowid <= (SELECT MAX(rowid) - ? FROM lifecycle_events)",
-                (cutoff, self._max_rows),
-            )
-            deleted = cur.rowcount
+            self._conn.execute("BEGIN")
+            try:
+                # Identify the set of rids we're about to evict. Materialize
+                # into a temp table so the four delete statements all see the
+                # same eviction set even if `lifecycle_events` is changing.
+                self._conn.execute(
+                    "CREATE TEMP TABLE IF NOT EXISTS _evict_rids (rid TEXT PRIMARY KEY)"
+                )
+                self._conn.execute("DELETE FROM _evict_rids")
+                self._conn.execute(
+                    "INSERT OR IGNORE INTO _evict_rids(rid)"
+                    " SELECT DISTINCT rid FROM lifecycle_events"
+                    " WHERE created_at < ?"
+                    "    OR rowid <= (SELECT MAX(rowid) - ? FROM lifecycle_events)",
+                    (cutoff, self._max_rows),
+                )
+                # Delete the dashboard rows first (no FK enforced, but order
+                # matches the documented intent: child resources before parent).
+                self._conn.execute(
+                    "DELETE FROM debug_entries WHERE rid IN (SELECT rid FROM _evict_rids)"
+                )
+                self._conn.execute(
+                    "DELETE FROM decision_records WHERE rid IN (SELECT rid FROM _evict_rids)"
+                )
+                self._conn.execute(
+                    "DELETE FROM request_summaries WHERE rid IN (SELECT rid FROM _evict_rids)"
+                )
+                cur = self._conn.execute(
+                    "DELETE FROM lifecycle_events"
+                    " WHERE rid IN (SELECT rid FROM _evict_rids)"
+                )
+                deleted = cur.rowcount
+                self._conn.execute("COMMIT")
+            except sqlite3.Error:
+                with suppress(sqlite3.Error):
+                    self._conn.execute("ROLLBACK")
+                raise
             if deleted > 0:
-                _LOG.info("retention cleanup deleted %d rows", deleted)
+                _LOG.info(
+                    "retention cleanup evicted %d lifecycle_events rows"
+                    " and the matching dashboard rows",
+                    deleted,
+                )
             return int(deleted)
         except sqlite3.Error as exc:
             _LOG.warning("retention cleanup failed: %s", exc)

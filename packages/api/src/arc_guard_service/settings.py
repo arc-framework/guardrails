@@ -14,8 +14,9 @@ runs with no LLM dependency.
 from __future__ import annotations
 
 from typing import Literal
+from urllib.parse import urlparse
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -114,6 +115,72 @@ class ServiceSettings(BaseSettings):
     # capture the raw inbound text on RequestStarted.
     lifecycle_capture_payloads: bool = False
     lifecycle_capture_raw_input: bool = False
+
+    # Dashboard data plane (additive HTTP routes + filtered SSE).
+    # `dashboard_origins` is the strict CORS allow-list — empty means no
+    # cross-origin requests are permitted. Wildcards / regex are forbidden;
+    # entries must be fully-qualified http(s) URLs with no path/query/fragment.
+    # When set via env, supply as a comma-separated list:
+    #   ARC_GUARD_SERVICE_DASHBOARD_ORIGINS=http://127.0.0.1:5173,https://dashboard.example.com
+    dashboard_origins: list[str] = Field(default_factory=list)
+    dashboard_max_request_page_size: int = Field(default=200, ge=1, le=1000)
+    dashboard_max_debug_page_size: int = Field(default=200, ge=1, le=1000)
+    dashboard_decision_record_queue_capacity: int = Field(
+        default=1000, ge=10, le=100_000
+    )
+    dashboard_debug_entry_queue_capacity: int = Field(
+        default=5000, ge=10, le=100_000
+    )
+
+    @field_validator("dashboard_origins", mode="before")
+    @classmethod
+    def _coerce_origins_from_env(cls, value: object) -> object:
+        """Accept either a list (from in-process construction) or a
+        comma-separated string (from env var) and return a list."""
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        return value
+
+    @field_validator("dashboard_origins", mode="after")
+    @classmethod
+    def _validate_origins(cls, value: list[str]) -> list[str]:
+        """Reject wildcards, non-http(s) schemes, and any path/query/fragment.
+        Empty list (default) is allowed and means cross-origin requests are
+        rejected at the CORS layer."""
+        for entry in value:
+            if "*" in entry:
+                raise ValueError(
+                    f'invalid origin "{entry}": wildcard not allowed'
+                )
+            if entry.endswith("/"):
+                raise ValueError(
+                    f'invalid origin "{entry}": trailing slash not allowed'
+                )
+            try:
+                parsed = urlparse(entry)
+            except ValueError as exc:
+                raise ValueError(f'invalid origin "{entry}": {exc}') from exc
+            if parsed.scheme not in ("http", "https"):
+                raise ValueError(
+                    f'invalid origin "{entry}": scheme must be http or https'
+                )
+            if not parsed.netloc:
+                raise ValueError(
+                    f'invalid origin "{entry}": missing host component'
+                )
+            if parsed.path:
+                raise ValueError(
+                    f'invalid origin "{entry}": path component not allowed'
+                )
+            if parsed.query:
+                raise ValueError(
+                    f'invalid origin "{entry}": query component not allowed'
+                )
+            if parsed.fragment:
+                raise ValueError(
+                    f'invalid origin "{entry}": fragment component not allowed'
+                )
+        return value
 
 
 __all__ = ["ServiceSettings"]
