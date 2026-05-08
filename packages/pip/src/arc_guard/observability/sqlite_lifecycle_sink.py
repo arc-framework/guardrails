@@ -115,7 +115,7 @@ def _row_to_event(row: sqlite3.Row | tuple[Any, ...]) -> LifecycleEvent | None:
                 isinstance(f.type, str) and f.type.startswith("tuple[")
             ):
                 payload[f.name] = tuple(payload[f.name])
-    return cls(**payload)  # type: ignore[arg-type]
+    return cls(**payload)  # type: ignore[return-value]
 
 
 class SqliteLifecycleSink:

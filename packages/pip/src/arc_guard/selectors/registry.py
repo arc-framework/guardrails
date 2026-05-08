@@ -88,7 +88,7 @@ def selector(name: str) -> Callable[[type[T]], type[T]]:
 
     def _wrap(cls: type[T]) -> type[T]:
         try:
-            instance = cls()  # type: ignore[call-arg]
+            instance = cls()
         except TypeError:
             return cls
         register_selector(name, instance)

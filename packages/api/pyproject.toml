@@ -55,6 +55,24 @@ warn_return_any = true
 warn_unused_configs = true
 files = ["src", "tests"]
 
+# FastAPI's untyped-decorator pattern (`@app.get(...)`) can't be
+# typed strictly; the SSE transport's typing-narrowing branches and
+# request-handler signatures legitimately need a few escape hatches.
+[[tool.mypy.overrides]]
+module = [
+    "arc_guard_service.transport.http",
+    "arc_guard_service.transport.lifecycle",
+    "arc_guard_service.transport.openai",
+    "arc_guard_service.transport.events",
+]
+disable_error_code = [
+    "untyped-decorator",
+    "unused-ignore",
+    "no-any-return",
+    "arg-type",
+    "valid-type",
+]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

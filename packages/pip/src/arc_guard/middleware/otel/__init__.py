@@ -62,9 +62,10 @@ class OtelTracer:
         self, name: str, *, attributes: Mapping[str, Any] | None = None
     ) -> AbstractContextManager[Any]:
         try:
-            return self._tracer.start_as_current_span(
+            cm: AbstractContextManager[Any] = self._tracer.start_as_current_span(
                 name, attributes=dict(attributes) if attributes else None,
             )
+            return cm
         except Exception:  # pragma: no cover — defensive; OTEL should never raise
             return nullcontext()
 

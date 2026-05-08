@@ -143,12 +143,14 @@ class HarnessImpl:
             def detector_id(self) -> str:
                 return "harness-noop-jb:1"
 
-            def detect(self, text, *, conversation_state=None):
+            def detect(
+                self, text: str, *, conversation_state: object = None
+            ) -> tuple[object, ...]:
                 return ()
 
         return GuardPipeline(
             inspectors=None,
-            jailbreak_detector=_NoOpJailbreak(),
+            jailbreak_detector=_NoOpJailbreak(),  # type: ignore[arg-type]
         )
 
     def _sanitize_plus_jailbreak_pipeline(self) -> GuardPipeline:
