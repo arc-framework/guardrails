@@ -11,20 +11,35 @@ from arc_guard_core.policy import PolicyRuleSet
 
 
 def validate_strategies_registered(ruleset: PolicyRuleSet) -> None:
-    """Raise ConfigCrossFieldError if any rule references an unknown strategy.
+    """Raise ConfigCrossFieldError if any rule references an unknown strategy
+    or unknown selector.
 
-    This is the runtime hook that ``GuardConfig.policy`` validation invokes
-    when a pipeline is constructed.
+    For rules using ``strategy``, the strategy name must resolve in the
+    strategy registry. For rules using ``selector``, the selector name must
+    resolve in the selector registry. ``PolicyRule``'s mutex validator
+    guarantees exactly one of the two is set.
     """
-    from arc_guard.strategies.registry import is_registered
+    from arc_guard.selectors.registry import is_registered as selector_is_registered
+    from arc_guard.strategies.registry import is_registered as strategy_is_registered
 
     for rule in ruleset.rules:
-        if not is_registered(rule.strategy):
-            raise ConfigCrossFieldError(
-                f"PolicyRuleSet rule {rule.id!r} references unknown strategy {rule.strategy!r}",
-                code="config.cross_field_violation",
-                details={"rule_id": rule.id, "strategy": rule.strategy},
-            )
+        if rule.strategy is not None:
+            if not strategy_is_registered(rule.strategy):
+                raise ConfigCrossFieldError(
+                    f"PolicyRuleSet rule {rule.id!r} references unknown "
+                    f"strategy {rule.strategy!r}",
+                    code="config.cross_field_violation",
+                    details={"rule_id": rule.id, "strategy": rule.strategy},
+                )
+        else:
+            assert rule.selector is not None  # mutex validator guarantees this
+            if not selector_is_registered(rule.selector):
+                raise ConfigCrossFieldError(
+                    f"PolicyRuleSet rule {rule.id!r} references unknown "
+                    f"selector {rule.selector!r}",
+                    code="config.cross_field_violation",
+                    details={"rule_id": rule.id, "selector": rule.selector},
+                )
 
 
 __all__ = ["validate_strategies_registered"]

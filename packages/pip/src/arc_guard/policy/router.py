@@ -6,7 +6,11 @@ import logging
 from collections.abc import Sequence
 from typing import Literal
 
-from arc_guard_core.exceptions import PolicyRouterError
+from arc_guard_core.exceptions import (
+    ConfigCrossFieldError,
+    PolicyRouterError,
+    StrategyError,
+)
 from arc_guard_core.policy import (
     PolicyRule,
     PolicyRuleSet,
@@ -22,7 +26,9 @@ from arc_guard.policy.clarification import build_clarification
 from arc_guard.policy.classifier import RiskClassifier, is_ambiguous
 from arc_guard.policy.conflict import resolve_conflict
 from arc_guard.refusal.builder import RefusalBuilder
+from arc_guard.selectors.registry import get_selector, is_registered as _selector_is_registered
 from arc_guard.strategies.registry import get_strategy
+from arc_guard.strategies.registry import is_registered as _strategy_is_registered
 
 logger = logging.getLogger("arc_guard")
 
@@ -95,20 +101,26 @@ class RuleBasedPolicyRouter:
             winner, losers = resolve_conflict(candidates)
             per_finding_winning_rule[finding_idx] = winner
             fired_rule_ids.append(winner.id)
-            rationale = winner.rationale_template or f"applied {winner.strategy}"
+            strategy_name = self._resolve_strategy_name(winner, finding, result)
+            rationale = winner.rationale_template or f"applied {strategy_name}"
             if losers:
-                loser_ids = ", ".join(f"{lr.id}({lr.strategy})" for lr in losers)
+                loser_ids = ", ".join(
+                    f"{lr.id}({lr.strategy or lr.selector})" for lr in losers
+                )
                 rationale = (
-                    f"{rationale} | rule {winner.id}({winner.strategy}) "
+                    f"{rationale} | rule {winner.id}({strategy_name}) "
                     f"overrode {loser_ids}"
                 )
+            decision_metadata: dict[str, object] = {"firing_rule_id": winner.id}
+            if winner.selector is not None:
+                decision_metadata["selector"] = winner.selector
             decisions.append(
                 PolicyDecision(
                     finding_ids=(finding_idx,),
-                    strategy=winner.strategy,
+                    strategy=strategy_name,
                     severity=finding.risk_level,
                     rationale=rationale,
-                    metadata={"firing_rule_id": winner.id},
+                    metadata=decision_metadata,
                 )
             )
 
@@ -175,6 +187,88 @@ class RuleBasedPolicyRouter:
         )
 
     # --- helpers ------------------------------------------------------------
+
+    def _resolve_strategy_name(
+        self,
+        rule: PolicyRule,
+        finding: Finding,
+        guard_result: GuardResult,
+    ) -> str:
+        """Return the strategy name for a finding under a winning rule.
+
+        When ``rule.strategy`` is set, returns it directly (legacy form).
+        When ``rule.selector`` is set, resolves the selector against the
+        selector registry, invokes ``selector.select(finding, guard_result)``,
+        validates the returned name against the strategy registry, and
+        returns it.
+
+        Failure modes:
+          - Unknown selector name: raises ``ConfigCrossFieldError``.
+          - Selector raises an exception: wraps in
+            ``PipelineContractValidationError`` so the pipeline emits a
+            closed-posture refusal with ``RefusalCode.INTERNAL_PIPELINE_ERROR``.
+          - Selector returns an unregistered strategy name: raises
+            ``StrategyError`` with ``code='strategy.failed'``.
+        """
+        if rule.strategy is not None:
+            return rule.strategy
+
+        # Mutex validator on PolicyRule guarantees selector is set when
+        # strategy is None.
+        assert rule.selector is not None
+
+        if not _selector_is_registered(rule.selector):
+            raise ConfigCrossFieldError(
+                f"PolicyRule {rule.id!r} references unknown selector "
+                f"{rule.selector!r}",
+                code="config.cross_field_violation",
+                details={"rule_id": rule.id, "selector": rule.selector},
+            )
+        sel = get_selector(rule.selector)
+        try:
+            strategy_name = sel.select(finding, guard_result)
+        except Exception as exc:
+            logger.warning(
+                "selector %r raised during select: %s — closed-posture refusal",
+                rule.selector,
+                exc,
+            )
+            raise StrategyError(
+                f"selector {rule.selector!r} raised during select for "
+                f"rule {rule.id!r}: {exc}",
+                code="strategy.failed",
+                details={
+                    "rule_id": rule.id,
+                    "selector": rule.selector,
+                    "exception_type": type(exc).__name__,
+                },
+            ) from exc
+
+        if not isinstance(strategy_name, str) or not strategy_name:
+            raise StrategyError(
+                f"selector {rule.selector!r} returned non-string or empty "
+                f"strategy name for rule {rule.id!r}",
+                code="strategy.failed",
+                details={
+                    "rule_id": rule.id,
+                    "selector": rule.selector,
+                    "returned": repr(strategy_name),
+                },
+            )
+
+        if not _strategy_is_registered(strategy_name):
+            raise StrategyError(
+                f"selector {rule.selector!r} returned unregistered strategy "
+                f"name {strategy_name!r} for rule {rule.id!r}",
+                code="strategy.failed",
+                details={
+                    "rule_id": rule.id,
+                    "selector": rule.selector,
+                    "strategy": strategy_name,
+                },
+            )
+
+        return strategy_name
 
     def _apply_strategies(
         self,
