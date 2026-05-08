@@ -17,7 +17,7 @@ TOOLS_DIR    := tools
         lint lint-core lint-pip lint-api \
         typecheck typecheck-core typecheck-pip typecheck-api \
         boundary docs-links \
-        all ci clean
+        all ci clean clean-cache
 
 help:
 	@echo "arc-guardrails — common make targets"
@@ -65,6 +65,10 @@ help:
 	@echo "Aggregate:"
 	@echo "  all                lint + typecheck + test + boundary"
 	@echo "  ci                 alias for 'all'"
+	@echo
+	@echo "Cleanup:"
+	@echo "  clean              remove __pycache__ / .pytest_cache / .ruff_cache / .mypy_cache / *.egg-info / api log"
+	@echo "  clean-cache        also wipes .hypothesis / .nox / .tox / htmlcov / .coverage* + .pyc/.pyo files (skips .git / .venv)"
 	@echo
 	@echo "Tip: 'make -j3 test' runs the three per-package suites in parallel."
 
@@ -334,3 +338,35 @@ clean:
 	find . -type d -name .mypy_cache -prune -exec rm -rf {} +
 	find . -type d -name '*.egg-info' -prune -exec rm -rf {} +
 	rm -f $(API_LOG_FILE)
+
+# clean-cache — wipe every Python tooling cache directory and .pyc /
+# coverage artifact across the workspace. More aggressive than `clean`:
+# also catches .hypothesis / .nox / .tox / htmlcov / .coverage*. Skips
+# .git/ and .venv/ so version control + the workspace venv survive.
+clean-cache:
+	@echo "removing python + tooling cache directories..."
+	@find . -type d \( \
+	    -name '__pycache__' \
+	    -o -name '.pytest_cache' \
+	    -o -name '.mypy_cache' \
+	    -o -name '.ruff_cache' \
+	    -o -name '.tox' \
+	    -o -name '.nox' \
+	    -o -name '.hypothesis' \
+	    -o -name 'htmlcov' \
+	    -o -name '*.egg-info' \
+	  \) \
+	  -not -path './.git/*' \
+	  -not -path './.venv/*' \
+	  -not -path './packages/.venv/*' \
+	  -prune -exec rm -rf {} +
+	@find . -type f \( -name '*.pyc' -o -name '*.pyo' \) \
+	  -not -path './.git/*' \
+	  -not -path './.venv/*' \
+	  -not -path './packages/.venv/*' \
+	  -delete
+	@find . -type f \( -name '.coverage' -o -name '.coverage.*' \) \
+	  -not -path './.git/*' \
+	  -delete
+	@rm -f $(API_LOG_FILE)
+	@echo "done."
