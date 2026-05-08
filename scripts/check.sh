@@ -3,18 +3,25 @@
 set -euo pipefail
 
 ROOT_DIR="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-PACKAGE_DIR="$ROOT_DIR/python/arc-guardrails"
 
-cd "$PACKAGE_DIR"
+echo "[check] running package lint"
+make -C "$ROOT_DIR" lint
 
-echo "[check] running ruff format check"
-uv run ruff format --check .
+echo "[check] running package type checks"
+make -C "$ROOT_DIR" typecheck
 
-echo "[check] running ruff lint"
-uv run ruff check src tests
+echo "[check] running package test suites"
+make -C "$ROOT_DIR" test
 
-echo "[check] running mypy"
-uv run mypy src
+echo "[check] running architecture boundary checks"
+make -C "$ROOT_DIR" boundary
 
-echo "[check] running pytest with coverage"
-uv run pytest --cov=src/arc_guard --cov-report=term-missing
+echo "[check] running docs link check"
+make -C "$ROOT_DIR" docs-links
+
+echo "[check] verifying public surface manifest"
+cd "$ROOT_DIR/packages"
+uv run --package arc-guard python ../tools/check_public_surface.py
+
+echo "[check] running example smoke tests"
+make -C "$ROOT_DIR" examples

@@ -1,5 +1,6 @@
 .claude/
 .specify/
+.superpowers/
 specs/
 .venv/
 .idea/
@@ -32,8 +33,14 @@ dist/
 *.egg-info/
 pip-wheel-metadata/
 
-docs/
-docs/university/images/
+# Public docs live in docs/; working and thesis material stay local.
+docs/.obsidian/
+docs/archive/
+docs/canvases/
+docs/superpowers/
+docs/university/
+dev/prompts/
 CLAUDE.md
+arc-guard-agent-prompts.md
 .github/copilot-instructions.md
 .github/claude-instructions.md

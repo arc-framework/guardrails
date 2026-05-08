@@ -1,8 +1,8 @@
-"""Run the public-surface drift check against ``arc_guard``.
+"""Run the supported public-surface check against ``arc_guard``.
 
 Wraps ``tools/check_public_surface.py`` so the per-package quality gate
-runs the manifest-vs-runtime symmetric difference, the stability-band
-consistency check, and the deprecation-shim check on every test run.
+verifies the documented supported imports still resolve, stable kinds still
+match, and deprecation shims remain wired.
 """
 
 from __future__ import annotations

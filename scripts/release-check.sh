@@ -3,39 +3,51 @@
 set -euo pipefail
 
 ROOT_DIR="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-PACKAGE_DIR="$ROOT_DIR/python/arc-guardrails"
-
-required_files=(
-  "$ROOT_DIR/.specify/config.yaml"
-  "$ROOT_DIR/.specify/modes.yaml"
-  "$ROOT_DIR/.specify/memory/constitution.md"
-  "$ROOT_DIR/.specify/memory/patterns.md"
-  "$ROOT_DIR/.specify/memory/libraries.md"
-  "$ROOT_DIR/.specify/docs/architecture/event-context.md"
-  "$ROOT_DIR/.specify/docs/architecture/enterprise-python-standard.md"
-  "$ROOT_DIR/specs/index.md"
+PACKAGE_DIRS=(
+  "$ROOT_DIR/packages/core"
+  "$ROOT_DIR/packages/pip"
+  "$ROOT_DIR/packages/api"
 )
 
-echo "[release-check] verifying required governance files"
-for file in "${required_files[@]}"; do
-  [[ -f "$file" ]] || { echo "missing required file: $file" >&2; exit 1; }
-done
-
-cd "$PACKAGE_DIR"
+echo "[release-check] verifying repository release assets"
+if ! compgen -G "$ROOT_DIR/LICENSE*" >/dev/null; then
+  echo "missing required release asset: LICENSE*" >&2
+  exit 1
+fi
 
 echo "[release-check] verifying package metadata"
-uv run python - <<'PY'
+for package_dir in "${PACKAGE_DIRS[@]}"; do
+  uv run python - "$package_dir" <<'PY'
 from pathlib import Path
+import sys
 import tomllib
 
-data = tomllib.loads(Path("pyproject.toml").read_text())
+package_dir = Path(sys.argv[1])
+data = tomllib.loads((package_dir / "pyproject.toml").read_text())
 project = data.get("project", {})
-required = ["name", "version", "requires-python"]
+required = [
+    "name",
+    "version",
+    "description",
+    "readme",
+    "requires-python",
+    "authors",
+    "license",
+]
 missing = [key for key in required if key not in project]
 if missing:
-    raise SystemExit(f"missing project fields: {', '.join(missing)}")
-print(f"package={project['name']} version={project['version']}")
+    raise SystemExit(f"{package_dir.name}: missing project fields: {', '.join(missing)}")
+print(f"{package_dir.name}: package={project['name']} version={project['version']}")
 PY
+done
+
+echo "[release-check] building distributions"
+for package_dir in "${PACKAGE_DIRS[@]}"; do
+  (
+    cd "$package_dir"
+    uv build
+  )
+done
 
 echo "[release-check] running quality gate"
 "$ROOT_DIR/scripts/check.sh"

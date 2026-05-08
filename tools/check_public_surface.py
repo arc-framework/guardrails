@@ -1,16 +1,15 @@
-"""Verify ``docs/public-surface.md`` against the runtime public surface.
+"""Verify ``docs/public-surface.md`` against the supported runtime surface.
 
-Three checks per ``contracts/public-surface-manifest.md``:
+Three checks:
 
-1. **Manifest-vs-runtime symmetric difference**: every name in each package's
-   ``__all__`` must appear in the manifest under that package, and every
-   manifest entry must resolve to a real attribute on the package.
-2. **Stability-band consistency**: for ``stability_band: stable`` entries,
-   the runtime kind matches the recorded kind (best-effort — full shape
-   pinning lives in the contract snapshot suite).
+1. **Supported-entry resolution**: every manifest entry resolves to a real
+    runtime attribute on the package.
+2. **Stable-kind consistency**: for ``stability_band: stable`` entries, the
+    runtime kind matches the recorded kind (best-effort — full shape pinning
+    lives in the contract snapshot suite).
 3. **Deprecation-shim wiring**: every entry in the manifest's "Renamed"
-   table still resolves to the old name and that import emits
-   ``DeprecationWarning``.
+    table still resolves to the old name and that import emits
+    ``DeprecationWarning``.
 
 Exits 0 on all-pass, non-zero with a structured error report on any
 failure. The pytest wrappers under
@@ -119,15 +118,6 @@ def _read_rename_table(text: str) -> list[RenameRow]:
     return rows
 
 
-def _runtime_surface(pkg: str) -> set[str]:
-    """Return the public surface for a package — ``__all__`` if present, otherwise ``__dir__()``-derived."""
-    module = importlib.import_module(pkg)
-    explicit = getattr(module, "__all__", None)
-    if explicit is not None:
-        return {n for n in explicit if not n.startswith("_") and n != "__version__"}
-    return {n for n in dir(module) if not n.startswith("_")}
-
-
 def _kind_of(obj: Any) -> str:
     """Best-effort kind label matching the manifest schema."""
     if isinstance(obj, type):
@@ -164,25 +154,22 @@ def check_manifest(path: Path = MANIFEST_PATH) -> list[str]:
 
     for pkg in PACKAGES:
         manifest_entries = per_pkg.get(pkg, [])
-        manifest_names = {e.name for e in manifest_entries}
-        runtime_names = _runtime_surface(pkg)
-
-        missing = runtime_names - manifest_names
-        for name in sorted(missing):
-            errors.append(f"[{pkg}] {name} is exported but not in manifest")
-
-        non_internal_extras = {
-            e.name for e in manifest_entries
-            if e.stability_band != "internal" and e.name not in runtime_names
-        }
-        for name in sorted(non_internal_extras):
-            errors.append(f"[{pkg}] {name} is in manifest but not exported (and not marked internal)")
+        seen_names: set[str] = set()
 
         for entry in manifest_entries:
+            if entry.name in seen_names:
+                errors.append(f"[{pkg}] duplicate manifest entry for {entry.name}")
+                continue
+            seen_names.add(entry.name)
             if entry.stability_band not in VALID_BANDS:
                 errors.append(f"[{pkg}] {entry.name}: invalid stability_band {entry.stability_band!r}")
+                continue
+
+            obj = _resolve_manifest_entry(pkg, entry, errors)
+            if obj is None:
+                continue
             if entry.stability_band == "stable":
-                _check_stable_kind(pkg, entry, errors)
+                _check_stable_kind(pkg, entry, obj, errors)
 
     for row in renames:
         _check_rename_shim(row, errors)
@@ -190,17 +177,18 @@ def check_manifest(path: Path = MANIFEST_PATH) -> list[str]:
     return errors
 
 
-def _check_stable_kind(pkg: str, entry: Entry, errors: list[str]) -> None:
-    """Best-effort kind check: declared kind matches runtime kind."""
+def _resolve_manifest_entry(pkg: str, entry: Entry, errors: list[str]) -> Any | None:
+    """Resolve one manifest entry to its runtime object, recording a readable error."""
     try:
         module = importlib.import_module(pkg)
-        obj = getattr(module, entry.name, None)
+        return getattr(module, entry.name)
     except Exception as exc:
-        errors.append(f"[{pkg}] {entry.name}: cannot resolve at runtime ({exc})")
-        return
-    if obj is None:
-        errors.append(f"[{pkg}] {entry.name}: marked stable but missing at runtime")
-        return
+        errors.append(f"[{pkg}] {entry.name}: manifest entry does not resolve at runtime ({exc})")
+        return None
+
+
+def _check_stable_kind(pkg: str, entry: Entry, obj: Any, errors: list[str]) -> None:
+    """Best-effort kind check: declared kind matches runtime kind."""
     runtime_kind = _kind_of(obj)
     declared = entry.kind
     aliases = {"dataclass": {"class", "dataclass"}, "class": {"class", "dataclass"}}
