@@ -2,6 +2,44 @@
 
 All notable changes to the `arc-guard` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.9.0] — 2026-05-08
+
+### Added
+- `arc_guard.selectors` subpackage — runtime support for the new `StrategySelector` Protocol from `arc_guard_core` 0.8.0.
+  - `DefaultStrategySelector` — bundled selector with documented entity-type → strategy-name mapping covering Presidio + project-recognized PII / credentials / internal identifiers / location data, plus a documented `redact` fallback for unmapped types (with a structured `guard.selector.unmapped_entity_type` observability event).
+  - `register_selector` / `get_selector` / `is_registered` / `list_registered` / `freeze_selectors` / `selector` decorator — registry surface mirroring `arc_guard.strategies.registry`.
+  - The `"default"` selector auto-registers on import of `arc_guard.selectors`.
+- `arc_guard.content_policies` subpackage — runtime support for the new `ContentPolicy` Protocol.
+  - `SemanticContentPolicy` — bundled policy backed by the spec-005 intent encoder under the existing `[semantic]` extra; emits a structured `guard.content_policy.semantic_extra_missing` warning + registers as a no-op when the extra is missing (FR-010 fail-open) and raises `ConfigSchemaError` distinguishing the missing-model case from the missing-extra case.
+  - `register_content_policy` / `get_content_policy` / etc. — registry surface mirroring the strategy registry.
+  - `arc_guard.content_policies.aggregate` — helper module with `evaluate_content_policies(text, policies)`, `build_finding_metadata(firing)`, and `build_aggregate_refusal_envelope(firings)` implementing the no-short-circuit aggregate evaluation contract.
+- `arc_guard.inspectors.code_injection` subpackage — three new `Inspector` Protocol implementations targeting the data-flowing-into-tools threat model.
+  - `SqlInjectionInspector` — sqlparse-backed grammar-aware tokenization, lazy-imported behind the new `[code-injection]` extra. Detects stacked statements, comment-terminator attacks, and union-injection.
+  - `ShellInjectionInspector` — stdlib `shlex` tokenization. Detects command substitution, pipe-into-destructive-command, and command-chaining at non-quoted positions.
+  - `TemplateInjectionInspector` — stdlib `re` + curated pattern list. Detects Jinja-style sandbox-escape sigils and active HTML.
+  - Each inspector accepts a `phases: Iterable[str]` constructor arg (default `frozenset({"post_process"})`); operators with template-rendered prompts opt into pre-process scanning by passing both phases.
+  - Each inspector accepts a `capture_raw_matches: bool = False` constructor arg. By default, lifecycle event payloads carry only a structured fingerprint (sha256 hash + length in chars/bytes + char-class summary); operators with appropriate downstream sink discipline opt into raw-match capture per inspector.
+  - Closed-posture exception handling via a shared decorator that re-raises unhandled inspector failures as `StrategyError` (mapping to `RefusalCode.STRATEGY_FAILED` via the `FAIL_RULE` table).
+  - Unparseable input (oversize content, sqlparse error) returns no finding and emits a structured `guard.code_injection.unparseable_input` observability event without raising.
+- New optional install extra: `[code-injection] = ["sqlparse>=0.4"]`. Required only for `SqlInjectionInspector`; the shell and template inspectors ship with stdlib only.
+- Two new pytest markers in `pyproject.toml`: `requires_semantic` and `requires_code_injection` for tests gated by optional extras.
+
+### Changed
+- `arc_guard.policy.RuleBasedPolicyRouter._resolve_strategy_name(rule, finding, guard_result)` — new helper. When `rule.strategy is not None` returns it; when `rule.selector is not None` resolves the selector via `arc_guard.selectors.registry.get_selector`, invokes `selector.select(finding, guard_result)`, validates the returned name against the strategy registry, and returns it. Closed-posture failure modes:
+  - Unknown selector name → `ConfigCrossFieldError` (`config.cross_field_violation`).
+  - Selector raises an exception → `StrategyError` with the original exception attached as `__cause__`; the `FAIL_RULE` table maps `StrategyError` → `RefusalCode.STRATEGY_FAILED` with closed posture.
+  - Selector returns a non-string or unregistered strategy name → `StrategyError`.
+- `RuleBasedPolicyRouter.route()` now passes through `StrategyError` and `ConfigCrossFieldError` instead of re-wrapping them into `PolicyRouterError`. The previous re-wrap obscured the `STRATEGY_FAILED` and config-violation refusal-code mappings at the pipeline boundary.
+- `arc_guard.policy.validate_strategies_registered` — extended to validate `selector` references against the selector registry when `rule.selector is set`.
+- `PolicyDecision.metadata` gains a `"selector"` key when a rule used `selector:` instead of `strategy:`, so downstream `StrategyExecuted` lifecycle events can identify which selector fired.
+
+### Migration notes
+- Existing operators with policy files using `strategy:` see zero behavior change. The legacy resolution path is preserved verbatim.
+- Operators opt into selector-driven masking by replacing `strategy:` with `selector:` on a rule; the framework validates at policy-load time that the selector name is registered.
+- The `[code-injection]` extra is opt-in. Operators who don't install it can still import `arc_guard` and use `ShellInjectionInspector` and `TemplateInjectionInspector` (stdlib-only); only `SqlInjectionInspector` lazy-fails with a clear install hint when `sqlparse` is missing.
+- Code-injection lifecycle events are fingerprint-only by default. To capture the raw matched text (for in-house attack-pattern catalogs with appropriate access control), pass `capture_raw_matches=True` per inspector.
+- The `freeze_selectors()` and `freeze_content_policies()` registry-seal helpers are exposed but are not currently called from `GuardPipeline.__init__` (matching the existing `freeze_strategies()` pattern, which is also defined-but-not-called). A later spec may wire all three together.
+
 ## [0.8.0] — 2026-05-04
 
 ### Added

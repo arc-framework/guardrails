@@ -2,6 +2,22 @@
 
 All notable changes to the `arc-guard-core` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.8.0] — 2026-05-08
+
+### Added
+- `arc_guard_core.protocols.StrategySelector` runtime-checkable Protocol — extension point that maps a detected `Finding` plus surrounding `GuardResult` context to a registered strategy name. Stateless contract; selectors choose among strategy names already registered, they do not own strategy implementations.
+- `arc_guard_core.protocols.ContentPolicy` runtime-checkable Protocol + `ContentPolicyDecision` frozen dataclass — predicate-shaped policy evaluation distinct from `Inspector`'s entity-level findings. `ContentPolicyDecision` carries `matched: bool`, `confidence: float | None`, `policy_name: str`, `refusal_code: RefusalCode | None`.
+- `PolicyRule.selector: str | None` field — name of a registered `StrategySelector`. Mutually exclusive with `strategy`; a `model_validator` enforces "exactly one of" at construction time with messages naming the rule id and conflicting fields.
+- Three new `RefusalCode` enum members: `SQL_INJECTION`, `SHELL_INJECTION`, `TEMPLATE_INJECTION`. Default `RefusalTemplate` entries pre-registered for each, with operator-customizable `human_message` and `next_steps`.
+- Package-root re-exports for the three new public symbols (`StrategySelector`, `ContentPolicy`, `ContentPolicyDecision`) so they resolve via `from arc_guard_core import StrategySelector` per the public-surface manifest convention.
+
+### Changed
+- `PolicyRule.strategy`: type relaxed from required `str` to optional `str | None = None`. Existing policy files using `strategy:` parse identically. Operators opt into selector-driven masking by replacing `strategy:` with `selector:` on a rule.
+
+### Migration notes
+- Additive only on the public surface. No breaking changes; no migration required for operators staying on the legacy `strategy:` form.
+- Code reading `rule.strategy` and assuming non-None must now check `if rule.strategy is not None:`. The strategy-resolution helper in `arc_guard.policy.router` (pip package) handles the new selector path; consumers of `PolicyRule.strategy` outside `arc_guard.*` are unaffected when they continue to author rules with `strategy:` set.
+
 ## [0.7.0] — 2026-05-04
 
 ### Added

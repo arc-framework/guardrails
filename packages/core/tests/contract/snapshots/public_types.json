@@ -115,6 +115,36 @@
     "fields": [
       {
         "default": null,
+        "name": "matched",
+        "type": "bool"
+      },
+      {
+        "default": "None",
+        "name": "confidence",
+        "type": "float | None"
+      },
+      {
+        "default": "''",
+        "name": "policy_name",
+        "type": "str"
+      },
+      {
+        "default": "None",
+        "name": "refusal_code",
+        "type": "RefusalCode | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.protocols.content_policy",
+    "name": "ContentPolicyDecision",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
         "name": "conversation_id",
         "type": "str"
       },

@@ -244,6 +244,21 @@ the spec/version where that contract was introduced.
   stability_band: experimental
   introduced_in: '006'
   stabilized_in: 'TBD'
+- name: StrategySelector
+  kind: class
+  stability_band: stable
+  introduced_in: '011'
+  stabilized_in: '011'
+- name: ContentPolicy
+  kind: class
+  stability_band: stable
+  introduced_in: '011'
+  stabilized_in: '011'
+- name: ContentPolicyDecision
+  kind: class
+  stability_band: stable
+  introduced_in: '011'
+  stabilized_in: '011'
 ```
 
 ## Package: arc_guard

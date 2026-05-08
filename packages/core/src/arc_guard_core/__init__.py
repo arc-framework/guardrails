@@ -118,6 +118,8 @@ from arc_guard_core.policy import (
 )
 from arc_guard_core.protocols import (
     ActionStrategy,
+    ContentPolicy,
+    ContentPolicyDecision,
     ConversationTurnInspector,
     EntityProvider,
     EvaluationHarness,
@@ -134,6 +136,7 @@ from arc_guard_core.protocols import (
     RehydrationVerdict,
     RehydrationVerifier,
     Reporter,
+    StrategySelector,
 )
 from arc_guard_core.protocols.attribute_redactor import (
     AttributeRedactor,
@@ -235,6 +238,9 @@ __all__ = [
     "JailbreakDetector",
     "ConversationTurnInspector",
     "EvaluationHarness",
+    "StrategySelector",
+    "ContentPolicy",
+    "ContentPolicyDecision",
     # observability hooks
     "Tracer",
     "Logger",

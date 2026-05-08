@@ -67,6 +67,30 @@
     "methods": [
       {
         "is_async": false,
+        "name": "evaluate",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "text"
+          }
+        ],
+        "return": "ContentPolicyDecision"
+      }
+    ],
+    "module": "arc_guard_core.protocols.content_policy",
+    "name": "ContentPolicy",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
         "name": "inspect_turn",
         "params": [
           {
@@ -623,6 +647,36 @@
     ],
     "module": "arc_guard_core.protocols.reporter",
     "name": "Reporter",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "select",
+        "params": [
+          {
+            "annotation": "Finding",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "finding"
+          },
+          {
+            "annotation": "GuardResult",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "guard_result"
+          }
+        ],
+        "return": "str"
+      }
+    ],
+    "module": "arc_guard_core.protocols.strategy_selector",
+    "name": "StrategySelector",
     "stability": "stable"
   },
   {
