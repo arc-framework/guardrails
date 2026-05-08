@@ -32,6 +32,9 @@ class RefusalCode(StrEnum):
     INTERNAL_REFUSAL_BUILD_ERROR = "internal_refusal_build_error"
     INTERNAL_ENTITY_PROVIDER_ERROR = "internal_entity_provider_error"
     INTERNAL_UNKNOWN_ERROR = "internal_unknown_error"
+    SQL_INJECTION = "sql_injection"
+    SHELL_INJECTION = "shell_injection"
+    TEMPLATE_INJECTION = "template_injection"
 
 
 __all__ = ["RefusalCode"]

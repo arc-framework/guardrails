@@ -147,6 +147,36 @@ DEFAULT_REFUSAL_TEMPLATES: dict[RefusalCode, RefusalTemplate] = {
             "Contact support if the issue persists; reference the correlation_id.",
         ),
     ),
+    RefusalCode.SQL_INJECTION: RefusalTemplate(
+        human_message=(
+            "The response was blocked because it contained SQL constructs "
+            "that could be executed by a downstream database tool."
+        ),
+        next_steps=(
+            "Sanitize generated SQL before passing it to query execution.",
+            "Use parameterized queries for any dynamic values.",
+        ),
+    ),
+    RefusalCode.SHELL_INJECTION: RefusalTemplate(
+        human_message=(
+            "The response was blocked because it contained shell constructs "
+            "that could be executed by a downstream tool."
+        ),
+        next_steps=(
+            "Avoid passing model-generated text directly to shell execution.",
+            "Use argument-array invocation (subprocess.run([...])) rather than shell=True.",
+        ),
+    ),
+    RefusalCode.TEMPLATE_INJECTION: RefusalTemplate(
+        human_message=(
+            "The response was blocked because it contained template-engine "
+            "constructs that could escape sandboxed rendering."
+        ),
+        next_steps=(
+            "Render model output through a sandboxed template engine with safe-mode enabled.",
+            "Escape model output before inclusion in HTML or template contexts.",
+        ),
+    ),
 }
 
 

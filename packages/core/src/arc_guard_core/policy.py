@@ -67,25 +67,56 @@ class RiskThresholds(BaseModel):
 
 
 class PolicyRule(BaseModel):
-    """One routing decision pattern."""
+    """One routing decision pattern.
+
+    Exactly one of ``strategy`` (legacy: explicit strategy name) or
+    ``selector`` (new in 0.8.0: name of a registered ``StrategySelector`` that
+    chooses the strategy per finding at runtime) MUST be set. Setting both,
+    or neither, raises a configuration error at model construction.
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     id: str
     match: str
-    strategy: str
+    strategy: str | None = None
+    selector: str | None = None
     severity_floor: RiskLevel = RiskLevel.LOW
     rationale_template: str = ""
     refusal_human_message: str | None = None
     refusal_next_steps: tuple[str, ...] | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
 
-    @field_validator("id", "match", "strategy")
+    @field_validator("id", "match")
     @classmethod
     def _non_empty(cls, value: str) -> str:
         if not value:
-            raise ValueError("PolicyRule id / match / strategy must be non-empty")
+            raise ValueError("PolicyRule id / match must be non-empty")
         return value
+
+    @field_validator("strategy", "selector")
+    @classmethod
+    def _non_empty_when_set(cls, value: str | None) -> str | None:
+        if value is not None and not value:
+            raise ValueError(
+                "PolicyRule strategy / selector must be non-empty when set"
+            )
+        return value
+
+    @model_validator(mode="after")
+    def _exactly_one_of_strategy_or_selector(self) -> PolicyRule:
+        if self.strategy is None and self.selector is None:
+            raise ValueError(
+                f"PolicyRule {self.id!r}: exactly one of `strategy` or "
+                f"`selector` must be set; both are unset"
+            )
+        if self.strategy is not None and self.selector is not None:
+            raise ValueError(
+                f"PolicyRule {self.id!r}: `strategy` and `selector` are "
+                f"mutually exclusive; both are set "
+                f"(strategy={self.strategy!r}, selector={self.selector!r})"
+            )
+        return self
 
 
 class PolicyRuleSet(BaseModel):

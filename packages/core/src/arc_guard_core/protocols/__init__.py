@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from arc_guard_core.protocols.content_policy import (
+    ContentPolicy,
+    ContentPolicyDecision,
+)
 from arc_guard_core.protocols.conversation_turn_inspector import (
     ConversationTurnInspector,
 )
@@ -29,6 +33,7 @@ from arc_guard_core.protocols.rehydration_verifier import (
 )
 from arc_guard_core.protocols.reporter import Reporter
 from arc_guard_core.protocols.strategy import ActionStrategy
+from arc_guard_core.protocols.strategy_selector import StrategySelector
 
 __all__ = [
     "Guard",
@@ -50,4 +55,7 @@ __all__ = [
     "EvaluationHarness",
     "ExplainableInspector",
     "InspectorMatchExplanation",
+    "StrategySelector",
+    "ContentPolicy",
+    "ContentPolicyDecision",
 ]

@@ -49,7 +49,7 @@ wheels = [
 
 [[package]]
 name = "arc-guard"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "pip" }
 dependencies = [
     { name = "arc-guard-core" },
@@ -58,6 +58,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+code-injection = [
+    { name = "sqlparse" },
+]
 jailbreak-ml = [
     { name = "torch" },
     { name = "transformers" },
@@ -82,14 +85,15 @@ requires-dist = [
     { name = "presidio-analyzer", specifier = ">=2.2" },
     { name = "presidio-anonymizer", specifier = ">=2.2" },
     { name = "sentence-transformers", marker = "extra == 'semantic'", specifier = ">=2.2" },
+    { name = "sqlparse", marker = "extra == 'code-injection'", specifier = ">=0.4" },
     { name = "torch", marker = "extra == 'jailbreak-ml'", specifier = ">=2.0" },
     { name = "transformers", marker = "extra == 'jailbreak-ml'", specifier = ">=4.30" },
 ]
-provides-extras = ["otel", "semantic", "jailbreak-ml"]
+provides-extras = ["otel", "semantic", "jailbreak-ml", "code-injection"]
 
 [[package]]
 name = "arc-guard-core"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "core" }
 dependencies = [
     { name = "pydantic" },
@@ -2499,6 +2503,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/67/3d/926db774c9c98acf66cb4ed7faf6c377746f3e00b84b700d0868b95d0712/spacy-loggers-1.0.5.tar.gz", hash = "sha256:d60b0bdbf915a60e516cc2e653baeff946f0cfc461b452d11a4d5458c6fe5f24", size = 20811, upload-time = "2023-09-11T12:26:52.323Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/33/78/d1a1a026ef3af911159398c939b1509d5c36fe524c7b644f34a5146c4e16/spacy_loggers-1.0.5-py3-none-any.whl", hash = "sha256:196284c9c446cc0cdb944005384270d775fdeaf4f494d8e269466cfa497ef645", size = 22343, upload-time = "2023-09-11T12:26:50.586Z" },
+]
+
+[[package]]
+name = "sqlparse"
+version = "0.5.5"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/90/76/437d71068094df0726366574cf3432a4ed754217b436eb7429415cf2d480/sqlparse-0.5.5.tar.gz", hash = "sha256:e20d4a9b0b8585fdf63b10d30066c7c94c5d7a7ec47c889a2d83a3caa93ff28e", size = 120815, upload-time = "2025-12-19T07:17:45.073Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/49/4b/359f28a903c13438ef59ebeee215fb25da53066db67b305c125f1c6d2a25/sqlparse-0.5.5-py3-none-any.whl", hash = "sha256:12a08b3bf3eec877c519589833aed092e2444e68240a3577e8e26148acc7b1ba", size = 46138, upload-time = "2025-12-19T07:17:46.573Z" },
 ]
 
 [[package]]

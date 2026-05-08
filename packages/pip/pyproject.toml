@@ -1,6 +1,6 @@
 [project]
 name = "arc-guard"
-version = "0.8.0"
+version = "0.9.0"
 description = "Guardrails library — typed sanitization (presidio + injection regex), built on arc-guard-core"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -25,6 +25,9 @@ semantic = [
 jailbreak-ml = [
     "transformers>=4.30",
     "torch>=2.0",
+]
+code-injection = [
+    "sqlparse>=0.4",
 ]
 
 # Other adapters (NATS / Unleash / semantic / webhook) were trimmed
@@ -96,4 +99,6 @@ testpaths = ["tests"]
 addopts = "-ra -q --strict-markers -m 'not slow'"
 markers = [
     "slow: long-running benchmark; excluded from default CI, run via `pytest -m slow`",
+    "requires_semantic: needs the [semantic] extra installed; skipped otherwise",
+    "requires_code_injection: needs the [code-injection] extra installed; skipped otherwise",
 ]

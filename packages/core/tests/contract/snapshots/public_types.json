@@ -1211,10 +1211,16 @@
         "type": "str"
       },
       {
-        "default": null,
+        "default": "None",
         "name": "strategy",
-        "required": true,
-        "type": "str"
+        "required": false,
+        "type": "str | None"
+      },
+      {
+        "default": "None",
+        "name": "selector",
+        "required": false,
+        "type": "str | None"
       },
       {
         "default": "<RiskLevel.LOW: 1>",
@@ -1386,6 +1392,18 @@
       {
         "name": "INTERNAL_UNKNOWN_ERROR",
         "value": "internal_unknown_error"
+      },
+      {
+        "name": "SQL_INJECTION",
+        "value": "sql_injection"
+      },
+      {
+        "name": "SHELL_INJECTION",
+        "value": "shell_injection"
+      },
+      {
+        "name": "TEMPLATE_INJECTION",
+        "value": "template_injection"
       }
     ]
   },
