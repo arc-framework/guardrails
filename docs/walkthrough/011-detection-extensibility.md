@@ -28,23 +28,15 @@ The three capabilities together make the framework decide what the operator prev
 
 ## Public surface
 
-| Symbol | Package | Kind | Band | Notes |
-|---|---|---|---|---|
-| `StrategySelector` | `arc_guard_core.protocols` | protocol | Stable | Runtime_checkable; pick a strategy name per finding |
-| `ContentPolicy` | `arc_guard_core.protocols` | protocol | Stable | Runtime_checkable; evaluate input as a policy predicate |
-| `ContentPolicyDecision` | `arc_guard_core.protocols` | dataclass | Stable | Frozen; carries `matched`, `confidence`, `policy_name`, `refusal_code` |
-| `PolicyRule.selector` | `arc_guard_core.policy` | field | Stable | Optional; mutually exclusive with `strategy` |
-| `RefusalCode.SQL_INJECTION` | `arc_guard_core.refusal.codes` | enum value | Stable | + matching default `RefusalTemplate` |
-| `RefusalCode.SHELL_INJECTION` | `arc_guard_core.refusal.codes` | enum value | Stable | + matching default `RefusalTemplate` |
-| `RefusalCode.TEMPLATE_INJECTION` | `arc_guard_core.refusal.codes` | enum value | Stable | + matching default `RefusalTemplate` |
-| `DefaultStrategySelector` | `arc_guard.selectors` | class | Stable | Auto-registered under `"default"` |
-| `SemanticContentPolicy` | `arc_guard.content_policies` | class | Stable | Under `[semantic]` extra; no-op when extra missing |
-| `SqlInjectionInspector` | `arc_guard.inspectors.code_injection` | class | Stable | Under `[code-injection]` extra |
-| `ShellInjectionInspector` | `arc_guard.inspectors.code_injection` | class | Stable | stdlib only |
-| `TemplateInjectionInspector` | `arc_guard.inspectors.code_injection` | class | Stable | stdlib only |
-| `register_selector` / `get_selector` | `arc_guard.selectors.registry` | function | Stable | Mirrors strategy registry |
-| `register_content_policy` / `get_content_policy` | `arc_guard.content_policies.registry` | function | Stable | Same pattern |
-| `evaluate_content_policies` / `build_aggregate_refusal_envelope` | `arc_guard.content_policies.aggregate` | function | Stable | Aggregate-evaluation helper |
+The following names are tracked in [`docs/public-surface.md`](../public-surface.md) under `arc_guard_core`:
+
+| Symbol | Kind | Band | Notes |
+|---|---|---|---|
+| `StrategySelector` | class | Stable | Runtime_checkable Protocol; pick a strategy name per finding |
+| `ContentPolicy` | class | Stable | Runtime_checkable Protocol; evaluate input as a policy predicate |
+| `ContentPolicyDecision` | class | Stable | Frozen dataclass; carries match, confidence, name, code |
+
+The package root arc_guard is kept mainly for migration compatibility per the manifest convention; bundled implementations live under arc_guard.selectors, arc_guard.content_policies, and arc_guard.inspectors.code_injection and are documented in the operator-usage section below rather than the manifest.
 
 ## Migration
 

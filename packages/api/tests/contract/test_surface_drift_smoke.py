@@ -29,6 +29,15 @@ def check_module() -> object:
     sys.modules.pop("_check_public_surface_smoke", None)
 
 
+@pytest.mark.skip(
+    reason=(
+        "Symmetric-difference drift check (manifest <-> runtime) was removed "
+        "from tools/check_public_surface.py when the tool's scope was trimmed "
+        "to supported-entry resolution + stable-kind consistency + "
+        "deprecation-shim wiring. Test kept as a regression marker if the "
+        "reverse-drift behavior is ever restored."
+    )
+)
 def test_extra_public_name_triggers_drift_error(
     check_module: object,
     monkeypatch: pytest.MonkeyPatch,
