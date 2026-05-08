@@ -53,7 +53,11 @@ class RuleBasedPolicyRouter:
     def route(self, result: GuardResult, ruleset: PolicyRuleSet) -> RoutedOutcome:
         try:
             return self._route(result, ruleset)
-        except PolicyRouterError:
+        except (PolicyRouterError, StrategyError, ConfigCrossFieldError):
+            # Pass-through: these closed-posture exceptions carry their own
+            # FAIL_RULE refusal-code mapping (POLICY_BLOCK / STRATEGY_FAILED /
+            # config-rule). Re-wrapping them obscures the operator-visible
+            # refusal code at the pipeline boundary.
             raise
         except Exception as exc:  # pragma: no cover (sanity net)
             raise PolicyRouterError(

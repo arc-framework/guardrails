@@ -17,7 +17,7 @@ from collections.abc import Callable
 from typing import Any, TypeVar
 
 from arc_guard_core._registry_lock import FrozenAfterConstructionRegistry
-from arc_guard_core.exceptions import StrategyError
+from arc_guard_core.exceptions import ConfigCrossFieldError
 
 _REGISTRY: FrozenAfterConstructionRegistry[Any] = FrozenAfterConstructionRegistry()
 
@@ -29,7 +29,7 @@ def register_selector(name: str, selector: Any) -> None:
 
     Raises:
         ValueError: when ``name`` is empty.
-        StrategyError: when ``name`` is already registered to a
+        ConfigCrossFieldError: when ``name`` is already registered to a
             different instance. Duplicate registration with the same
             instance is a no-op.
         RegistryFrozenError: when called after ``freeze_selectors()``.
@@ -38,9 +38,9 @@ def register_selector(name: str, selector: Any) -> None:
         raise ValueError("selector name must be non-empty")
     existing = _REGISTRY.get(name)
     if existing is not None and existing is not selector:
-        raise StrategyError(
+        raise ConfigCrossFieldError(
             f"selector {name!r} already registered to a different instance",
-            code="selector.failed",
+            code="config.cross_field_violation",
             details={"name": name},
         )
     _REGISTRY.register(name, selector, replace=True)
@@ -50,13 +50,13 @@ def get_selector(name: str) -> Any:
     """Resolve a registered selector by name.
 
     Raises:
-        StrategyError: when ``name`` is not registered.
+        ConfigCrossFieldError: when ``name`` is not registered.
     """
     sel = _REGISTRY.get(name)
     if sel is None:
-        raise StrategyError(
+        raise ConfigCrossFieldError(
             f"selector {name!r} is not registered",
-            code="selector.failed",
+            code="config.cross_field_violation",
             details={"name": name},
         )
     return sel

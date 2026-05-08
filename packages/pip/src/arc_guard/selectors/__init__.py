@@ -7,6 +7,7 @@ surface.
 
 from __future__ import annotations
 
+from arc_guard.selectors.default import DefaultStrategySelector
 from arc_guard.selectors.registry import (
     freeze_selectors,
     get_selector,
@@ -18,6 +19,7 @@ from arc_guard.selectors.registry import (
 )
 
 __all__ = [
+    "DefaultStrategySelector",
     "register_selector",
     "get_selector",
     "is_registered",

@@ -16,7 +16,7 @@ from collections.abc import Callable
 from typing import Any, TypeVar
 
 from arc_guard_core._registry_lock import FrozenAfterConstructionRegistry
-from arc_guard_core.exceptions import StrategyError
+from arc_guard_core.exceptions import ConfigCrossFieldError
 
 _REGISTRY: FrozenAfterConstructionRegistry[Any] = FrozenAfterConstructionRegistry()
 
@@ -28,17 +28,17 @@ def register_content_policy(name: str, policy: Any) -> None:
 
     Raises:
         ValueError: when ``name`` is empty.
-        StrategyError: when ``name`` is already registered to a different
-            instance.
+        ConfigCrossFieldError: when ``name`` is already registered to a
+            different instance.
         RegistryFrozenError: when called after ``freeze_content_policies()``.
     """
     if not name:
         raise ValueError("content policy name must be non-empty")
     existing = _REGISTRY.get(name)
     if existing is not None and existing is not policy:
-        raise StrategyError(
+        raise ConfigCrossFieldError(
             f"content policy {name!r} already registered to a different instance",
-            code="content_policy.failed",
+            code="config.cross_field_violation",
             details={"name": name},
         )
     _REGISTRY.register(name, policy, replace=True)
@@ -48,9 +48,9 @@ def get_content_policy(name: str) -> Any:
     """Resolve a registered content policy by name."""
     cp = _REGISTRY.get(name)
     if cp is None:
-        raise StrategyError(
+        raise ConfigCrossFieldError(
             f"content policy {name!r} is not registered",
-            code="content_policy.failed",
+            code="config.cross_field_violation",
             details={"name": name},
         )
     return cp
@@ -77,7 +77,7 @@ def content_policy(name: str) -> Callable[[type[T]], type[T]]:
 
     def _wrap(cls: type[T]) -> type[T]:
         try:
-            instance = cls()  # type: ignore[call-arg]
+            instance = cls()
         except TypeError:
             return cls
         register_content_policy(name, instance)
@@ -87,7 +87,12 @@ def content_policy(name: str) -> Callable[[type[T]], type[T]]:
 
 
 def _reset_for_testing() -> None:
-    _REGISTRY._unfreeze_for_testing()
+    """Test-only: unfreeze and clear the content-policy registry.
+
+    Unlike strategies and selectors, no content policies register at
+    import time, so a full clear is the safest reset for tests.
+    """
+    _REGISTRY._reset_for_testing()
 
 
 __all__ = [
