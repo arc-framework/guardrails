@@ -9,14 +9,12 @@ extension point.
 from __future__ import annotations
 
 import pytest
-
 from arc_guard_core.policy import PolicyRule
 from arc_guard_core.protocols.strategy_selector import StrategySelector
 from arc_guard_core.types import Finding, GuardResult, RiskLevel
 
 from arc_guard.policy.router import RuleBasedPolicyRouter
-from arc_guard.selectors.registry import _reset_for_testing
-from arc_guard.selectors.registry import register_selector
+from arc_guard.selectors.registry import _reset_for_testing, register_selector
 
 
 # This implementation imports ONLY from arc_guard_core.protocols.

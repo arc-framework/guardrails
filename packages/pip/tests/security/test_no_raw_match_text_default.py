@@ -18,7 +18,6 @@ from __future__ import annotations
 import json
 
 import pytest
-
 from arc_guard_core.types import GuardResult
 
 from arc_guard.inspectors.code_injection import (
@@ -26,7 +25,6 @@ from arc_guard.inspectors.code_injection import (
     SqlInjectionInspector,
     TemplateInjectionInspector,
 )
-
 
 # Diverse attack corpus — each string is chosen so the inspectors fire.
 SQL_ATTACKS = [

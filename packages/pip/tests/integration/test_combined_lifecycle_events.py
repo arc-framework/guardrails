@@ -9,9 +9,8 @@ shape.
 from __future__ import annotations
 
 import pytest
-
 from arc_guard_core.policy import PolicyRule
-from arc_guard_core.protocols import ContentPolicy, ContentPolicyDecision
+from arc_guard_core.protocols import ContentPolicyDecision
 from arc_guard_core.refusal.codes import RefusalCode
 from arc_guard_core.types import Finding, GuardResult, RiskLevel
 

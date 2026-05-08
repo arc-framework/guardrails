@@ -13,11 +13,11 @@ from datetime import datetime
 from typing import Any
 
 import pytest
+from arc_guard_core.lifecycle import LifecycleEmitter
+from arc_guard_core.types import GuardContext, GuardInput
 
 from arc_guard.observability.ring_buffer_lifecycle_sink import RingBufferLifecycleSink
 from arc_guard.pipeline import GuardPipeline
-from arc_guard_core.lifecycle import LifecycleEmitter
-from arc_guard_core.types import GuardContext, GuardInput
 
 # Fixture-known PII that MUST NOT appear in any captured event field.
 PII_EMAIL = "alice.fixturetestonly@example.com"

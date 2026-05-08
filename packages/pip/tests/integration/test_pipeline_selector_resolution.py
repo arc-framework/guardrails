@@ -14,7 +14,6 @@ Negative paths:
 from __future__ import annotations
 
 import pytest
-
 from arc_guard_core.exceptions import (
     ConfigCrossFieldError,
     StrategyError,

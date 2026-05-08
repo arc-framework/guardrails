@@ -11,7 +11,6 @@ from __future__ import annotations
 import inspect
 
 import pytest
-
 from arc_guard_core.policy import PolicyRule
 from arc_guard_core.types import Finding, GuardResult, RiskLevel
 

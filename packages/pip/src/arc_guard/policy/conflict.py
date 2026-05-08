@@ -18,11 +18,20 @@ STRATEGY_PRECEDENCE: tuple[str, ...] = (
 )
 
 
-def _precedence_index(strategy: str) -> int:
+def _precedence_index(strategy: str | None) -> int:
+    """Return precedence index for a strategy name.
+
+    Selector-based rules (``strategy is None``) have an unresolved strategy
+    until routing time. We treat them as ``block``-precedence (most
+    restrictive) so a selector rule wins against a permissive explicit
+    strategy in a tie — the operator opted into framework-driven masking
+    expecting a safe default.
+    """
+    if strategy is None:
+        return STRATEGY_PRECEDENCE.index("block")
     try:
         return STRATEGY_PRECEDENCE.index(strategy)
     except ValueError:
-        # Unknown strategy is treated as least restrictive (highest index).
         return len(STRATEGY_PRECEDENCE)
 
 

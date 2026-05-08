@@ -303,9 +303,10 @@ class InspectorFailed(LifecycleEventBase):
 
 @dataclass(frozen=True)
 class PlaceholderMapBuilt(LifecycleEventBase):
-    """Request-level aggregate summary (conditional). Distinct from per-placeholder SanitizationApplied.
+    """Request-level aggregate summary (conditional).
 
-    `map` field is the most security-sensitive in the v1 taxonomy; defaults to None.
+    Distinct from per-placeholder SanitizationApplied. The `map` field is the
+    most security-sensitive in the v1 taxonomy; defaults to None.
     """
 
     event_type: ClassVar[str] = "PlaceholderMapBuilt"
@@ -326,7 +327,11 @@ class RehydrationVerified(LifecycleEventBase):
 
 @dataclass(frozen=True)
 class InspectorMatchExplain(LifecycleEventBase):
-    """Fires only by inspectors that surface match metadata (e.g., regex-based InjectionInspector)."""
+    """Fires only by inspectors that surface match metadata.
+
+    Example: regex-based InjectionInspector populates this via its
+    explain_matches() helper.
+    """
 
     event_type: ClassVar[str] = "InspectorMatchExplain"
     inspector: str = ""

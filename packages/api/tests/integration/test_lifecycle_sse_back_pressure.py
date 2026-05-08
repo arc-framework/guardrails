@@ -10,11 +10,11 @@ or back-pressuring the pipeline.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
-
 from arc_guard_core.lifecycle import RequestStarted, new_event_id
+
 from arc_guard_service.transport.events import (
     BroadcastingLifecycleSink,
     SubscriberRegistry,
@@ -26,7 +26,7 @@ def _evt(rid: str, seq: int) -> RequestStarted:
         id=new_event_id(),
         parent_id=None,
         seq=seq,
-        ts=datetime.now(timezone.utc),
+        ts=datetime.now(UTC),
         rid=rid,
         route="/test",
     )

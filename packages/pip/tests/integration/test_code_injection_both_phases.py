@@ -8,7 +8,6 @@ content is inspected on both.
 from __future__ import annotations
 
 import pytest
-
 from arc_guard_core.types import GuardResult
 
 from arc_guard.inspectors.code_injection import TemplateInjectionInspector

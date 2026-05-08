@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
 from fastapi.testclient import TestClient
 
 from arc_guard_service.settings import ServiceSettings

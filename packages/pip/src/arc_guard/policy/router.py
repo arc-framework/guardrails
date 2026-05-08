@@ -26,7 +26,8 @@ from arc_guard.policy.clarification import build_clarification
 from arc_guard.policy.classifier import RiskClassifier, is_ambiguous
 from arc_guard.policy.conflict import resolve_conflict
 from arc_guard.refusal.builder import RefusalBuilder
-from arc_guard.selectors.registry import get_selector, is_registered as _selector_is_registered
+from arc_guard.selectors.registry import get_selector
+from arc_guard.selectors.registry import is_registered as _selector_is_registered
 from arc_guard.strategies.registry import get_strategy
 from arc_guard.strategies.registry import is_registered as _strategy_is_registered
 

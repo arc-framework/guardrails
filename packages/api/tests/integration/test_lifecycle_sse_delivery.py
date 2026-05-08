@@ -22,17 +22,15 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-
 from arc_guard_core.lifecycle import (
-    LifecycleEvent,
-    PreProcessStarted,
     RequestStarted,
     new_event_id,
 )
+
 from arc_guard_service.transport.events import (
     BroadcastingLifecycleSink,
     SubscriberRegistry,
@@ -46,7 +44,7 @@ def _evt_request_started(rid: str, seq: int = 0) -> RequestStarted:
         id=new_event_id(),
         parent_id=None,
         seq=seq,
-        ts=datetime.now(timezone.utc),
+        ts=datetime.now(UTC),
         rid=rid,
         route="/v1/chat/completions",
         model="demo",
@@ -152,7 +150,7 @@ async def test_event_to_json_dict_coerces_tuples_to_lists() -> None:
         id=new_event_id(),
         parent_id="parent",
         seq=1,
-        ts=datetime.now(timezone.utc),
+        ts=datetime.now(UTC),
         rid="span-test",
         entity_type="EMAIL_ADDRESS",
         span=(12, 29),

@@ -7,7 +7,6 @@ neither finding suppresses the other.
 from __future__ import annotations
 
 import pytest
-
 from arc_guard_core.refusal.codes import RefusalCode
 from arc_guard_core.types import GuardResult
 

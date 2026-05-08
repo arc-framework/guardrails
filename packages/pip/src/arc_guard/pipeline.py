@@ -17,6 +17,7 @@ Fail-open guarantees:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import contextvars
 import logging
 import time
@@ -35,12 +36,8 @@ from arc_guard_core.failure_modes import lookup_rule
 from arc_guard_core.fidelity import NOT_MEASURED, FidelityScore
 from arc_guard_core.jailbreak import JailbreakSignal
 from arc_guard_core.lifecycle import (
-    DecisionEmitted as LifecycleDecisionEmitted,
-)
-from arc_guard_core.lifecycle import (
     DeceptionScored,
     FidelityScored,
-    FindingProduced as LifecycleFindingProduced,
     InspectorFailed,
     InspectorMatchExplain,
     InspectorRan,
@@ -58,6 +55,12 @@ from arc_guard_core.lifecycle import (
     SanitizationApplied,
     StageRan,
     StrategyExecuted,
+)
+from arc_guard_core.lifecycle import (
+    DecisionEmitted as LifecycleDecisionEmitted,
+)
+from arc_guard_core.lifecycle import (
+    FindingProduced as LifecycleFindingProduced,
 )
 from arc_guard_core.observability import (
     Logger,
@@ -355,10 +358,8 @@ class GuardPipeline:
             await self._lifecycle_hook.emit(event)
         except Exception as exc:  # pragma: no cover — sink failure path
             logger.warning("LifecycleSink.emit() raised: %s", exc)
-            try:
+            with contextlib.suppress(Exception):
                 self._metrics_hook.counter("arc_guard.lifecycle.emit.failures")
-            except Exception:
-                pass
 
     @staticmethod
     def _lifecycle_ctx(guard_input: GuardInput) -> tuple[Any | None, str | None]:
@@ -397,10 +398,8 @@ class GuardPipeline:
             )
         except Exception as exc:  # pragma: no cover — sink failure path
             logger.warning("LifecycleEmitter.emit() raised: %s", exc)
-            try:
+            with contextlib.suppress(Exception):
                 self._metrics_hook.counter("arc_guard.lifecycle.emit.failures")
-            except Exception:
-                pass
             return None
 
     def _build_inspector_chain(self) -> list[Inspector]:

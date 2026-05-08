@@ -17,11 +17,9 @@ import asyncio
 import random
 import statistics
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
-from fastapi.testclient import TestClient
-
 from arc_guard_core.lifecycle import (
     BackendCalled,
     BackendResponded,
@@ -35,6 +33,8 @@ from arc_guard_core.lifecycle import (
     StageRan,
     new_event_id,
 )
+from fastapi.testclient import TestClient
+
 from arc_guard_service.settings import ServiceSettings
 from arc_guard_service.transport.http import create_app
 
@@ -42,7 +42,7 @@ pytestmark = pytest.mark.slow
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _populate_one_request(sink, rid: str) -> None:

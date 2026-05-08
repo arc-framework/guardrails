@@ -6,13 +6,10 @@ round-trip.
 from __future__ import annotations
 
 import asyncio
-import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
-
-from arc_guard.observability.sqlite_lifecycle_sink import SqliteLifecycleSink
 from arc_guard_core.lifecycle import (
     FindingProduced,
     LifecycleSink,
@@ -20,13 +17,15 @@ from arc_guard_core.lifecycle import (
     new_event_id,
 )
 
+from arc_guard.observability.sqlite_lifecycle_sink import SqliteLifecycleSink
+
 
 def _request_started(rid: str, seq: int = 0) -> RequestStarted:
     return RequestStarted(
         id=new_event_id(),
         parent_id=None,
         seq=seq,
-        ts=datetime.now(timezone.utc),
+        ts=datetime.now(UTC),
         rid=rid,
         route="/v1/chat/completions",
         model="echo",
@@ -40,7 +39,7 @@ def _finding(rid: str, parent_id: str, seq: int = 1) -> FindingProduced:
         id=new_event_id(),
         parent_id=parent_id,
         seq=seq,
-        ts=datetime.now(timezone.utc),
+        ts=datetime.now(UTC),
         rid=rid,
         entity_type="EMAIL_ADDRESS",
         span=(12, 29),
@@ -143,7 +142,7 @@ def test_retention_deletes_rows_older_than_max_age(tmp_path: Path) -> None:
     # Emit one event, then manually backdate its created_at to 2 days ago.
     rs = _request_started("old-rid")
     asyncio.run(sink.emit(rs))
-    two_days_ago = (datetime.now(timezone.utc) - timedelta(days=2)).timestamp()
+    two_days_ago = (datetime.now(UTC) - timedelta(days=2)).timestamp()
     sink._conn.execute(
         "UPDATE lifecycle_events SET created_at = ? WHERE id = ?",
         (two_days_ago, rs.id),

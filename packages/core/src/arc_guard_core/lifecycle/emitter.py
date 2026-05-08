@@ -16,7 +16,7 @@ api transport can import it without crossing the layered-import boundary.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from arc_guard_core.lifecycle._ulid import new_event_id
@@ -80,15 +80,15 @@ class LifecycleEmitter:
     ) -> LifecycleEventBase:
         seq = self._seq
         self._seq += 1
-        event = event_class(  # type: ignore[call-arg]
+        event = event_class(
             id=new_event_id(),
             parent_id=parent_id,
             seq=seq,
-            ts=datetime.now(timezone.utc),
+            ts=datetime.now(UTC),
             rid=self._rid,
             **fields,
         )
-        await self._sink.emit(event)
+        await self._sink.emit(event)  # type: ignore[arg-type]
         return event
 
 

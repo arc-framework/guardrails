@@ -25,7 +25,6 @@ import json
 import logging
 import sqlite3
 import time
-from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import asdict, fields
 from datetime import datetime

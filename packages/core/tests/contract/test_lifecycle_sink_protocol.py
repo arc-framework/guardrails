@@ -5,7 +5,7 @@ returns None for any rid; emit + close return None and don't raise.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from arc_guard_core.lifecycle import (
     LifecycleSink,
@@ -25,7 +25,7 @@ def test_null_sink_emit_is_no_op() -> None:
         id=new_event_id(),
         parent_id=None,
         seq=0,
-        ts=datetime.now(timezone.utc),
+        ts=datetime.now(UTC),
         rid="test",
     )
     # Should not raise; should return None.

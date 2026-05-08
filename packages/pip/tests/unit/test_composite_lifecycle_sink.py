@@ -5,13 +5,9 @@ isolation, fall-through query, served-from tier label, idempotent close.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
-
-from arc_guard.observability.composite_lifecycle_sink import CompositeLifecycleSink
-from arc_guard.observability.ring_buffer_lifecycle_sink import RingBufferLifecycleSink
-from arc_guard.observability.sqlite_lifecycle_sink import SqliteLifecycleSink
 from arc_guard_core.lifecycle import (
     LifecycleEvent,
     LifecycleSink,
@@ -20,13 +16,17 @@ from arc_guard_core.lifecycle import (
     new_event_id,
 )
 
+from arc_guard.observability.composite_lifecycle_sink import CompositeLifecycleSink
+from arc_guard.observability.ring_buffer_lifecycle_sink import RingBufferLifecycleSink
+from arc_guard.observability.sqlite_lifecycle_sink import SqliteLifecycleSink
+
 
 def _request_started(rid: str, seq: int = 0) -> RequestStarted:
     return RequestStarted(
         id=new_event_id(),
         parent_id=None,
         seq=seq,
-        ts=datetime.now(timezone.utc),
+        ts=datetime.now(UTC),
         rid=rid,
         route="/test",
     )

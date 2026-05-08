@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, fields, is_dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import get_args
 
 from arc_guard_core.lifecycle import ALL_EVENT_TYPES, LifecycleEvent, new_event_id
@@ -38,7 +38,8 @@ def test_every_event_type_declares_event_type_classvar() -> None:
     for cls in ALL_EVENT_TYPES:
         assert hasattr(cls, "event_type"), f"{cls.__name__} missing event_type"
         assert cls.event_type == cls.__name__, (
-            f"{cls.__name__} event_type discriminator should match class name; got {cls.event_type!r}"
+            f"{cls.__name__} event_type discriminator should match class name; "
+            f"got {cls.event_type!r}"
         )
 
 
@@ -62,7 +63,7 @@ def _sample_event(cls: type[LifecycleEventBase]) -> LifecycleEventBase:
         id=new_event_id(),
         parent_id=None,
         seq=0,
-        ts=datetime.now(timezone.utc),
+        ts=datetime.now(UTC),
         rid="test-rid",
     )
 

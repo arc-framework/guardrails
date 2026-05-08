@@ -88,10 +88,8 @@ class SubscriberRegistry:
                 queue.put_nowait(event)
             except asyncio.QueueFull:
                 # Drop oldest in this subscriber's queue; enqueue new event.
-                try:
+                with suppress(asyncio.QueueEmpty):
                     queue.get_nowait()
-                except asyncio.QueueEmpty:
-                    pass
                 self._dropped_per_subscriber += 1
                 with suppress(asyncio.QueueFull):
                     queue.put_nowait(event)
@@ -163,7 +161,7 @@ def build_events_router(
                     )
                     try:
                         event = await asyncio.wait_for(queue.get(), timeout=timeout)
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         # Heartbeat to keep proxies from dropping the connection.
                         last_heartbeat = time.monotonic()
                         yield ": heartbeat\n\n"

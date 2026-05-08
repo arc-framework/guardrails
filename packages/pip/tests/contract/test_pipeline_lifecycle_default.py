@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import asyncio
 
-from arc_guard.pipeline import GuardPipeline
 from arc_guard_core.lifecycle import NullLifecycleSink
 from arc_guard_core.types import GuardInput
+
+from arc_guard.pipeline import GuardPipeline
 
 
 def test_default_lifecycle_hook_is_null_sink() -> None:

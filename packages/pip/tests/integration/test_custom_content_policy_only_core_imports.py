@@ -9,7 +9,6 @@ from __future__ import annotations
 import re
 
 import pytest
-
 from arc_guard_core.protocols.content_policy import (
     ContentPolicy,
     ContentPolicyDecision,

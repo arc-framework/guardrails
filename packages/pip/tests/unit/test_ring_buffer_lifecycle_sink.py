@@ -5,17 +5,17 @@ counter accuracy, O(1) lookup, idempotent close.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
-
-from arc_guard.observability.ring_buffer_lifecycle_sink import RingBufferLifecycleSink
 from arc_guard_core.lifecycle import (
     LifecycleSink,
     RequestStarted,
     StageRan,
     new_event_id,
 )
+
+from arc_guard.observability.ring_buffer_lifecycle_sink import RingBufferLifecycleSink
 
 
 def _evt(rid: str, seq: int) -> RequestStarted | StageRan:
@@ -24,7 +24,7 @@ def _evt(rid: str, seq: int) -> RequestStarted | StageRan:
         id=new_event_id(),
         parent_id=None,
         seq=seq,
-        ts=datetime.now(timezone.utc),
+        ts=datetime.now(UTC),
         rid=rid,
     )
 
