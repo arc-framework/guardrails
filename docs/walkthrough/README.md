@@ -23,17 +23,19 @@ The `system-overview.md` and `system-canvas.md` files synthesize across multiple
 
 ## Current walkthroughs
 
-| Spec          | File                                                                     | Status                       |
-| ------------- | ------------------------------------------------------------------------ | ---------------------------- |
-| Cross-cutting | [system-overview.md](system-overview.md)                                 | Stable                       |
-| Cross-cutting | [system-canvas.md](system-canvas.md)                                     | Stable                       |
-| 001           | [001-arc-guard-rails.md](001-arc-guard-rails.md)                         | Stable (historical baseline) |
-| 002           | [002-rewrite-foundation.md](002-rewrite-foundation.md)                   | Stable                       |
-| 003           | [003-sanitization-policy-core.md](003-sanitization-policy-core.md)       | Stable                       |
-| 004           | [004-observability-runtime.md](004-observability-runtime.md)             | Stable                       |
-| 005           | [005-intent-fidelity-rehydration.md](005-intent-fidelity-rehydration.md) | Stable                       |
-| 006           | [006-jailbreak-deception-eval.md](006-jailbreak-deception-eval.md)       | Stable                       |
-| 007           | [007-integration-api-delivery.md](007-integration-api-delivery.md)       | Stable                       |
+| Spec          | File                                                                       | Status                       |
+| ------------- | -------------------------------------------------------------------------- | ---------------------------- |
+| Cross-cutting | [system-overview.md](system-overview.md)                                   | Stable                       |
+| Cross-cutting | [system-canvas.md](system-canvas.md)                                       | Stable                       |
+| 001           | [001-arc-guard-rails.md](001-arc-guard-rails.md)                           | Stable (historical baseline) |
+| 002           | [002-rewrite-foundation.md](002-rewrite-foundation.md)                     | Stable                       |
+| 003           | [003-sanitization-policy-core.md](003-sanitization-policy-core.md)         | Stable                       |
+| 004           | [004-observability-runtime.md](004-observability-runtime.md)               | Stable                       |
+| 005           | [005-intent-fidelity-rehydration.md](005-intent-fidelity-rehydration.md)   | Stable                       |
+| 006           | [006-jailbreak-deception-eval.md](006-jailbreak-deception-eval.md)         | Stable                       |
+| 007           | [007-integration-api-delivery.md](007-integration-api-delivery.md)         | Stable                       |
+| 012           | [012-dashboard-backend-data-plane.md](012-dashboard-backend-data-plane.md) | Draft                        |
+| 013           | [013-guardrailflow-dashboard.md](013-guardrailflow-dashboard.md)           | Draft                        |
 
 ## Related
 
