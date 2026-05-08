@@ -1,6 +1,6 @@
 # Walkthrough — Spec 007: Integration, API, and Documentation Completion
 
-This page is the operator-facing summary of [Spec 007](../../specs/007-integration-api-delivery/spec.md). It documents the API package's first non-stub release, the public-surface manifest that downstream operators pin against, the four integration-mode examples under `examples/`, and the consolidated doc tree under `docs/architecture/`.
+This page is the operator-facing summary of [Spec 007](../../specs/007-integration-api-delivery/spec.md). It documents the API package's first non-stub release, the public-surface manifest that downstream operators pin against, and the consolidated doc tree under `docs/architecture/`. (The four integration-mode examples originally shipped with this spec under `examples/` were retired in a later cleanup; integration patterns are documented in prose in `docs/architecture/` instead.)
 
 ## What changed
 
@@ -10,7 +10,6 @@ Five deliverables, all additive:
 |---|---|
 | `arc-guard-service` (the `packages/api/` package) gains its first non-stub release with an in-process `run_guard()` adapter, a `python -m arc_guard_service` CLI, and a single-endpoint `POST /v1/guard` HTTP transport under the `[fastapi]` extra | [`packages/api/src/arc_guard_service/`](../../packages/api/src/arc_guard_service/) |
 | Public-surface manifest enumerating every Stable / Provisional / Experimental / Internal symbol across the three packages, with a CI drift check (`tools/check_public_surface.py`) | [`docs/public-surface.md`](../public-surface.md) |
-| Four self-contained integration examples (library / sidecar HTTP / CLI batch / FastAPI middleware), each with a smoke test | [`examples/`](../../examples/) |
 | Walkthroughs refreshed to a uniform 5-section schema; new entry for Spec 007 | [`docs/walkthrough/`](.) |
 | Architecture index consolidating cross-cutting references | [`docs/architecture/`](../architecture/) |
 
@@ -18,7 +17,7 @@ The decision contract from Specs 002–006 is **frozen**. Spec 007 ships exactly
 
 ## Why
 
-Without Spec 007, the rewrite ships as five packages of contracts that can only be consumed from Python. The "one contract many modes" constitution principle requires at least the SDK + sidecar + CLI + middleware modes to demonstrably share `GuardPipeline.pre_process` semantics. Spec 007 makes that real: an operator can pick any of the four examples, follow the README, and have a working integration in under 15 minutes regardless of their host language.
+Without Spec 007, the rewrite ships as five packages of contracts that can only be consumed from Python. The "one contract many modes" constitution principle requires at least the SDK + sidecar + CLI + middleware modes to demonstrably share `GuardPipeline.pre_process` semantics. Spec 007 makes that real by shipping `arc-guard-service` with an in-process adapter, a CLI entrypoint, and an HTTP transport — operators can integrate via any of the three modes against the same `GuardPipeline.pre_process` semantics.
 
 The public-surface manifest exists because pre-1.0 packages otherwise leak implicit-stability promises through `__all__` lists. The manifest makes the contract explicit: pin to Stable, evaluate Provisional, accept change risk on Experimental, and never depend on Internal-importable.
 
@@ -55,7 +54,6 @@ Set `pipeline_factory` to a dotted path like `myproject.guard:build_pipeline` to
 - [Spec 007 — full specification](../../specs/007-integration-api-delivery/spec.md)
 - [Spec 007 — implementation plan](../../specs/007-integration-api-delivery/plan.md)
 - [Public-surface manifest](../public-surface.md)
-- [Examples](../../examples/)
 - [Architecture index](../architecture/README.md)
 - [In-process entrypoint contract](../../specs/007-integration-api-delivery/contracts/in-process-entrypoint.md)
 - [HTTP transport contract](../../specs/007-integration-api-delivery/contracts/http-transport.md)

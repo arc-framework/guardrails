@@ -5,13 +5,12 @@
 # Boundary checks live under tools/.
 
 PACKAGES_DIR := packages
-EXAMPLES_DIR := examples
 TOOLS_DIR    := tools
 
 .DEFAULT_GOAL := help
 
 .PHONY: help init install install-minimal \
-        smoke examples example-library example-sidecar example-cli example-fastapi example-api \
+        smoke \
         api-up api-down api-logs demo sse \
         docker-build docker-up docker-up-prod docker-down docker-logs docker-nuke \
         test test-core test-pip test-api \
@@ -32,13 +31,7 @@ help:
 	@echo "  install-minimal    same but skips optional extras (no torch / transformers / sentence_transformers / opentelemetry)"
 	@echo
 	@echo "Quick checks:"
-	@echo "  smoke              run the canonical in-process example end-to-end (~2s)"
-	@echo "  examples           run all five example smoke tests"
-	@echo "  example-library    run only the library-in-process smoke test"
-	@echo "  example-sidecar    run only the sidecar-http smoke test"
-	@echo "  example-cli        run only the cli-batch smoke test"
-	@echo "  example-fastapi    run only the fastapi-middleware smoke test"
-	@echo "  example-api        run only the openai-compatible api smoke test"
+	@echo "  smoke              run the canonical in-process flow end-to-end (~2s)"
 	@echo
 	@echo "Live api (OpenAI-compatible chat-completions service):"
 	@echo "  api-up             boot the api on 127.0.0.1:8766 (BACKEND=echo by default)"
@@ -70,7 +63,7 @@ help:
 	@echo "  docs-links         markdown link check across docs/ and specs/"
 	@echo
 	@echo "Aggregate:"
-	@echo "  all                lint + typecheck + test + boundary + examples"
+	@echo "  all                lint + typecheck + test + boundary"
 	@echo "  ci                 alias for 'all'"
 	@echo
 	@echo "Tip: 'make -j3 test' runs the three per-package suites in parallel."
@@ -104,39 +97,13 @@ install-minimal:
 	@echo "Workspace venv ready at packages/.venv (no optional extras)."
 	@echo "Activate: source packages/.venv/bin/activate"
 
-# ---------- Smoke / examples ----------
+# ---------- Smoke ----------
 #
-# Examples don't declare workspace sources, so we run them through the workspace
-# venv. --package <name> forces uv to install that workspace member (and its
-# deps) editably; without it, the bare workspace root pulls in no members.
-#
-# Per-target package selection:
-#   library-in-process   → arc-guard (only imports arc_guard)
-#   cli-batch            → arc-guard-service (imports arc_guard_service)
-#   sidecar-http         → arc-guard-service[fastapi] (uses HTTP transport)
-#   fastapi-middleware   → arc-guard-service[fastapi] (imports fastapi directly)
-#   all examples         → arc-guard-service[fastapi] (superset)
+# 'smoke' runs the canonical in-process flow end-to-end via the
+# arc-guard library entrypoint. ~2s. No HTTP, no Docker, no extras.
 
 smoke:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python ../$(EXAMPLES_DIR)/library-in-process/main.py
-
-examples:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard-service --extra fastapi pytest ../$(EXAMPLES_DIR)
-
-example-library:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard pytest ../$(EXAMPLES_DIR)/library-in-process
-
-example-sidecar:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard-service --extra fastapi pytest ../$(EXAMPLES_DIR)/sidecar-http
-
-example-cli:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard-service pytest ../$(EXAMPLES_DIR)/cli-batch
-
-example-fastapi:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard-service --extra fastapi pytest ../$(EXAMPLES_DIR)/fastapi-middleware
-
-example-api:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard-service --extra fastapi pytest ../$(EXAMPLES_DIR)/api
+	cd $(PACKAGES_DIR) && uv run --package arc-guard python -c "from arc_guard.pipeline import GuardPipeline; import asyncio; from arc_guard_core.types import GuardInput; result = asyncio.run(GuardPipeline().pre_process(GuardInput(text='hello world'))); print(f'smoke ok: action={result.action}')"
 
 # ---------- arc-guard-service (live local) ----------
 #
@@ -354,7 +321,7 @@ docs-links:
 
 # ---------- Aggregate ----------
 
-all: lint typecheck test boundary examples
+all: lint typecheck test boundary
 
 ci: all
 

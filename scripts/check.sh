@@ -22,6 +22,3 @@ make -C "$ROOT_DIR" docs-links
 echo "[check] verifying public surface manifest"
 cd "$ROOT_DIR/packages"
 uv run --package arc-guard python ../tools/check_public_surface.py
-
-echo "[check] running example smoke tests"
-make -C "$ROOT_DIR" examples

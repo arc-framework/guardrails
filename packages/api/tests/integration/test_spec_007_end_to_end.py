@@ -7,8 +7,6 @@ fresh-process perspective. The "everything is wired up correctly" gate.
 from __future__ import annotations
 
 import importlib.util
-import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -51,16 +49,10 @@ def test_us2_public_surface_manifest_check_passes() -> None:
     assert errors == [], "\n".join(errors)
 
 
-def test_us3_examples_directory_has_four_self_contained_projects() -> None:
-    examples = REPO_ROOT / "examples"
-    assert examples.is_dir()
-    expected = {"library-in-process", "sidecar-http", "cli-batch", "fastapi-middleware"}
-    found = {d.name for d in examples.iterdir() if d.is_dir()}
-    assert expected.issubset(found), f"missing examples: {expected - found}"
-    for name in expected:
-        assert (examples / name / "README.md").is_file()
-        assert (examples / name / "pyproject.toml").is_file()
-        assert (examples / name / "tests").is_dir()
+# test_us3_examples_directory_has_four_self_contained_projects: removed.
+# The four-integration-mode examples directory was retired by operator
+# decision; integration patterns are documented in
+# docs/walkthrough/007-integration-api-delivery.md prose only.
 
 
 def test_us4_walkthroughs_follow_uniform_schema() -> None:
@@ -135,14 +127,4 @@ def test_decision_contract_frozen_no_new_stages() -> None:
     )
 
 
-def test_examples_smoke_tests_pass() -> None:
-    examples = REPO_ROOT / "examples"
-    result = subprocess.run(
-        [sys.executable, "-m", "pytest", str(examples), "-v", "--import-mode=importlib"],
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0, (
-        f"example smoke tests failed:\n{result.stdout}\n{result.stderr}"
-    )
-    assert re.search(r"\d+ passed", result.stdout), result.stdout
+# test_examples_smoke_tests_pass: removed when the examples directory was retired.
