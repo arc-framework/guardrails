@@ -56,7 +56,9 @@ services:
       ARC_GUARD_SERVICE_BACKEND: ollama
       ARC_GUARD_SERVICE_OLLAMA_URL: http://ollama:11434/v1/chat/completions
       ARC_GUARD_SERVICE_LOG_LEVEL: INFO
-      ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH: /data/lifecycle.db
+      ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH: /data/arc_guardrail.db
+      ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS: "${ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS:-false}"
+      ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT: "${ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT:-false}"
     volumes:
       - lifecycle-data:/data
     depends_on:
@@ -76,7 +78,7 @@ services:
       - "8081:8080"
     volumes:
       - lifecycle-data:/data:ro
-    command: ["sqlite_web", "-H", "0.0.0.0", "/data/lifecycle.db"]
+    command: ["sqlite_web", "-H", "0.0.0.0", "/data/arc_guardrail.db"]
     depends_on:
       api:
         condition: service_healthy

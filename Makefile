@@ -12,7 +12,7 @@ TOOLS_DIR    := tools
 
 .PHONY: help init install install-minimal \
         smoke examples example-library example-sidecar example-cli example-fastapi example-api \
-        api-up api-down api-logs demo \
+        api-up api-down api-logs demo sse \
         docker-build docker-up docker-up-prod docker-down docker-logs docker-nuke \
         test test-core test-pip test-api \
         lint lint-core lint-pip lint-api \
@@ -42,11 +42,14 @@ help:
 	@echo
 	@echo "Live api (OpenAI-compatible chat-completions service):"
 	@echo "  api-up             boot the api on 127.0.0.1:8766 (BACKEND=echo by default)"
+	@echo "                       CAPTURE=1 make api-up  # populate raw_input/text_after/response_text on events"
 	@echo "  api-down           stop the running api"
 	@echo "  api-logs           tail the api log"
 	@echo "  demo               POST benign / injection / pii to the running api"
+	@echo "  sse                live terminal dashboard for the /events SSE feed (foreground; Ctrl-C to stop)"
+	@echo "                       SSE_URL=http://host:port/events make sse  # point at a different api"
 	@echo
-	@echo "Docker (full Compose stack — api + ollama + llama3.2):"
+	@echo "Docker (full Compose stack — api + ollama + llama3.2 + sqlite-ui):"
 	@echo "  docker-build       build the arc-guard-service image"
 	@echo "  docker-up          boot dev profile (api + ollama + sqlite-web DB browser); auto-pulls llama3.2 ~2GB on first run"
 	@echo "  docker-up-prod     boot prod profile (DB browser suppressed)"
@@ -147,12 +150,20 @@ API_PORT ?= 8766
 API_HOST ?= 127.0.0.1
 API_LOG_FILE := .api.log
 
+CAPTURE ?= 0
+ifeq ($(CAPTURE),1)
+  CAPTURE_ENV := ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS=true ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT=true
+else
+  CAPTURE_ENV :=
+endif
+
 api-up:
 	@if lsof -ti:$(API_PORT) >/dev/null 2>&1; then \
 	  echo "port $(API_PORT) already in use (pid $$(lsof -ti:$(API_PORT)))"; exit 1; \
 	fi
 	@cd $(PACKAGES_DIR) && \
 	  ARC_GUARD_SERVICE_BIND=$(API_HOST) ARC_GUARD_SERVICE_PORT=$(API_PORT) \
+	  $(CAPTURE_ENV) \
 	  nohup uv run --package arc-guard-service --extra fastapi \
 	  python -m arc_guard_service \
 	  > ../$(API_LOG_FILE) 2>&1 &
@@ -161,9 +172,13 @@ api-up:
 	@echo
 	@echo "  Guard endpoint:  POST http://$(API_HOST):$(API_PORT)/v1/guard"
 	@echo "  Chat endpoint:   POST http://$(API_HOST):$(API_PORT)/v1/chat/completions"
+	@echo "  Live events:     GET  http://$(API_HOST):$(API_PORT)/events"
+	@echo "  Lifecycle replay:GET  http://$(API_HOST):$(API_PORT)/lifecycle/{rid}"
 	@echo "  Swagger:         http://$(API_HOST):$(API_PORT)/docs"
 	@echo "  OpenAPI:         http://$(API_HOST):$(API_PORT)/openapi.json"
 	@echo "  Health:          http://$(API_HOST):$(API_PORT)/"
+	@echo
+	@echo "Live event dashboard:  make sse"
 
 api-down:
 	@PID=$$(lsof -ti:$(API_PORT) 2>/dev/null); \
@@ -175,6 +190,11 @@ api-down:
 
 api-logs:
 	@tail -n 50 -f $(API_LOG_FILE)
+
+SSE_URL ?= http://$(API_HOST):$(API_PORT)/events
+
+sse:
+	@cd $(PACKAGES_DIR) && uv run python ../$(TOOLS_DIR)/sse_dashboard.py $(SSE_URL)
 
 demo:
 	@echo "===1. BENIGN==="
@@ -213,6 +233,8 @@ docker-build:
 	docker build -f packages/api/Dockerfile -t $(DOCKER_IMAGE) .
 
 docker-up:
+	ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS=true \
+	ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT=true \
 	docker compose -f $(COMPOSE_FILE) --profile dev up --build -d
 	@echo "waiting for api to respond on http://127.0.0.1:8766/ ..."
 	@until curl -sf http://127.0.0.1:8766/ >/dev/null 2>&1; do sleep 1; done
@@ -232,6 +254,8 @@ docker-up:
 	@echo "  OpenAPI:           http://127.0.0.1:8766/openapi.json"
 	@echo "  Health:            http://127.0.0.1:8766/"
 	@echo
+	@echo "Live event dashboard:  make sse   (color-coded TUI streaming the /events feed)"
+	@echo
 	@echo "First run pulls llama3.2 (~2GB); follow with: docker compose -f $(COMPOSE_FILE) logs -f ollama-pull"
 
 docker-up-prod:
@@ -249,6 +273,8 @@ docker-up-prod:
 	@echo "  Lifecycle replay:  GET  http://127.0.0.1:8766/lifecycle/{rid}"
 	@echo "  Swagger:           http://127.0.0.1:8766/docs"
 	@echo "  Health:            http://127.0.0.1:8766/"
+	@echo
+	@echo "Live event dashboard:  make sse   (color-coded TUI streaming the /events feed)"
 
 docker-down:
 	docker compose -f $(COMPOSE_FILE) --profile dev --profile prod down

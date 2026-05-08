@@ -146,7 +146,7 @@ class SqliteLifecycleSink:
         self._cleanup_task: asyncio.Task[None] | None = None
 
         # Ensure the parent directory exists. Operators typically configure
-        # an absolute path (e.g. /data/lifecycle.db); auto-creating the
+        # an absolute path (e.g. /data/arc_guardrail.db); auto-creating the
         # directory means a fresh deployment doesn't require an mkdir step.
         # The `:memory:` sentinel is left unchanged.
         if self._path != ":memory:":

@@ -34,7 +34,18 @@ def _finding(entity_type: str = "TEST", start: int = 0, end: int = 5) -> Finding
 
 
 def _make_presidio_mock() -> None:
-    """Stub presidio_analyzer so PresidioInspector construction never fails."""
+    """Stub presidio_analyzer so PresidioInspector construction never fails.
+
+    Only stubs when the real module cannot be imported. Otherwise leaves
+    the real module installed — collecting this test file before another
+    test that needs real Presidio would otherwise leak the stub into
+    sys.modules for the rest of the pytest session.
+    """
+    try:
+        import presidio_analyzer  # noqa: F401
+        return
+    except ImportError:
+        pass
     if "presidio_analyzer" in sys.modules:
         return
     stub = _types.ModuleType("presidio_analyzer")

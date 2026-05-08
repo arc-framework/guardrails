@@ -385,7 +385,17 @@ class TestCustomInspector:
 
 def _make_presidio_mock() -> None:
     """Insert a minimal presidio_analyzer stub so PresidioInspector can be
-    constructed without the real spacy/presidio stack."""
+    constructed without the real spacy/presidio stack.
+
+    Only stubs when the real module cannot be imported, so collecting
+    this file before tests that need real Presidio doesn't leak the
+    stub into sys.modules for the rest of the pytest session.
+    """
+    try:
+        import presidio_analyzer  # noqa: F401
+        return
+    except ImportError:
+        pass
     if "presidio_analyzer" in sys.modules:
         return
 

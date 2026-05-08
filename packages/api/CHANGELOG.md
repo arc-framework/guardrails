@@ -18,7 +18,7 @@ All notable changes to the `arc-guard-service` package are documented here. Form
   - `lifecycle_capture_raw_input` (default `False`) — security-sensitive: opts in to capturing raw inbound text on `RequestStarted.raw_input`. Only enable when the dashboard is appropriately authenticated.
 - `RequestTimeoutMiddleware.skip_paths` now excludes `/events` so SSE long-lived connections are not interrupted by the request-timeout enforcement.
 - Compose stack:
-  - New named volume `lifecycle-data` mounted at `/data` in the api container; `ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH=/data/lifecycle.db` wires the persistent tier.
+  - New named volume `lifecycle-data` mounted at `/data` in the api container; `ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH=/data/arc_guardrail.db` wires the persistent tier.
   - New `sqlite-ui` service (image `coleifer/sqlite-web`, port `8081`) under the `dev` profile; mounts `lifecycle-data` read-only so the browser cannot corrupt the active store.
   - `prod` profile suppresses `sqlite-ui`.
 - `Makefile` updates:

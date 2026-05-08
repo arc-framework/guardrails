@@ -96,7 +96,7 @@ class ServiceSettings(BaseSettings):
     lifecycle_buffer_capacity: int = Field(default=5000, ge=1, le=1_000_000)
     # Ring-only by default — no assumed filesystem path. Docker / production
     # deployments opt into persistent storage via the env var:
-    #   ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH=/data/lifecycle.db
+    #   ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH=/data/arc_guardrail.db
     # Setting this to None (default) keeps lifecycle storage in-memory only.
     lifecycle_sqlite_path: str | None = None
     lifecycle_sqlite_max_rows: int = Field(default=500_000, ge=1_000)

@@ -22,6 +22,10 @@ __pycache__/
 .coverage.*
 htmlcov/
 
+# Local runtime logs
+.api.log
+*.log
+
 # Packaging artifacts
 build/
 dist/
