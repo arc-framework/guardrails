@@ -134,3 +134,40 @@ def test_load_corpus_fail_fast_on_id_filename_mismatch(tmp_path):
     _write_yaml(tmp_path, "pii_presidio__easy__01.yaml", _yaml_for("pii_presidio__easy__99"))
     with pytest.raises(CorpusError, match="filename stem"):
         load_corpus(tmp_path)
+
+
+def _yaml_for_super_hard(prompt_id: str, *, false_positive: bool) -> str:
+    return f"""
+id: {prompt_id}
+inspector: pii_presidio
+difficulty: super_hard
+swagger_summary: "test"
+swagger_description: "test"
+request:
+  model: llama3.2
+  messages:
+    - role: user
+      content: "test"
+expected:
+  action: pass
+  phase: pre_process
+  refusal_code: null
+  findings: []
+  false_positive: {str(false_positive).lower()}
+""".strip()
+
+
+def test_load_corpus_rejects_gap_in_numbering(tmp_path):
+    for n in (1, 2, 4):
+        nm = f"pii_presidio__easy__{n:02d}"
+        _write_yaml(tmp_path, f"{nm}.yaml", _yaml_for(nm))
+    with pytest.raises(CorpusError, match=r"gap in numbering"):
+        load_corpus(tmp_path)
+
+
+def test_load_corpus_super_hard_requires_exactly_two_false_positive(tmp_path):
+    for n in range(1, 6):
+        nm = f"pii_presidio__super_hard__{n:02d}"
+        _write_yaml(tmp_path, f"{nm}.yaml", _yaml_for_super_hard(nm, false_positive=False))
+    with pytest.raises(CorpusError, match=r"exactly two false_positive"):
+        load_corpus(tmp_path)

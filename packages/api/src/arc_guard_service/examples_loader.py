@@ -100,4 +100,26 @@ def load_corpus(corpus_dir: Path) -> list[CorpusPrompt]:
             )
         prompts.append(prompt)
     prompts.sort(key=lambda p: p.id)
+    _enforce_cross_rules(prompts)
     return prompts
+
+
+def _enforce_cross_rules(prompts: list[CorpusPrompt]) -> None:
+    from collections import defaultdict
+    buckets: dict[tuple[str, str], list[CorpusPrompt]] = defaultdict(list)
+    for p in prompts:
+        buckets[(p.inspector, p.difficulty)].append(p)
+    for (inspector, difficulty), bucket in buckets.items():
+        bucket.sort(key=lambda p: p.id)
+        nums = [int(p.id.rsplit("__", 1)[-1]) for p in bucket]
+        expected = list(range(1, len(nums) + 1))
+        if nums != expected:
+            raise CorpusError(
+                f"{inspector}/{difficulty}: gap in numbering — got {nums}, expected {expected}"
+            )
+        if difficulty == "super_hard" and len(bucket) >= 5:
+            fp_count = sum(1 for p in bucket if p.expected.false_positive)
+            if fp_count != 2:
+                raise CorpusError(
+                    f"{inspector}/super_hard: exactly two false_positive prompts required, got {fp_count}"
+                )
