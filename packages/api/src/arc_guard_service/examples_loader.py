@@ -68,6 +68,19 @@ class CorpusPrompt(BaseModel):
             ) from exc
         return self
 
+    @model_validator(mode="after")
+    def _id_shape(self) -> CorpusPrompt:
+        parts = self.id.split("__")
+        if len(parts) != 3:
+            raise ValueError(
+                f"id {self.id!r} must have shape '<inspector>__<difficulty>__<nn>'"
+            )
+        if parts[0] != self.inspector:
+            raise ValueError(
+                f"id {self.id!r} first segment must equal inspector {self.inspector!r}"
+            )
+        return self
+
 
 class CorpusError(Exception):
     """Raised when the corpus is malformed. Carries file path in message."""
@@ -112,6 +125,8 @@ def _enforce_cross_rules(prompts: list[CorpusPrompt]) -> None:
     for p in prompts:
         buckets[(p.inspector, p.difficulty)].append(p)
     for (inspector, difficulty), bucket in buckets.items():
+        if inspector == "_baseline":
+            continue
         bucket.sort(key=lambda p: p.id)
         nums = [int(p.id.rsplit("__", 1)[-1]) for p in bucket]
         expected = list(range(1, len(nums) + 1))
