@@ -11,6 +11,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from arc_guard_service.schemas.openai import ChatCompletionRequest
+
 
 class ExpectedOutcome(BaseModel):
     action: Literal["pass", "redact", "tokenize", "hash", "block"]
@@ -36,4 +38,26 @@ class ExpectedOutcome(BaseModel):
                 "tolerance",
                 "strict" if self.phase == "pre_process" else "subset",
             )
+        return self
+
+
+class CorpusPrompt(BaseModel):
+    id: str
+    inspector: str
+    difficulty: Literal["easy", "medium", "super_hard"]
+    swagger_summary: str
+    swagger_description: str
+    request: dict[str, Any]
+    expected: ExpectedOutcome
+    requires_extra: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    notes: str | None = None
+    references: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _request_round_trips(self) -> "CorpusPrompt":
+        try:
+            ChatCompletionRequest.model_validate(self.request)
+        except Exception as exc:
+            raise ValueError(f"request does not validate as ChatCompletionRequest: {exc}") from exc
         return self
