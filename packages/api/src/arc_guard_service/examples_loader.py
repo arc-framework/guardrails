@@ -168,7 +168,7 @@ def to_openapi_examples(prompts: list[CorpusPrompt]) -> dict[str, dict[str, Any]
 # In production, an empty corpus would be a developer error — but we still
 # avoid raising at import to support the `python -m ... --validate` workflow,
 # which needs to load the module before the corpus is fully populated.
-_PACKAGE_ROOT = Path(__file__).resolve().parents[3]
+_PACKAGE_ROOT = Path(__file__).resolve().parents[2]
 CORPUS_DIR = _PACKAGE_ROOT / "tests" / "corpus"
 
 
