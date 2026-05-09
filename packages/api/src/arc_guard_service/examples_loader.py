@@ -123,3 +123,34 @@ def _enforce_cross_rules(prompts: list[CorpusPrompt]) -> None:
                 raise CorpusError(
                     f"{inspector}/super_hard: exactly two false_positive prompts required, got {fp_count}"
                 )
+
+
+def _render_expected_block(p: CorpusPrompt) -> str:
+    lines = [
+        "",
+        "",
+        "**Expected SDK behavior:**",
+        "",
+        f"- action: `{p.expected.action}` at `{p.expected.phase}`",
+        f"- findings: `{p.expected.findings}` ({p.expected.tolerance} match)",
+    ]
+    if p.expected.refusal_code:
+        lines.append(f"- refusal_code: `{p.expected.refusal_code}`")
+    if p.expected.false_positive:
+        lines.append("- ⚠️ `false_positive: true` — this is a precision-test prompt; SDK must NOT block it.")
+    if p.requires_extra:
+        lines.append(f"- ⚠️ Requires the `[{p.requires_extra}]` extra; without it the SDK will not detect this and the request passes through.")
+    if p.references:
+        lines.append("- references: " + ", ".join(p.references))
+    return "\n".join(lines)
+
+
+def to_openapi_examples(prompts: list[CorpusPrompt]) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    for p in prompts:
+        out[p.id] = {
+            "summary": p.swagger_summary,
+            "description": p.swagger_description.rstrip() + _render_expected_block(p),
+            "value": p.request,
+        }
+    return out

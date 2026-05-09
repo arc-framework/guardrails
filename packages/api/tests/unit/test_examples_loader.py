@@ -171,3 +171,18 @@ def test_load_corpus_super_hard_requires_exactly_two_false_positive(tmp_path):
         _write_yaml(tmp_path, f"{nm}.yaml", _yaml_for_super_hard(nm, false_positive=False))
     with pytest.raises(CorpusError, match=r"exactly two false_positive"):
         load_corpus(tmp_path)
+
+
+from arc_guard_service.examples_loader import to_openapi_examples
+
+
+def test_to_openapi_examples_shape_and_description_appends_expected_block():
+    p = CorpusPrompt.model_validate(_valid_prompt_dict())
+    out = to_openapi_examples([p])
+    assert "pii_presidio__easy__01" in out
+    entry = out["pii_presidio__easy__01"]
+    assert entry["summary"] == "PII (email)"
+    assert "**Expected:**" in entry["description"] or "**Expected SDK behavior:**" in entry["description"]
+    assert "redact" in entry["description"]
+    assert "EMAIL_ADDRESS" in entry["description"]
+    assert entry["value"] == p.request
