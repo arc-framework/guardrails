@@ -33,7 +33,9 @@ def test_multiple_rules_each_match_one_finding() -> None:
     policy = PolicyRuleSet(
         rules=(
             PolicyRule(id="r_email", match="EMAIL_ADDRESS", strategy="redact"),
-            PolicyRule(id="r_card", match="CREDIT_CARD", strategy="hash", severity_floor=RiskLevel.MEDIUM),
+            PolicyRule(
+                id="r_card", match="CREDIT_CARD", strategy="hash", severity_floor=RiskLevel.MEDIUM
+            ),
         ),
     )
     findings = (

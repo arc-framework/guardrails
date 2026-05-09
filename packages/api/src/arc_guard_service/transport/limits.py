@@ -19,16 +19,35 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-from collections.abc import Callable
-from typing import Any
-
-from starlette.responses import JSONResponse
-from starlette.types import ASGIApp, Message, Receive, Scope, Send
+import importlib
+from collections.abc import Awaitable, Callable
+from typing import Any, TypeAlias
 
 from arc_guard_service.transport.errors import (
     envelope_for_invalid_request,
     envelope_for_transport_timeout,
 )
+
+Message: TypeAlias = dict[str, Any]
+Scope: TypeAlias = dict[str, Any]
+Receive: TypeAlias = Callable[[], Awaitable[Message]]
+Send: TypeAlias = Callable[[Message], Awaitable[None]]
+ASGIApp: TypeAlias = Callable[[Scope, Receive, Send], Awaitable[None]]
+
+
+_FASTAPI_INSTALL_HINT = (
+    "arc-guard-service[fastapi] is not installed. "
+    "Install it with: pip install arc-guard-service[fastapi]"
+)
+
+
+def _json_response(*, status_code: int, content: dict[str, Any]) -> Any:
+    try:
+        responses_module = importlib.import_module("starlette.responses")
+    except ImportError as exc:
+        raise ImportError(_FASTAPI_INSTALL_HINT) from exc
+    response_cls = responses_module.JSONResponse
+    return response_cls(status_code=status_code, content=content)
 
 
 class RequestSizeLimitMiddleware:
@@ -50,8 +69,7 @@ class RequestSizeLimitMiddleware:
             return
 
         headers = {
-            k.decode("latin-1").lower(): v.decode("latin-1")
-            for k, v in scope.get("headers", [])
+            k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])
         }
         content_length_raw = headers.get("content-length")
         if content_length_raw is not None:
@@ -95,7 +113,7 @@ class RequestSizeLimitMiddleware:
 
     async def _reject(self, send: Send) -> None:
         envelope = envelope_for_invalid_request(trigger="transport.payload_too_large")
-        response = JSONResponse(
+        response = _json_response(
             status_code=413,
             content=_envelope_to_dict(envelope),
         )
@@ -166,7 +184,7 @@ class RequestTimeoutMiddleware:
                 with contextlib.suppress(Exception):
                     self.on_timeout()
             envelope = envelope_for_transport_timeout()
-            response = JSONResponse(
+            response = _json_response(
                 status_code=504,
                 content=_envelope_to_dict(envelope),
             )

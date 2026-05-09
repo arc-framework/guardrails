@@ -81,8 +81,7 @@ async def test_reporter_failure_is_fail_open() -> None:
     failed_counters = [
         m
         for m in metric_sink.captured_metrics
-        if m.name == "arc_guardrails.stage.failed"
-        and m.attributes.get("stage") == "report"
+        if m.name == "arc_guardrails.stage.failed" and m.attributes.get("stage") == "report"
     ]
     assert len(failed_counters) == 1
     assert failed_counters[0].attributes["posture"] == "open"

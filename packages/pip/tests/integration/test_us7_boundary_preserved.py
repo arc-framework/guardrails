@@ -23,7 +23,5 @@ def test_import_graph_check_passes_after_custom_strategy_registration() -> None:
         capture_output=True,
         text=True,
     )
-    assert proc.returncode == 0, (
-        f"import-graph check failed:\n{proc.stdout}\n{proc.stderr}"
-    )
+    assert proc.returncode == 0, f"import-graph check failed:\n{proc.stdout}\n{proc.stderr}"
     assert "Contracts: 4 kept, 0 broken" in proc.stdout

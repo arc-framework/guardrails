@@ -27,11 +27,17 @@ _LOG = logging.getLogger("arc_guard.middleware.jailbreak_ml")
 # rather than rely on these keywords.
 _CATEGORY_KEYWORDS: dict[JailbreakCategory, tuple[re.Pattern[str], ...]] = {
     "direct_override": (
-        re.compile(r"\b(?:ignore|disregard)\s+(?:previous|prior|all)\s+(?:instructions|rules)\b", re.IGNORECASE),
+        re.compile(
+            r"\b(?:ignore|disregard)\s+(?:previous|prior|all)\s+(?:instructions|rules)\b",
+            re.IGNORECASE,
+        ),
         re.compile(r"\b(?:reveal|show|print)\s+(?:the\s+)?system\s+prompt\b", re.IGNORECASE),
     ),
     "role_play": (
-        re.compile(r"\byou\s+are\s+(?:now\s+)?(?:DAN|an?\s+(?:unrestricted|jailbroken|evil))\b", re.IGNORECASE),
+        re.compile(
+            r"\byou\s+are\s+(?:now\s+)?(?:DAN|an?\s+(?:unrestricted|jailbroken|evil))\b",
+            re.IGNORECASE,
+        ),
         re.compile(r"\bact\s+as\b", re.IGNORECASE),
         re.compile(r"\bpretend\s+(?:to\s+be|you\s+(?:are|were))\b", re.IGNORECASE),
     ),

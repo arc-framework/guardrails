@@ -45,9 +45,7 @@ async def test_full_subscriber_queue_drops_oldest() -> None:
         await sink.emit(ev)
 
     received = await asyncio.wait_for(queue.get(), timeout=0.5)
-    assert received is events[-1], (
-        f"expected last event ({events[-1].rid}); got {received.rid}"
-    )
+    assert received is events[-1], f"expected last event ({events[-1].rid}); got {received.rid}"
 
     # Queue should now be empty — drop-oldest leaves at most one event.
     with pytest.raises(asyncio.TimeoutError):

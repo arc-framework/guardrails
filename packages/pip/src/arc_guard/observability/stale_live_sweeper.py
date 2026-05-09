@@ -124,26 +124,28 @@ class StaleLiveSweeper:
                 )
             except Exception as exc:  # noqa: BLE001
                 _LOG.warning(
-                    "stale_live_sweep failed to promote rid=%s: %s", rid, exc,
+                    "stale_live_sweep failed to promote rid=%s: %s",
+                    rid,
+                    exc,
                 )
         duration_ms = (time.perf_counter() - sweep_started) * 1000
         _LOG.info(
-            "event=stale_live_sweep_completed swept_count=%d duration_ms=%.1f "
-            "threshold_seconds=%d",
-            promoted, duration_ms, self._stale_threshold_seconds,
+            "event=stale_live_sweep_completed swept_count=%d duration_ms=%.1f threshold_seconds=%d",
+            promoted,
+            duration_ms,
+            self._stale_threshold_seconds,
         )
         return promoted
 
     def _query_stale_rids(self) -> list[tuple[str, str]]:
         assert self._read_conn is not None
         cutoff_iso = (
-            datetime.fromtimestamp(
-                time.time() - self._stale_threshold_seconds, tz=UTC
-            ).isoformat().replace("+00:00", "Z")
+            datetime.fromtimestamp(time.time() - self._stale_threshold_seconds, tz=UTC)
+            .isoformat()
+            .replace("+00:00", "Z")
         )
         cur = self._read_conn.execute(
-            "SELECT rid, last_event_at FROM request_summaries"
-            " WHERE live = 1 AND last_event_at < ?",
+            "SELECT rid, last_event_at FROM request_summaries WHERE live = 1 AND last_event_at < ?",
             (cutoff_iso,),
         )
         return [(r[0], r[1]) for r in cur.fetchall()]

@@ -54,8 +54,7 @@ class CorpusEntry:
             )
         if not self.expected_outcomes:
             raise ValueError(
-                "CorpusEntry.expected_outcomes must contain at least one "
-                "Configuration key"
+                "CorpusEntry.expected_outcomes must contain at least one Configuration key"
             )
         if not self.notes:
             raise ValueError("CorpusEntry.notes must be non-empty")
@@ -106,19 +105,14 @@ class ConfigurationMetrics:
         ):
             value = getattr(self, name)
             if not (0.0 <= value <= 1.0):
-                raise ValueError(
-                    f"ConfigurationMetrics.{name} must be in [0.0, 1.0]; got {value}"
-                )
+                raise ValueError(f"ConfigurationMetrics.{name} must be in [0.0, 1.0]; got {value}")
         if self.latency_p50_ms < 0 or self.latency_p99_ms < 0:
-            raise ValueError(
-                "ConfigurationMetrics latency fields must be >= 0"
-            )
+            raise ValueError("ConfigurationMetrics latency fields must be >= 0")
         if self.fidelity_score_median is not None and not (
             0.0 <= self.fidelity_score_median <= 1.0
         ):
             raise ValueError(
-                "ConfigurationMetrics.fidelity_score_median must be in [0.0, 1.0] "
-                "or None"
+                "ConfigurationMetrics.fidelity_score_median must be in [0.0, 1.0] or None"
             )
 
 
@@ -132,13 +126,9 @@ class EvaluationReport:
 
     def __post_init__(self) -> None:
         if self.corpus_size < 0:
-            raise ValueError(
-                f"EvaluationReport.corpus_size must be >= 0; got {self.corpus_size}"
-            )
+            raise ValueError(f"EvaluationReport.corpus_size must be >= 0; got {self.corpus_size}")
         if not self.configurations:
-            raise ValueError(
-                "EvaluationReport.configurations must be non-empty"
-            )
+            raise ValueError("EvaluationReport.configurations must be non-empty")
 
 
 __all__ = [

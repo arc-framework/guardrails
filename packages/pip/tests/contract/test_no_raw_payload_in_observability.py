@@ -23,21 +23,23 @@ from arc_guard.pipeline import GuardPipeline
 # Field names that historically have leaked raw input/output text or
 # matched substrings. None of these should appear as keys in any
 # captured artifact.
-FORBIDDEN_FIELD_NAMES: frozenset[str] = frozenset({
-    "text",
-    "input",
-    "input_text",
-    "output",
-    "output_text",
-    "body",
-    "value",  # too generic — could leak
-    "matched",
-    "matched_text",
-    "matched_substring",
-    "raw",
-    "payload",
-    "user_text",
-})
+FORBIDDEN_FIELD_NAMES: frozenset[str] = frozenset(
+    {
+        "text",
+        "input",
+        "input_text",
+        "output",
+        "output_text",
+        "body",
+        "value",  # too generic — could leak
+        "matched",
+        "matched_text",
+        "matched_substring",
+        "raw",
+        "payload",
+        "user_text",
+    }
+)
 
 
 @pytest.mark.asyncio

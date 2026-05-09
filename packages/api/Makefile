@@ -1,7 +1,9 @@
 .PHONY: corpus-validate corpus-stats
 
+UV := env -u VIRTUAL_ENV uv
+
 corpus-validate:
-	uv run --package arc-guard-service python -m arc_guard_service.examples_loader --validate
+	$(UV) run --package arc-guard-service python -m arc_guard_service.examples_loader --validate
 
 corpus-stats:
-	uv run --package arc-guard-service python -m arc_guard_service.examples_loader --stats
+	$(UV) run --package arc-guard-service python -m arc_guard_service.examples_loader --stats

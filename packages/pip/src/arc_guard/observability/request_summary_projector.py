@@ -100,8 +100,7 @@ class RequestSummaryProjector:
             )
         elif et == "DecisionEmitted":
             self._conn.execute(
-                "UPDATE request_summaries"
-                " SET decision_id = ?, final_action = ? WHERE rid = ?",
+                "UPDATE request_summaries SET decision_id = ?, final_action = ? WHERE rid = ?",
                 (
                     getattr(event, "decision_id", None),
                     getattr(event, "action", None),
@@ -110,18 +109,14 @@ class RequestSummaryProjector:
             )
         elif et == "RefusalProduced":
             self._conn.execute(
-                "UPDATE request_summaries"
-                " SET refusal_code = ? WHERE rid = ?",
+                "UPDATE request_summaries SET refusal_code = ? WHERE rid = ?",
                 (getattr(event, "refusal_code", None), rid),
             )
         elif et == "RequestCompleted":
             blocked = bool(getattr(event, "blocked", False))
             pre_action = getattr(event, "pre_action", "pass")
             post_action = getattr(event, "post_action", None)
-            final_action = (
-                "block" if blocked
-                else (post_action or pre_action or "pass")
-            )
+            final_action = "block" if blocked else (post_action or pre_action or "pass")
             duration_ms = int(getattr(event, "total_duration_ms", 0.0))
             self._conn.execute(
                 "UPDATE request_summaries"

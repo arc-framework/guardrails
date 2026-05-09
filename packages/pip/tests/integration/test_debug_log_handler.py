@@ -27,11 +27,7 @@ def _all_entries(path: str) -> list[sqlite3.Row]:
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     try:
-        return list(
-            conn.execute(
-                "SELECT * FROM debug_entries ORDER BY rid, seq"
-            ).fetchall()
-        )
+        return list(conn.execute("SELECT * FROM debug_entries ORDER BY rid, seq").fetchall())
     finally:
         conn.close()
 
@@ -94,6 +90,7 @@ async def test_concurrent_contexts_dont_bleed(db_path: str) -> None:
     logger.setLevel(logging.DEBUG)
     logger.addHandler(handler)
     try:
+
         async def request(rid: str) -> None:
             token = rid_context_var.set(rid)
             try:

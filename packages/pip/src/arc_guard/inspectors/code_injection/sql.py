@@ -41,23 +41,25 @@ _DEFAULT_PHASES = frozenset({"post_process"})
 # intentionally excludes ``UNION`` (subordinate clause, not a leading
 # statement keyword) and includes the common DML / DDL set the inspector
 # must guard.
-_LEADING_SQL_KEYWORDS = frozenset({
-    "select",
-    "insert",
-    "update",
-    "delete",
-    "drop",
-    "create",
-    "alter",
-    "truncate",
-    "merge",
-    "replace",
-    "grant",
-    "revoke",
-    "exec",
-    "execute",
-    "call",
-})
+_LEADING_SQL_KEYWORDS = frozenset(
+    {
+        "select",
+        "insert",
+        "update",
+        "delete",
+        "drop",
+        "create",
+        "alter",
+        "truncate",
+        "merge",
+        "replace",
+        "grant",
+        "revoke",
+        "exec",
+        "execute",
+        "call",
+    }
+)
 
 _COMMENT_TERMINATOR_RE = re.compile(
     r"(?P<keyword>\b(?:select|insert|update|delete|drop|create|alter|truncate|"
@@ -150,16 +152,12 @@ class SqlInjectionInspector:
     # Detectors
     # ------------------------------------------------------------------
 
-    def _detect_stacked(
-        self, text: str, statements: tuple[object, ...]
-    ) -> list[Finding]:
+    def _detect_stacked(self, text: str, statements: tuple[object, ...]) -> list[Finding]:
         if len(statements) < 2:
             return []
 
         sql_like_count = sum(
-            1
-            for stmt in statements
-            if _leading_keyword(str(stmt)) in _LEADING_SQL_KEYWORDS
+            1 for stmt in statements if _leading_keyword(str(stmt)) in _LEADING_SQL_KEYWORDS
         )
         if sql_like_count < 2:
             return []

@@ -30,9 +30,5 @@ def test_request_summary_required_fields() -> None:
     data-model.md §2.1."""
     from arc_guard_core.schemas.request_summary import RequestSummary
 
-    required = {
-        name
-        for name, field in RequestSummary.model_fields.items()
-        if field.is_required()
-    }
+    required = {name for name, field in RequestSummary.model_fields.items() if field.is_required()}
     assert required == {"rid", "started_at", "last_event_at", "status", "live"}

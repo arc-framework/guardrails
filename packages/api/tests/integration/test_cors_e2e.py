@@ -33,57 +33,39 @@ async def client(tmp_path: Path):
     )
     app = create_app(settings)
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
 
 
 @pytest.mark.asyncio
 async def test_allowed_origin_succeeds_with_cors_header(client) -> None:
-    resp = await client.get(
-        "/requests", headers={"Origin": "http://127.0.0.1:5173"}
-    )
+    resp = await client.get("/requests", headers={"Origin": "http://127.0.0.1:5173"})
     assert resp.status_code == 200
-    assert (
-        resp.headers.get("access-control-allow-origin")
-        == "http://127.0.0.1:5173"
-    )
+    assert resp.headers.get("access-control-allow-origin") == "http://127.0.0.1:5173"
 
 
 @pytest.mark.asyncio
 async def test_second_allowed_origin_also_succeeds(client) -> None:
-    resp = await client.get(
-        "/requests", headers={"Origin": "https://dashboard.example.com"}
-    )
+    resp = await client.get("/requests", headers={"Origin": "https://dashboard.example.com"})
     assert resp.status_code == 200
-    assert (
-        resp.headers.get("access-control-allow-origin")
-        == "https://dashboard.example.com"
-    )
+    assert resp.headers.get("access-control-allow-origin") == "https://dashboard.example.com"
 
 
 @pytest.mark.asyncio
 async def test_disallowed_origin_blocked_by_browser(client) -> None:
     """Server still serves the response (CORS is enforced by the browser),
     but the missing allow-origin header means the browser blocks it."""
-    resp = await client.get(
-        "/requests", headers={"Origin": "http://evil.example.com"}
-    )
+    resp = await client.get("/requests", headers={"Origin": "http://evil.example.com"})
     # Server returns 200 with the body — but the browser would block it
     # because the allow-origin header is absent.
     assert resp.status_code == 200
-    assert "access-control-allow-origin" not in {
-        k.lower() for k in resp.headers.keys()
-    }
+    assert "access-control-allow-origin" not in {k.lower() for k in resp.headers.keys()}
 
 
 @pytest.mark.asyncio
 async def test_cross_origin_keeps_payload_safety(client) -> None:
     """Same payload-safety rules apply cross-origin as same-origin."""
-    resp = await client.get(
-        "/requests", headers={"Origin": "http://127.0.0.1:5173"}
-    )
+    resp = await client.get("/requests", headers={"Origin": "http://127.0.0.1:5173"})
     body = resp.json()
     # The default deployment never exposes raw user payload; an empty result
     # set returns an envelope, not raw content.
@@ -104,7 +86,4 @@ async def test_preflight_options_succeeds_for_allowed_origin(client) -> None:
         },
     )
     assert resp.status_code == 200
-    assert (
-        resp.headers.get("access-control-allow-origin")
-        == "http://127.0.0.1:5173"
-    )
+    assert resp.headers.get("access-control-allow-origin") == "http://127.0.0.1:5173"

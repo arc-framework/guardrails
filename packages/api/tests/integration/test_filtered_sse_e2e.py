@@ -32,17 +32,13 @@ async def test_filter_drops_other_rids(tmp_path: Path) -> None:
     fastapi = __import__("fastapi")
     app = fastapi.FastAPI()
     registry = SubscriberRegistry()
-    app.include_router(
-        build_events_router(registry=registry, lifecycle_sink=sink)
-    )
+    app.include_router(build_events_router(registry=registry, lifecycle_sink=sink))
 
     received_lines: list[str] = []
 
     async def _run() -> None:
         transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(
-            transport=transport, base_url="http://test", timeout=5.0
-        ) as c:
+        async with httpx.AsyncClient(transport=transport, base_url="http://test", timeout=5.0) as c:
             ts = datetime(2026, 5, 9, 14, 0, 0, tzinfo=UTC)
 
             async def feed_events() -> None:
@@ -53,34 +49,37 @@ async def test_filter_drops_other_rids(tmp_path: Path) -> None:
                         break
                     await asyncio.sleep(0.05)
                 registry.broadcast(
-                    RequestStarted(
-                        id="ev-1", parent_id=None, seq=1, ts=ts, rid="rid-other"
-                    )
+                    RequestStarted(id="ev-1", parent_id=None, seq=1, ts=ts, rid="rid-other")
                 )
                 registry.broadcast(
-                    RequestStarted(
-                        id="ev-2", parent_id=None, seq=1, ts=ts, rid="rid-target"
-                    )
+                    RequestStarted(id="ev-2", parent_id=None, seq=1, ts=ts, rid="rid-target")
                 )
                 registry.broadcast(
                     StageRan(
-                        id="ev-3", parent_id="ev-2", seq=2, ts=ts,
-                        rid="rid-target", stage="classify",
+                        id="ev-3",
+                        parent_id="ev-2",
+                        seq=2,
+                        ts=ts,
+                        rid="rid-target",
+                        stage="classify",
                     )
                 )
                 registry.broadcast(
                     RequestCompleted(
-                        id="ev-4", parent_id="ev-2", seq=3, ts=ts,
-                        rid="rid-target", blocked=False, pre_action="pass",
+                        id="ev-4",
+                        parent_id="ev-2",
+                        seq=3,
+                        ts=ts,
+                        rid="rid-target",
+                        blocked=False,
+                        pre_action="pass",
                         total_duration_ms=15.0,
                     )
                 )
 
             feeder = asyncio.create_task(feed_events())
             try:
-                async with c.stream(
-                    "GET", "/events?rid=rid-target"
-                ) as resp:
+                async with c.stream("GET", "/events?rid=rid-target") as resp:
                     assert resp.status_code == 200
                     async for line in resp.aiter_lines():
                         received_lines.append(line)
@@ -115,15 +114,16 @@ async def test_already_terminated_rid_returns_immediate_sentinel(
     ts = datetime(2026, 5, 9, 14, 0, 0, tzinfo=UTC)
     body = ""
     try:
-        await sink.emit(
-            RequestStarted(
-                id="ev-1", parent_id=None, seq=1, ts=ts, rid="rid-done"
-            )
-        )
+        await sink.emit(RequestStarted(id="ev-1", parent_id=None, seq=1, ts=ts, rid="rid-done"))
         await sink.emit(
             RequestCompleted(
-                id="ev-2", parent_id="ev-1", seq=2, ts=ts,
-                rid="rid-done", blocked=False, pre_action="pass",
+                id="ev-2",
+                parent_id="ev-1",
+                seq=2,
+                ts=ts,
+                rid="rid-done",
+                blocked=False,
+                pre_action="pass",
                 total_duration_ms=10.0,
             )
         )
@@ -131,9 +131,7 @@ async def test_already_terminated_rid_returns_immediate_sentinel(
         fastapi = __import__("fastapi")
         app = fastapi.FastAPI()
         registry = SubscriberRegistry()
-        app.include_router(
-            build_events_router(registry=registry, lifecycle_sink=sink)
-        )
+        app.include_router(build_events_router(registry=registry, lifecycle_sink=sink))
 
         async def _run() -> str:
             transport = httpx.ASGITransport(app=app)

@@ -41,7 +41,10 @@ def _docker_available() -> bool:
         return False
     try:
         out = subprocess.run(
-            ["docker", "info"], capture_output=True, timeout=5, check=False,
+            ["docker", "info"],
+            capture_output=True,
+            timeout=5,
+            check=False,
         )
         return out.returncode == 0
     except Exception:
@@ -110,15 +113,18 @@ def test_make_docker_up_brings_stack_online_then_nuke_cleans_everything() -> Non
 
     ps = subprocess.run(
         ["docker", "compose", "-f", "packages/api/docker-compose.yml", "ps", "-q"],
-        cwd=_REPO_ROOT, capture_output=True, text=True, check=False,
+        cwd=_REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
     )
-    assert ps.stdout.strip() == "", (
-        f"compose ps not empty after docker-nuke: {ps.stdout!r}"
-    )
+    assert ps.stdout.strip() == "", f"compose ps not empty after docker-nuke: {ps.stdout!r}"
 
     vol = subprocess.run(
         ["docker", "volume", "ls", "--format", "{{.Name}}"],
-        capture_output=True, text=True, check=False,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     remaining = vol.stdout.splitlines()
     assert "api_lifecycle-data" not in remaining

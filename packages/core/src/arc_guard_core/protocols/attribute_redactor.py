@@ -37,8 +37,7 @@ class AttributeRedactor(Protocol):
     ``RedactionResult`` with ``accepted=False`` instead.
     """
 
-    def sanitize(self, key: str, value: Any) -> RedactionResult:
-        ...
+    def sanitize(self, key: str, value: Any) -> RedactionResult: ...
 
 
 __all__ = [

@@ -35,9 +35,7 @@ def _iso(dt: datetime) -> str:
     return dt.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
-def _seed_summary(
-    path: Path, rid: str, *, last_event_at: datetime, live: int = 1
-) -> None:
+def _seed_summary(path: Path, rid: str, *, last_event_at: datetime, live: int = 1) -> None:
     """Insert a request_summaries row directly. Mirrors what the projector
     would write for a partially-completed run."""
     started_iso = _iso(last_event_at - timedelta(seconds=5))
@@ -73,17 +71,14 @@ async def _build_stack(
 
 def _row(path: Path, rid: str) -> tuple[str, int] | None:
     with sqlite3.connect(str(path)) as conn:
-        cur = conn.execute(
-            "SELECT status, live FROM request_summaries WHERE rid = ?", (rid,)
-        )
+        cur = conn.execute("SELECT status, live FROM request_summaries WHERE rid = ?", (rid,))
         return cur.fetchone()
 
 
 def _request_errored_count(path: Path, rid: str) -> int:
     with sqlite3.connect(str(path)) as conn:
         cur = conn.execute(
-            "SELECT COUNT(*) FROM lifecycle_events"
-            " WHERE rid = ? AND event_type = 'RequestErrored'",
+            "SELECT COUNT(*) FROM lifecycle_events WHERE rid = ? AND event_type = 'RequestErrored'",
             (rid,),
         )
         return int(cur.fetchone()[0])
@@ -94,9 +89,7 @@ async def test_stale_row_promoted_to_errored(tmp_path: Path) -> None:
     db = tmp_path / "arc_guardrail.db"
     composite, sweeper = await _build_stack(db)
     rid = "stale-rid-1"
-    _seed_summary(
-        db, rid, last_event_at=datetime.now(UTC) - timedelta(seconds=900)
-    )
+    _seed_summary(db, rid, last_event_at=datetime.now(UTC) - timedelta(seconds=900))
 
     promoted = await sweeper._run_sweep_once()
 
@@ -112,9 +105,7 @@ async def test_fresh_row_stays_untouched(tmp_path: Path) -> None:
     db = tmp_path / "arc_guardrail.db"
     composite, sweeper = await _build_stack(db)
     rid = "fresh-rid-1"
-    _seed_summary(
-        db, rid, last_event_at=datetime.now(UTC) - timedelta(seconds=10)
-    )
+    _seed_summary(db, rid, last_event_at=datetime.now(UTC) - timedelta(seconds=10))
 
     promoted = await sweeper._run_sweep_once()
 
@@ -130,9 +121,7 @@ async def test_sweeper_is_idempotent(tmp_path: Path) -> None:
     db = tmp_path / "arc_guardrail.db"
     composite, sweeper = await _build_stack(db)
     rid = "stale-rid-2"
-    _seed_summary(
-        db, rid, last_event_at=datetime.now(UTC) - timedelta(seconds=900)
-    )
+    _seed_summary(db, rid, last_event_at=datetime.now(UTC) - timedelta(seconds=900))
 
     first = await sweeper._run_sweep_once()
     second = await sweeper._run_sweep_once()
@@ -150,9 +139,7 @@ async def test_request_errored_event_carries_documented_fields(
     db = tmp_path / "arc_guardrail.db"
     composite, sweeper = await _build_stack(db)
     rid = "stale-rid-3"
-    _seed_summary(
-        db, rid, last_event_at=datetime.now(UTC) - timedelta(seconds=900)
-    )
+    _seed_summary(db, rid, last_event_at=datetime.now(UTC) - timedelta(seconds=900))
 
     await sweeper._run_sweep_once()
 

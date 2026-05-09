@@ -40,9 +40,7 @@ def register_placeholder(entity_type: str, label: str) -> None:
     if not entity_type:
         raise ValueError("entity_type must be non-empty")
     if not _LABEL_RE.match(label):
-        raise ValueError(
-            f"placeholder label {label!r} must match {_LABEL_RE.pattern}"
-        )
+        raise ValueError(f"placeholder label {label!r} must match {_LABEL_RE.pattern}")
     with _LOCK:
         _REGISTRY[entity_type] = label
 

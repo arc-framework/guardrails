@@ -36,7 +36,8 @@ def _signal(confidence: float) -> JailbreakSignal:
     ],
 )
 def test_each_band_produces_documented_result_shape(
-    confidence: float, band: str,
+    confidence: float,
+    band: str,
 ) -> None:
     result = GuardResult(text="answer", action="pass")
     out = apply_jailbreak_ladder(result, [_signal(confidence)], THRESHOLDS)
@@ -90,9 +91,7 @@ def test_no_signals_is_no_op() -> None:
     result = GuardResult(text="answer", action="pass")
     out = apply_jailbreak_ladder(result, [], THRESHOLDS)
     assert out is result or (
-        out.action == "pass"
-        and out.clarification is None
-        and out.refusal is None
+        out.action == "pass" and out.clarification is None and out.refusal is None
     )
 
 

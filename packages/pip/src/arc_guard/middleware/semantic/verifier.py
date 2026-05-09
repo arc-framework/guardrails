@@ -34,7 +34,8 @@ class _Finding:
 
 
 def _scan_with_patterns(
-    text: str, patterns: list[re.Pattern[str]],
+    text: str,
+    patterns: list[re.Pattern[str]],
 ) -> set[tuple[str, int, int]]:
     """Run regex patterns over ``text``; return ``(entity_type, start, end)`` triples."""
     findings: set[tuple[str, int, int]] = set()
@@ -91,10 +92,12 @@ class SemanticRehydrationVerifier(NullRehydrationVerifier):
 
         try:
             candidate_findings = _scan_with_patterns(
-                rehydration_candidate, self._patterns,
+                rehydration_candidate,
+                self._patterns,
             )
             rehydrated_findings = _scan_with_patterns(
-                rehydrated_text, self._patterns,
+                rehydrated_text,
+                self._patterns,
             )
         except Exception as exc:
             raise RehydrationVerifierError(

@@ -25,8 +25,6 @@ class ActionStrategy(Protocol):
 
     name: str
 
-    def apply(
-        self, text: str, findings: Sequence[Finding]
-    ) -> tuple[str, Sequence[PolicyDecision]]:
+    def apply(self, text: str, findings: Sequence[Finding]) -> tuple[str, Sequence[PolicyDecision]]:
         """Return the transformed text and the per-finding decisions."""
         ...

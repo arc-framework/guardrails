@@ -6,6 +6,7 @@
 
 PACKAGES_DIR := packages
 TOOLS_DIR    := tools
+UV           := env -u VIRTUAL_ENV uv
 
 .DEFAULT_GOAL := help
 
@@ -14,10 +15,25 @@ TOOLS_DIR    := tools
         api-up api-down api-logs demo sse \
         docker-build docker-up docker-up-prod docker-down docker-logs docker-nuke dashboard-logs \
         test test-core test-pip test-api \
-        lint lint-core lint-pip lint-api \
+	format format-core format-pip format-api \
+	lint lint-core lint-pip lint-api \
         typecheck typecheck-core typecheck-pip typecheck-api \
         boundary docs-links \
-        all ci clean clean-cache
+	all ci fix ci-fix clean clean-cache
+
+FIX ?= 0
+
+RUFF_CHECK_FLAGS :=
+DASHBOARD_LINT_SCRIPT := lint
+DASHBOARD_FORMAT_SCRIPT := format
+AUTO_FIX_TARGETS :=
+
+ifeq ($(FIX),1)
+RUFF_CHECK_FLAGS := --fix
+DASHBOARD_LINT_SCRIPT := lint:fix
+DASHBOARD_FORMAT_SCRIPT := format:fix
+AUTO_FIX_TARGETS := format
+endif
 
 help:
 	@echo "arc-guardrails — common make targets"
@@ -53,9 +69,11 @@ help:
 	@echo
 	@echo "Per-package quality gates:"
 	@echo "  test               pytest for core + pip + api"
+	@echo "  format             ruff format for core + pip + api"
 	@echo "  lint               ruff check for core + pip + api"
 	@echo "  typecheck          mypy for core + pip + api"
 	@echo "  test-core / test-pip / test-api          single-package pytest"
+	@echo "  format-core / format-pip / format-api    single-package ruff format"
 	@echo "  lint-core / lint-pip / lint-api          single-package ruff"
 	@echo "  typecheck-core / typecheck-pip / typecheck-api    single-package mypy"
 	@echo
@@ -66,6 +84,9 @@ help:
 	@echo "Aggregate:"
 	@echo "  all                lint + typecheck + test + boundary"
 	@echo "  ci                 alias for 'all'"
+	@echo "  fix                run 'all' with auto-fix enabled where supported"
+	@echo "  ci-fix             alias for 'fix'"
+	@echo "  all FIX=1          same as 'fix' (GNU make cannot accept 'make all --fix')"
 	@echo
 	@echo "Cleanup:"
 	@echo "  clean              remove __pycache__ / .pytest_cache / .ruff_cache / .mypy_cache / *.egg-info / api log"
@@ -81,7 +102,7 @@ help:
 # directly without prefixing every command with `cd packages && uv run`.
 
 init:
-	@cd $(PACKAGES_DIR) && uv sync --all-extras --dev
+	@cd $(PACKAGES_DIR) && $(UV) sync --all-extras --dev
 	@echo
 	@echo "Workspace venv ready at packages/.venv"
 	@echo
@@ -92,12 +113,12 @@ init:
 	@echo "  Cmd+Shift+P → 'Python: Select Interpreter' → packages/.venv/bin/python"
 	@echo
 	@echo "Or skip activation entirely and use uv:"
-	@echo "  cd packages && uv run pytest"
+	@echo "  cd packages && env -u VIRTUAL_ENV uv run pytest"
 
 install: init
 
 install-minimal:
-	@cd $(PACKAGES_DIR) && uv sync --dev
+	@cd $(PACKAGES_DIR) && $(UV) sync --dev
 	@echo
 	@echo "Workspace venv ready at packages/.venv (no optional extras)."
 	@echo "Activate: source packages/.venv/bin/activate"
@@ -108,7 +129,7 @@ install-minimal:
 # arc-guard library entrypoint. ~2s. No HTTP, no Docker, no extras.
 
 smoke:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python -c "from arc_guard.pipeline import GuardPipeline; import asyncio; from arc_guard_core.types import GuardInput; result = asyncio.run(GuardPipeline().pre_process(GuardInput(text='hello world'))); print(f'smoke ok: action={result.action}')"
+	cd $(PACKAGES_DIR) && $(UV) run --package arc-guard python -c "from arc_guard.pipeline import GuardPipeline; import asyncio; from arc_guard_core.types import GuardInput; result = asyncio.run(GuardPipeline().pre_process(GuardInput(text='hello world'))); print(f'smoke ok: action={result.action}')"
 
 # ---------- arc-guard-service (live local) ----------
 #
@@ -136,7 +157,7 @@ api-up:
 	@cd $(PACKAGES_DIR) && \
 	  ARC_GUARD_SERVICE_BIND=$(API_HOST) ARC_GUARD_SERVICE_PORT=$(API_PORT) \
 	  $(CAPTURE_ENV) \
-	  nohup uv run --package arc-guard-service --extra fastapi \
+	  nohup $(UV) run --package arc-guard-service --extra fastapi \
 	  python -m arc_guard_service \
 	  > ../$(API_LOG_FILE) 2>&1 &
 	@until lsof -ti:$(API_PORT) >/dev/null 2>&1; do sleep 1; done
@@ -166,7 +187,7 @@ api-logs:
 SSE_URL ?= http://$(API_HOST):$(API_PORT)/events
 
 sse:
-	@cd $(PACKAGES_DIR) && uv run python ../$(TOOLS_DIR)/sse_dashboard.py $(SSE_URL)
+	@cd $(PACKAGES_DIR) && $(UV) run python ../$(TOOLS_DIR)/sse_dashboard.py $(SSE_URL)
 
 demo:
 	@echo "===1. BENIGN==="
@@ -282,39 +303,50 @@ docker-nuke:
 test: test-core test-pip test-api
 
 test-core:
-	cd $(PACKAGES_DIR)/core && uv run pytest tests/
+	cd $(PACKAGES_DIR)/core && $(UV) run pytest tests/
 
 test-pip:
-	cd $(PACKAGES_DIR)/pip && uv run pytest tests/
+	cd $(PACKAGES_DIR)/pip && $(UV) run pytest tests/
 
 test-api:
-	cd $(PACKAGES_DIR)/api && uv run pytest tests/
+	cd $(PACKAGES_DIR)/api && $(UV) run pytest tests/
 
 # ---------- Lint ----------
+
+format: format-core format-pip format-api
+
+format-core:
+	cd $(PACKAGES_DIR)/core && $(UV) run ruff format src tests
+
+format-pip:
+	cd $(PACKAGES_DIR)/pip && $(UV) run ruff format src tests
+
+format-api:
+	cd $(PACKAGES_DIR)/api && $(UV) run ruff format src tests
 
 lint: lint-core lint-pip lint-api
 
 lint-core:
-	cd $(PACKAGES_DIR)/core && uv run ruff check src tests
+	cd $(PACKAGES_DIR)/core && $(UV) run ruff check $(RUFF_CHECK_FLAGS) src tests
 
 lint-pip:
-	cd $(PACKAGES_DIR)/pip && uv run ruff check src tests
+	cd $(PACKAGES_DIR)/pip && $(UV) run ruff check $(RUFF_CHECK_FLAGS) src tests
 
 lint-api:
-	cd $(PACKAGES_DIR)/api && uv run ruff check src tests
+	cd $(PACKAGES_DIR)/api && $(UV) run ruff check $(RUFF_CHECK_FLAGS) src tests
 
 # ---------- Typecheck ----------
 
 typecheck: typecheck-core typecheck-pip typecheck-api
 
 typecheck-core:
-	cd $(PACKAGES_DIR)/core && uv run mypy src
+	cd $(PACKAGES_DIR)/core && $(UV) run mypy src
 
 typecheck-pip:
-	cd $(PACKAGES_DIR)/pip && uv run mypy src
+	cd $(PACKAGES_DIR)/pip && $(UV) run mypy src
 
 typecheck-api:
-	cd $(PACKAGES_DIR)/api && uv run mypy src
+	cd $(PACKAGES_DIR)/api && $(UV) run mypy src
 
 # ---------- Boundary / docs ----------
 #
@@ -322,13 +354,13 @@ typecheck-api:
 # transitively pulls it in (arc-guard depends on arc-guard-core).
 
 boundary:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python ../$(TOOLS_DIR)/check_import_graph.py
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python ../$(TOOLS_DIR)/check_dependency_tree.py
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python ../$(TOOLS_DIR)/check_async_blocking.py
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python ../$(TOOLS_DIR)/check_adopt_vs_build.py
+	cd $(PACKAGES_DIR) && $(UV) run --package arc-guard python ../$(TOOLS_DIR)/check_import_graph.py
+	cd $(PACKAGES_DIR) && $(UV) run --package arc-guard python ../$(TOOLS_DIR)/check_dependency_tree.py
+	cd $(PACKAGES_DIR) && $(UV) run --package arc-guard python ../$(TOOLS_DIR)/check_async_blocking.py
+	cd $(PACKAGES_DIR) && $(UV) run --package arc-guard python ../$(TOOLS_DIR)/check_adopt_vs_build.py
 
 docs-links:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python ../$(TOOLS_DIR)/check_docs_links.py
+	cd $(PACKAGES_DIR) && $(UV) run --package arc-guard python ../$(TOOLS_DIR)/check_docs_links.py
 
 # ---------- Dashboard (apps/guardrail-flow) ----------
 
@@ -344,13 +376,18 @@ dashboard-build:
 	cd $(DASHBOARD_DIR) && pnpm build
 
 dashboard-check:
-	cd $(DASHBOARD_DIR) && pnpm typecheck && pnpm lint && pnpm format && pnpm test
+	cd $(DASHBOARD_DIR) && pnpm typecheck && pnpm $(DASHBOARD_LINT_SCRIPT) && pnpm $(DASHBOARD_FORMAT_SCRIPT) && pnpm test
 
 # ---------- Aggregate ----------
 
-all: lint typecheck test boundary dashboard-check
+all: $(AUTO_FIX_TARGETS) lint typecheck test boundary dashboard-check
 
 ci: all
+
+fix:
+	@$(MAKE) all FIX=1
+
+ci-fix: fix
 
 # ---------- Cleanup ----------
 

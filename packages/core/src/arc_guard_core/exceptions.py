@@ -45,19 +45,17 @@ class ArcGuardError(Exception):
     """Base exception. Never raised directly."""
 
     def __init__(
-            self,
-            message: str,
-            *,
-            code: str,
-            details: Mapping[str, Any] | None = None,
-            cause: BaseException | None = None,
+        self,
+        message: str,
+        *,
+        code: str,
+        details: Mapping[str, Any] | None = None,
+        cause: BaseException | None = None,
     ) -> None:
         super().__init__(message)
         valid_codes: frozenset[str] = getattr(type(self), "__valid_codes__", frozenset())
         if valid_codes and code not in valid_codes:
-            raise ValueError(
-                f"{type(self).__name__}: code {code!r} not in __valid_codes__"
-            )
+            raise ValueError(f"{type(self).__name__}: code {code!r} not in __valid_codes__")
         self.code = code
         self.details: Mapping[str, Any] = dict(details) if details else {}
         if cause is not None:
@@ -89,10 +87,12 @@ class RefusalEnvelopeError(ArcGuardError):
     """Errors raised while constructing or serializing a RefusalEnvelope."""
 
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "refusal.build_failed",
-        "refusal.unknown_code",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "refusal.build_failed",
+            "refusal.unknown_code",
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -102,19 +102,23 @@ class RefusalEnvelopeError(ArcGuardError):
 
 class ConfigSchemaError(ConfigError):
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "config.missing_field",
-        "config.unknown_field",
-        "config.type_mismatch",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "config.missing_field",
+            "config.unknown_field",
+            "config.type_mismatch",
+        }
+    )
 
 
 class ConfigCrossFieldError(ConfigError):
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "config.cross_field_violation",
-        "config.unknown_inspector",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "config.cross_field_violation",
+            "config.unknown_inspector",
+        }
+    )
 
 
 class RegistryFrozenError(ConfigCrossFieldError):
@@ -126,9 +130,11 @@ class RegistryFrozenError(ConfigCrossFieldError):
     """
 
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "registry.frozen",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "registry.frozen",
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -138,31 +144,37 @@ class RegistryFrozenError(ConfigCrossFieldError):
 
 class ApiBoundaryValidationError(ValidationError):
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "api.malformed_payload",
-        "api.missing_field",
-        "api.type_mismatch",
-        "api.unknown_field",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "api.malformed_payload",
+            "api.missing_field",
+            "api.type_mismatch",
+            "api.unknown_field",
+        }
+    )
 
 
 class PipelineContractValidationError(ValidationError):
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "pipeline.invalid_span",
-        "pipeline.invalid_score",
-        "pipeline.invalid_severity",
-        "pipeline.missing_inspector",
-        "pipeline.invalid_decision",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "pipeline.invalid_span",
+            "pipeline.invalid_score",
+            "pipeline.invalid_severity",
+            "pipeline.missing_inspector",
+            "pipeline.invalid_decision",
+        }
+    )
 
 
 class AdapterBoundaryValidationError(ValidationError):
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "adapter.invalid_input",
-        "adapter.invalid_output",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "adapter.invalid_input",
+            "adapter.invalid_output",
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -172,27 +184,33 @@ class AdapterBoundaryValidationError(ValidationError):
 
 class InspectorError(PipelineError):
     __failure_mode__: ClassVar[FailureMode] = "open"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "inspector.timeout",
-        "inspector.malformed_finding",
-        "inspector.unhandled",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "inspector.timeout",
+            "inspector.malformed_finding",
+            "inspector.unhandled",
+        }
+    )
 
 
 class StrategyError(PipelineError):
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "strategy.failed",
-        "strategy.unsupported_action",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "strategy.failed",
+            "strategy.unsupported_action",
+        }
+    )
 
 
 class PolicyRouterError(PipelineError):
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "router.no_decision",
-        "router.conflicting_decisions",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "router.no_decision",
+            "router.conflicting_decisions",
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -202,27 +220,33 @@ class PolicyRouterError(PipelineError):
 
 class ReporterError(AdapterError):
     __failure_mode__: ClassVar[FailureMode] = "open"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "reporter.queue_full",
-        "reporter.publish_failed",
-        "reporter.unhandled",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "reporter.queue_full",
+            "reporter.publish_failed",
+            "reporter.unhandled",
+        }
+    )
 
 
 class FlagProviderError(AdapterError):
     __failure_mode__: ClassVar[FailureMode] = "closed-conservative"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "flag.lookup_failed",
-        "flag.unhandled",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "flag.lookup_failed",
+            "flag.unhandled",
+        }
+    )
 
 
 class EntityProviderError(AdapterError):
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "entity.load_failed",
-        "entity.duplicate_name",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "entity.load_failed",
+            "entity.duplicate_name",
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -238,11 +262,13 @@ class IntentEncoderError(AdapterError):
     """
 
     __failure_mode__: ClassVar[FailureMode] = "closed-conservative"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "intent_encoder.timeout",
-        "intent_encoder.model_load_failed",
-        "intent_encoder.inference_failed",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "intent_encoder.timeout",
+            "intent_encoder.model_load_failed",
+            "intent_encoder.inference_failed",
+        }
+    )
 
 
 class FidelityScorerError(AdapterError):
@@ -253,10 +279,12 @@ class FidelityScorerError(AdapterError):
     """
 
     __failure_mode__: ClassVar[FailureMode] = "open"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "fidelity_scorer.incompatible_pair",
-        "fidelity_scorer.scoring_failed",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "fidelity_scorer.incompatible_pair",
+            "fidelity_scorer.scoring_failed",
+        }
+    )
 
 
 class RehydrationVerifierError(PipelineError):
@@ -268,12 +296,14 @@ class RehydrationVerifierError(PipelineError):
     """
 
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "rehydration_verifier.invented_placeholder",
-        "rehydration_verifier.structural_shift",
-        "rehydration_verifier.safety_regression",
-        "rehydration_verifier.verifier_failed",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "rehydration_verifier.invented_placeholder",
+            "rehydration_verifier.structural_shift",
+            "rehydration_verifier.safety_regression",
+            "rehydration_verifier.verifier_failed",
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -290,11 +320,13 @@ class JailbreakDetectorError(AdapterError):
     """
 
     __failure_mode__: ClassVar[FailureMode] = "closed-conservative"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "jailbreak_detector.timeout",
-        "jailbreak_detector.model_load_failed",
-        "jailbreak_detector.inference_failed",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "jailbreak_detector.timeout",
+            "jailbreak_detector.model_load_failed",
+            "jailbreak_detector.inference_failed",
+        }
+    )
 
 
 class ConversationTurnInspectorError(AdapterError):
@@ -305,10 +337,12 @@ class ConversationTurnInspectorError(AdapterError):
     """
 
     __failure_mode__: ClassVar[FailureMode] = "closed-conservative"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "conversation_turn_inspector.state_invalid",
-        "conversation_turn_inspector.inference_failed",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "conversation_turn_inspector.state_invalid",
+            "conversation_turn_inspector.inference_failed",
+        }
+    )
 
 
 class EvaluationHarnessError(PipelineError):
@@ -319,11 +353,13 @@ class EvaluationHarnessError(PipelineError):
     """
 
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "evaluation_harness.configuration_invalid",
-        "evaluation_harness.corpus_unreadable",
-        "evaluation_harness.metric_compute_failed",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "evaluation_harness.configuration_invalid",
+            "evaluation_harness.corpus_unreadable",
+            "evaluation_harness.metric_compute_failed",
+        }
+    )
 
 
 class CorpusValidationError(ValidationError):
@@ -334,11 +370,13 @@ class CorpusValidationError(ValidationError):
     """
 
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "corpus.entry_invalid",
-        "corpus.schema_mismatch",
-        "corpus.empty",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "corpus.entry_invalid",
+            "corpus.schema_mismatch",
+            "corpus.empty",
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -356,11 +394,13 @@ class TransportError(PipelineError):
     """
 
     __failure_mode__: ClassVar[FailureMode] = "closed"
-    __valid_codes__: ClassVar[frozenset[str]] = frozenset({
-        "transport.timeout",
-        "transport.payload_too_large",
-        "transport.invalid_state",
-    })
+    __valid_codes__: ClassVar[frozenset[str]] = frozenset(
+        {
+            "transport.timeout",
+            "transport.payload_too_large",
+            "transport.invalid_state",
+        }
+    )
 
 
 __all__ = [

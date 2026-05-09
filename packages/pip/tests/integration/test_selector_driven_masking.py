@@ -35,8 +35,7 @@ def _finding(entity_type: str, start: int, end: int) -> Finding:
 
 def test_selector_default_picks_per_entity_strategy() -> None:
     text = (
-        "email user@example.com card 4111111111111111 ssn 123-45-6789 "
-        "url https://x.test emp E12345"
+        "email user@example.com card 4111111111111111 ssn 123-45-6789 url https://x.test emp E12345"
     )
     findings = (
         _finding("EMAIL_ADDRESS", 6, 22),
@@ -69,18 +68,14 @@ def test_selector_default_picks_per_entity_strategy() -> None:
     }
 
     assert len(outcome.decisions) == 5
-    decisions_by_entity = {
-        findings[d.finding_ids[0]].entity_type: d for d in outcome.decisions
-    }
+    decisions_by_entity = {findings[d.finding_ids[0]].entity_type: d for d in outcome.decisions}
     for entity_type, expected_strategy in expected_per_entity.items():
         decision = decisions_by_entity[entity_type]
         assert decision.strategy == expected_strategy
         assert decision.metadata.get("selector") == "default"
 
     expected_rule_ids = {"r_email", "r_card", "r_ssn", "r_url", "r_emp"}
-    actual_rule_ids = {
-        d.metadata.get("firing_rule_id") for d in outcome.decisions
-    }
+    actual_rule_ids = {d.metadata.get("firing_rule_id") for d in outcome.decisions}
     assert actual_rule_ids == expected_rule_ids
 
     expected_transform_strategies = set(expected_per_entity.values())

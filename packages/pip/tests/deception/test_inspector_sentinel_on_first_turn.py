@@ -8,7 +8,8 @@ from arc_guard.deception.inspector import StatefulConversationInspector
 def test_first_turn_returns_sentinel_score() -> None:
     inspector = StatefulConversationInspector()
     score, state = inspector.inspect_turn(
-        "anything goes here", prior_state=None,
+        "anything goes here",
+        prior_state=None,
     )
     assert score.sentinel == "not_measured"
     assert score.value is None

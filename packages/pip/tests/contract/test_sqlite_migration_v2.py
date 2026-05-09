@@ -94,9 +94,7 @@ async def test_migration_is_idempotent(tmp_path: Path) -> None:
         # Inspect the meta table directly — only one schema_version row.
         conn = sqlite3.connect(db)
         try:
-            cur = conn.execute(
-                "SELECT COUNT(*) FROM lifecycle_meta WHERE key='schema_version'"
-            )
+            cur = conn.execute("SELECT COUNT(*) FROM lifecycle_meta WHERE key='schema_version'")
             assert cur.fetchone()[0] == 1
         finally:
             conn.close()

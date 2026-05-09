@@ -34,6 +34,4 @@ def test_zero_decision_drift_on_pii_corpus() -> None:
     # When the corpus exists, drive each request through the pipeline twice:
     # once with explicit strategy: bindings, once with selector: default.
     # Assert GuardResult.transforms is byte-identical.
-    raise NotImplementedError(
-        "corpus loader stub; provide _load_corpus to enable assertion"
-    )
+    raise NotImplementedError("corpus loader stub; provide _load_corpus to enable assertion")

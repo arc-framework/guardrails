@@ -102,15 +102,11 @@ async def test_explorer_page_p95(tmp_path: Path) -> None:
     db = tmp_path / "arc_guardrail.db"
     SqliteLifecycleSink(str(db))
     _seed_n_summaries(str(db), 1000)
-    settings = ServiceSettings(
-        enable_chat_completions=False, lifecycle_sqlite_path=str(db)
-    )
+    settings = ServiceSettings(enable_chat_completions=False, lifecycle_sqlite_path=str(db))
     app = create_app(settings)
     transport = httpx.ASGITransport(app=app)
     samples: list[float] = []
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         # Warmup
         await c.get("/requests?page=1&page_size=50")
         for _ in range(50):
@@ -120,8 +116,7 @@ async def test_explorer_page_p95(tmp_path: Path) -> None:
             assert resp.status_code == 200
     p95_ms = _p95(samples)
     assert p95_ms < 1000.0, (
-        f"explorer p95 {p95_ms:.1f} ms exceeds the test threshold (1000 ms);"
-        f" spec target is 200 ms"
+        f"explorer p95 {p95_ms:.1f} ms exceeds the test threshold (1000 ms); spec target is 200 ms"
     )
 
 
@@ -133,15 +128,11 @@ async def test_workspace_open_p95(tmp_path: Path) -> None:
     SqliteLifecycleSink(str(db))
     _seed_n_summaries(str(db), 1000)
     _seed_workspace_resources(str(db), "rid-000500")
-    settings = ServiceSettings(
-        enable_chat_completions=False, lifecycle_sqlite_path=str(db)
-    )
+    settings = ServiceSettings(enable_chat_completions=False, lifecycle_sqlite_path=str(db))
     app = create_app(settings)
     transport = httpx.ASGITransport(app=app)
     samples: list[float] = []
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         await c.get("/requests/rid-000500")
         for _ in range(20):
             t0 = time.perf_counter()
@@ -155,8 +146,7 @@ async def test_workspace_open_p95(tmp_path: Path) -> None:
             assert r3.status_code == 200
     p95_ms = _p95(samples)
     assert p95_ms < 2500.0, (
-        f"workspace-open p95 {p95_ms:.1f} ms exceeds the test threshold;"
-        f" spec target is 500 ms"
+        f"workspace-open p95 {p95_ms:.1f} ms exceeds the test threshold; spec target is 500 ms"
     )
 
 
@@ -185,38 +175,35 @@ async def test_filtered_sse_setup_completes_quickly(
     ts = datetime(2026, 5, 9, 14, 0, 0, tzinfo=UTC)
     try:
         await sink.emit(
-            RequestStarted(
-                id="ev-1", parent_id=None, seq=1, ts=ts, rid="rid-perf-done"
-            )
+            RequestStarted(id="ev-1", parent_id=None, seq=1, ts=ts, rid="rid-perf-done")
         )
         await sink.emit(
             RequestCompleted(
-                id="ev-2", parent_id="ev-1", seq=2, ts=ts,
-                rid="rid-perf-done", blocked=False, pre_action="pass",
+                id="ev-2",
+                parent_id="ev-1",
+                seq=2,
+                ts=ts,
+                rid="rid-perf-done",
+                blocked=False,
+                pre_action="pass",
                 total_duration_ms=10.0,
             )
         )
     finally:
         await sink.close()
 
-    settings = ServiceSettings(
-        enable_chat_completions=False, lifecycle_sqlite_path=str(db)
-    )
+    settings = ServiceSettings(enable_chat_completions=False, lifecycle_sqlite_path=str(db))
     app = create_app(settings)
     transport = httpx.ASGITransport(app=app)
     samples: list[float] = []
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test", timeout=5.0
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test", timeout=5.0) as c:
         for _ in range(20):
             t0 = time.perf_counter()
             # Pre-seeded terminated rid → handler emits the sentinel and
             # closes synchronously. We read until we see "terminated" so
             # the timing covers the full handshake + body delivery, not
             # just connection setup.
-            async with c.stream(
-                "GET", "/events?rid=rid-perf-done"
-            ) as resp:
+            async with c.stream("GET", "/events?rid=rid-perf-done") as resp:
                 assert resp.status_code == 200
                 async for chunk in resp.aiter_text():
                     if "terminated" in chunk:

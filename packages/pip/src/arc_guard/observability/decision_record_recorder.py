@@ -49,8 +49,8 @@ class DecisionRecordRecorder:
         (action, max_risk, decision_id) — the operator's pipeline must
         provide a richer ``decision_lookup`` to capture the full record."""
         self._path = str(path)
-        self._queue: asyncio.Queue[tuple[str, str, str, str, int] | None] = (
-            asyncio.Queue(maxsize=queue_capacity)
+        self._queue: asyncio.Queue[tuple[str, str, str, str, int] | None] = asyncio.Queue(
+            maxsize=queue_capacity
         )
         self._dropped_writes = 0
         self._closed = False

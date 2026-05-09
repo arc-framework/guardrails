@@ -91,9 +91,7 @@ class ChatCompletionUsage(BaseModel):
 class ArcGuardPhase(BaseModel):
     """Per-phase metadata describing what arc-guard did at one boundary."""
 
-    action: str = Field(
-        description="One of `pass`, `block`, `redact`, `hash`, `tokenize`, `warn`."
-    )
+    action: str = Field(description="One of `pass`, `block`, `redact`, `hash`, `tokenize`, `warn`.")
     findings: list[str] = Field(
         default_factory=list,
         description=(

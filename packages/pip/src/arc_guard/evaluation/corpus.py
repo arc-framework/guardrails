@@ -48,7 +48,8 @@ def load_adversarial_corpus(
         )
 
     spec = importlib.util.spec_from_file_location(
-        f"_arc_guard_corpus_{abs(hash(str(target)))}", target,
+        f"_arc_guard_corpus_{abs(hash(str(target)))}",
+        target,
     )
     if spec is None or spec.loader is None:
         raise CorpusValidationError(
@@ -82,10 +83,7 @@ def load_adversarial_corpus(
     errors: list[str] = []
     for index, entry in enumerate(raw):
         if not is_dataclass(entry) or not isinstance(entry, CorpusEntry):
-            errors.append(
-                f"entry {index}: not a CorpusEntry instance "
-                f"(got {type(entry).__name__})"
-            )
+            errors.append(f"entry {index}: not a CorpusEntry instance (got {type(entry).__name__})")
             continue
         # Validation already ran in CorpusEntry.__post_init__ at
         # construction time; re-validation here is defensive — if a

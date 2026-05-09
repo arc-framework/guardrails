@@ -98,18 +98,12 @@ def test_decision_record_does_not_leak_raw_payload(
     # Forbidden substring 1: any substring of the original input >= 8 chars
     forbidden = _all_substrings_min_len(text, min_len=8)
     leaked_input = [s for s in forbidden if s in serialized]
-    assert leaked_input == [], (
-        f"DecisionRecord leaks input substring(s) {leaked_input[:3]!r}"
-    )
+    assert leaked_input == [], f"DecisionRecord leaks input substring(s) {leaked_input[:3]!r}"
 
     # Forbidden substring 2: each raw entity content
     raw_entities = [text[f.start : f.end] for f in findings]
-    leaked_entities = [
-        raw for raw in raw_entities if len(raw) >= 4 and raw in serialized
-    ]
-    assert leaked_entities == [], (
-        f"DecisionRecord leaks raw entity content {leaked_entities!r}"
-    )
+    leaked_entities = [raw for raw in raw_entities if len(raw) >= 4 and raw in serialized]
+    assert leaked_entities == [], f"DecisionRecord leaks raw entity content {leaked_entities!r}"
 
 
 def test_decision_record_findings_are_span_only() -> None:

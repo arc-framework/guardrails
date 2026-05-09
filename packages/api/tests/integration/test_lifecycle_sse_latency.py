@@ -63,9 +63,7 @@ async def test_sse_emit_to_consumer_p95_under_100ms() -> None:
     p95 = sorted(latencies_ms)[int(0.95 * len(latencies_ms))]
     p50 = statistics.median(latencies_ms)
     print(f"\n[SSE latency] p50={p50:.3f}ms  p95={p95:.3f}ms  max={max(latencies_ms):.3f}ms")
-    assert p95 < 100.0, (
-        f"p95 emit-to-consumer latency exceeded 100 ms threshold: {p95:.2f} ms"
-    )
+    assert p95 < 100.0, f"p95 emit-to-consumer latency exceeded 100 ms threshold: {p95:.2f} ms"
 
     await registry.unregister(queue)
 

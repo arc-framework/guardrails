@@ -43,7 +43,7 @@ async def test_conversation_state_contains_no_raw_turn_text() -> None:
     for text in _SENSITIVE_TURNS:
         # Check 8-char chunks (well above the leak scanner's 4-char floor).
         for start in range(0, len(text) - 8 + 1, 4):
-            chunk = text[start:start + 8]
+            chunk = text[start : start + 8]
             assert chunk not in serialized, (
                 f"raw turn-text chunk {chunk!r} leaked into ConversationState"
             )
@@ -82,7 +82,8 @@ async def test_leak_scanner_finds_zero_leaks_against_captured_artifacts() -> Non
         # rule sweeps the whole captured set, but this test scopes to
         # the new deception emissions.
         deception_leaks = [
-            leak for leak in leaks
+            leak
+            for leak in leaks
             if "deception" in leak.artifact_name.lower()
             or leak.field_path.endswith("turn_count")
             or leak.field_path.endswith("conversation_id")

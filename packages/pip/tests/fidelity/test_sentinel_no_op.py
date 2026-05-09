@@ -19,7 +19,9 @@ async def test_null_pair_with_aggressive_thresholds_takes_no_action() -> None:
     config = GuardConfig(
         observability=ObservabilityConfig(
             fidelity_thresholds=FidelityThresholds(
-                warn=0.99, clarify=0.95, refuse=0.9,
+                warn=0.99,
+                clarify=0.95,
+                refuse=0.9,
             ),
         ),
     )

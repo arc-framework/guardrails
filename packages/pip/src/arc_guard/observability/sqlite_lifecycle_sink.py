@@ -167,9 +167,7 @@ def _row_to_event(row: sqlite3.Row | tuple[Any, ...]) -> LifecycleEvent | None:
     for f in fields(cls):
         if f.name in payload and isinstance(payload[f.name], list):
             origin = getattr(f.type, "__origin__", None)
-            if origin is tuple or (
-                isinstance(f.type, str) and f.type.startswith("tuple[")
-            ):
+            if origin is tuple or (isinstance(f.type, str) and f.type.startswith("tuple[")):
                 payload[f.name] = tuple(payload[f.name])
     return cls(**payload)  # type: ignore[return-value]
 
@@ -239,9 +237,7 @@ class SqliteLifecycleSink:
 
     @property
     def schema_version(self) -> str:
-        cur = self._conn.execute(
-            "SELECT value FROM lifecycle_meta WHERE key='schema_version'"
-        )
+        cur = self._conn.execute("SELECT value FROM lifecycle_meta WHERE key='schema_version'")
         row = cur.fetchone()
         return str(row[0]) if row is not None else "0"
 
@@ -336,8 +332,7 @@ class SqliteLifecycleSink:
                     "DELETE FROM request_summaries WHERE rid IN (SELECT rid FROM _evict_rids)"
                 )
                 cur = self._conn.execute(
-                    "DELETE FROM lifecycle_events"
-                    " WHERE rid IN (SELECT rid FROM _evict_rids)"
+                    "DELETE FROM lifecycle_events WHERE rid IN (SELECT rid FROM _evict_rids)"
                 )
                 deleted = cur.rowcount
                 self._conn.execute("COMMIT")

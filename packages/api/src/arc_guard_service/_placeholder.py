@@ -16,8 +16,7 @@ Until then, importing this module documents the handoff.
 from __future__ import annotations
 
 HANDOFF_NOTE = (
-    "arc-guard-service is a thin scaffold. The full deployment surface "
-    "lands in a future spec."
+    "arc-guard-service is a thin scaffold. The full deployment surface lands in a future spec."
 )
 
 __all__ = ["HANDOFF_NOTE"]

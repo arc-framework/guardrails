@@ -37,9 +37,7 @@ _MIN_SUBSTRING_LENGTH = 4
 # this shape to avoid false positives when an input prompt happens to
 # share a 4+ char substring with a system identifier (e.g. "rule" in
 # both "rule-based:1" and the prompt "no rules.").
-_SYSTEM_ID_PATTERN: re.Pattern[str] = re.compile(
-    r"^[A-Za-z][A-Za-z0-9_\-/.]*:[A-Za-z0-9_.\-]+$"
-)
+_SYSTEM_ID_PATTERN: re.Pattern[str] = re.compile(r"^[A-Za-z][A-Za-z0-9_\-/.]*:[A-Za-z0-9_.\-]+$")
 
 
 @dataclass(frozen=True)
@@ -164,9 +162,7 @@ def _scan_metric(metric: CapturedMetric, originals: tuple[str, ...]) -> list[Lea
     return reports
 
 
-def scan_for_leaks(
-    captured: CapturedArtifacts, *, originals: Iterable[str]
-) -> list[LeakReport]:
+def scan_for_leaks(captured: CapturedArtifacts, *, originals: Iterable[str]) -> list[LeakReport]:
     """Scan every captured artifact for fragments of the originals.
 
     ``originals`` is the input text plus any finding-matched substrings.

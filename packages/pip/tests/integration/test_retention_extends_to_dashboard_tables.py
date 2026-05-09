@@ -16,9 +16,7 @@ import pytest
 from arc_guard.observability.sqlite_lifecycle_sink import SqliteLifecycleSink
 
 
-def _seed_event_for_rid(
-    sink: SqliteLifecycleSink, rid: str, *, created_at: float
-) -> None:
+def _seed_event_for_rid(sink: SqliteLifecycleSink, rid: str, *, created_at: float) -> None:
     """Bypass emit() to insert an event row with a controlled created_at."""
     sink._conn.execute(  # type: ignore[attr-defined]
         "INSERT INTO lifecycle_events"
@@ -58,9 +56,7 @@ def _row_count(path: str, table: str, rid: str) -> int:
     conn = sqlite3.connect(path)
     try:
         return int(
-            conn.execute(
-                f"SELECT COUNT(*) FROM {table} WHERE rid = ?", (rid,)
-            ).fetchone()[0]
+            conn.execute(f"SELECT COUNT(*) FROM {table} WHERE rid = ?", (rid,)).fetchone()[0]
         )
     finally:
         conn.close()
@@ -73,9 +69,7 @@ async def test_retention_evicts_dashboard_tables_in_lockstep(
     import time
 
     db = tmp_path / "arc_guardrail.db"
-    sink = SqliteLifecycleSink(
-        str(db), max_rows=1, max_age_days=365, cleanup_interval_seconds=60
-    )
+    sink = SqliteLifecycleSink(str(db), max_rows=1, max_age_days=365, cleanup_interval_seconds=60)
     try:
         # Seed two rids with RECENT created_at values so age-based eviction
         # doesn't fire; only the max_rows=1 check should evict rid-old.

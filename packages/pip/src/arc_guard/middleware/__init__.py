@@ -37,8 +37,7 @@ def from_otel_sdk(*, instrumentation_name: str = "arc-guardrails") -> Any:
         from arc_guard.middleware.otel import OtelObservability
     except ImportError as exc:
         raise ImportError(
-            "from_otel_sdk() requires the [otel] extra. "
-            "Install with: pip install arc-guard[otel]"
+            "from_otel_sdk() requires the [otel] extra. Install with: pip install arc-guard[otel]"
         ) from exc
     return OtelObservability.from_otel_sdk(instrumentation_name=instrumentation_name)
 
@@ -90,7 +89,8 @@ def from_huggingface_jailbreak(
             "Install with: pip install arc-guard[jailbreak-ml]"
         ) from exc
     return JailbreakMlBundle.from_huggingface_jailbreak(
-        model_name=model_name, device=device,
+        model_name=model_name,
+        device=device,
     )
 
 

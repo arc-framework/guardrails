@@ -26,16 +26,28 @@ def _ts() -> datetime:
 def test_jailbreak_detected_constructor_works_without_new_field() -> None:
     """Existing callers don't need to pass evidence_reference."""
     ev = JailbreakDetected(
-        id="ev-1", parent_id=None, seq=1, ts=_ts(), rid="rid-1",
-        detector_id="rule-based:1", category="prompt-injection", confidence=0.9,
+        id="ev-1",
+        parent_id=None,
+        seq=1,
+        ts=_ts(),
+        rid="rid-1",
+        detector_id="rule-based:1",
+        category="prompt-injection",
+        confidence=0.9,
     )
     assert ev.evidence_reference is None
 
 
 def test_jailbreak_detected_field_round_trips_through_asdict() -> None:
     ev = JailbreakDetected(
-        id="ev-1", parent_id=None, seq=1, ts=_ts(), rid="rid-1",
-        detector_id="rule-based:1", category="prompt-injection", confidence=0.9,
+        id="ev-1",
+        parent_id=None,
+        seq=1,
+        ts=_ts(),
+        rid="rid-1",
+        detector_id="rule-based:1",
+        category="prompt-injection",
+        confidence=0.9,
         evidence_reference="rule-based:1/prompt-injection",
     )
     payload = asdict(ev)
@@ -46,8 +58,14 @@ def test_jailbreak_detected_unset_field_serializes_as_none() -> None:
     """Existing wire format is preserved for callers that don't populate
     the new field — the field appears in the dict as None / null."""
     ev = JailbreakDetected(
-        id="ev-1", parent_id=None, seq=1, ts=_ts(), rid="rid-1",
-        detector_id="rule-based:1", category="prompt-injection", confidence=0.9,
+        id="ev-1",
+        parent_id=None,
+        seq=1,
+        ts=_ts(),
+        rid="rid-1",
+        detector_id="rule-based:1",
+        category="prompt-injection",
+        confidence=0.9,
     )
     payload = asdict(ev)
     assert "evidence_reference" in payload
@@ -56,14 +74,22 @@ def test_jailbreak_detected_unset_field_serializes_as_none() -> None:
 
 def test_deception_scored_marker_counts_default_none() -> None:
     ev = DeceptionScored(
-        id="ev-1", parent_id=None, seq=1, ts=_ts(), rid="rid-1",
+        id="ev-1",
+        parent_id=None,
+        seq=1,
+        ts=_ts(),
+        rid="rid-1",
     )
     assert ev.marker_counts is None
 
 
 def test_deception_scored_marker_counts_round_trips() -> None:
     ev = DeceptionScored(
-        id="ev-1", parent_id=None, seq=1, ts=_ts(), rid="rid-1",
+        id="ev-1",
+        parent_id=None,
+        seq=1,
+        ts=_ts(),
+        rid="rid-1",
         marker_counts={"context_drift": 2, "role_assertion": 1},
     )
     payload = asdict(ev)
@@ -74,10 +100,18 @@ def test_deception_scored_empty_marker_counts_distinct_from_none() -> None:
     """An empty dict means 'computed but no markers fired'; None means
     'not computed for this event'. They are distinct."""
     no_compute = DeceptionScored(
-        id="ev-1", parent_id=None, seq=1, ts=_ts(), rid="rid-1",
+        id="ev-1",
+        parent_id=None,
+        seq=1,
+        ts=_ts(),
+        rid="rid-1",
     )
     computed_empty = DeceptionScored(
-        id="ev-2", parent_id=None, seq=2, ts=_ts(), rid="rid-1",
+        id="ev-2",
+        parent_id=None,
+        seq=2,
+        ts=_ts(),
+        rid="rid-1",
         marker_counts={},
     )
     assert no_compute.marker_counts is None
@@ -86,7 +120,11 @@ def test_deception_scored_empty_marker_counts_distinct_from_none() -> None:
 
 def test_backend_called_model_config_snapshot_default_none() -> None:
     ev = BackendCalled(
-        id="ev-1", parent_id=None, seq=1, ts=_ts(), rid="rid-1",
+        id="ev-1",
+        parent_id=None,
+        seq=1,
+        ts=_ts(),
+        rid="rid-1",
     )
     assert ev.model_config_snapshot is None
 
@@ -99,7 +137,11 @@ def test_backend_called_model_config_snapshot_round_trips() -> None:
         "max_tokens": 100,
     }
     ev = BackendCalled(
-        id="ev-1", parent_id=None, seq=1, ts=_ts(), rid="rid-1",
+        id="ev-1",
+        parent_id=None,
+        seq=1,
+        ts=_ts(),
+        rid="rid-1",
         model_config_snapshot=snap,
     )
     assert asdict(ev)["model_config_snapshot"] == snap
@@ -107,7 +149,11 @@ def test_backend_called_model_config_snapshot_round_trips() -> None:
 
 def test_backend_responded_token_usage_default_none() -> None:
     ev = BackendResponded(
-        id="ev-1", parent_id=None, seq=1, ts=_ts(), rid="rid-1",
+        id="ev-1",
+        parent_id=None,
+        seq=1,
+        ts=_ts(),
+        rid="rid-1",
     )
     assert ev.token_usage is None
 
@@ -115,7 +161,11 @@ def test_backend_responded_token_usage_default_none() -> None:
 def test_backend_responded_token_usage_round_trips() -> None:
     usage = {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
     ev = BackendResponded(
-        id="ev-1", parent_id=None, seq=1, ts=_ts(), rid="rid-1",
+        id="ev-1",
+        parent_id=None,
+        seq=1,
+        ts=_ts(),
+        rid="rid-1",
         token_usage=usage,
     )
     assert asdict(ev)["token_usage"] == usage

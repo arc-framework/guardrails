@@ -104,9 +104,7 @@ async def test_stage_failure_emits_documented_observability(
     await pipeline.pre_process(GuardInput(text="fault-injection test input."))
 
     # guard.stage.failed fires at rule severity.
-    failed_events = [
-        e for e in logger.captured_events if e.name == "guard.stage.failed"
-    ]
+    failed_events = [e for e in logger.captured_events if e.name == "guard.stage.failed"]
     assert len(failed_events) == 1, (
         f"expected exactly one stage.failed event for {exc_class.__name__}, "
         f"got {len(failed_events)}"

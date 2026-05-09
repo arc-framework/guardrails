@@ -63,18 +63,14 @@ class CorpusPrompt(BaseModel):
         try:
             ChatCompletionRequest.model_validate(self.request)
         except Exception as exc:
-            raise ValueError(
-                f"request does not validate as ChatCompletionRequest: {exc}"
-            ) from exc
+            raise ValueError(f"request does not validate as ChatCompletionRequest: {exc}") from exc
         return self
 
     @model_validator(mode="after")
     def _id_shape(self) -> CorpusPrompt:
         parts = self.id.split("__")
         if len(parts) != 3:
-            raise ValueError(
-                f"id {self.id!r} must have shape '<inspector>__<difficulty>__<nn>'"
-            )
+            raise ValueError(f"id {self.id!r} must have shape '<inspector>__<difficulty>__<nn>'")
         if parts[0] != self.inspector:
             raise ValueError(
                 f"id {self.id!r} first segment must equal inspector {self.inspector!r}"
@@ -116,9 +112,7 @@ def load_corpus(corpus_dir: Path) -> list[CorpusPrompt]:
         try:
             prompt = CorpusPrompt.model_validate(data)
         except Exception as exc:
-            raise CorpusError(
-                f"{path.name}: schema validation failed: {exc}"
-            ) from exc
+            raise CorpusError(f"{path.name}: schema validation failed: {exc}") from exc
         if path.stem != prompt.id:
             raise CorpusError(
                 f"{path.name}: id ({prompt.id!r}) must equal filename stem ({path.stem!r})"
@@ -227,9 +221,7 @@ def _cli_stats() -> int:
     except CorpusError as exc:
         print(f"FAIL: {exc}", flush=True)
         return 1
-    counts: Counter[tuple[str, str]] = Counter(
-        (p.inspector, p.difficulty) for p in prompts
-    )
+    counts: Counter[tuple[str, str]] = Counter((p.inspector, p.difficulty) for p in prompts)
     inspectors = sorted({p.inspector for p in prompts})
     difficulties = ["easy", "medium", "super_hard"]
     width = max((len(i) for i in inspectors), default=10)

@@ -70,7 +70,9 @@ class _PartiallyExplodingMeter:
 
 class _RecordingCounter:
     def __init__(
-        self, name: str, sink: list[tuple[str, int, dict[str, Any] | None]],
+        self,
+        name: str,
+        sink: list[tuple[str, int, dict[str, Any] | None]],
     ) -> None:
         self._name = name
         self._sink = sink

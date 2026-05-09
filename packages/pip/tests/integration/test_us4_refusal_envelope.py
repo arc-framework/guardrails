@@ -39,9 +39,7 @@ def test_walkthrough_a_block_path_envelope() -> None:
                     "This request was blocked because it appeared to attempt "
                     "jailbreaking the system."
                 ),
-                refusal_next_steps=(
-                    "Rephrase without instructions to ignore previous rules.",
-                ),
+                refusal_next_steps=("Rephrase without instructions to ignore previous rules.",),
             ),
         ),
     )
@@ -54,9 +52,7 @@ def test_walkthrough_a_block_path_envelope() -> None:
     assert result.refusal is not None
     assert result.refusal.code == "jailbreak"
     assert "jailbreaking" in result.refusal.human_message
-    assert result.refusal.next_steps == (
-        "Rephrase without instructions to ignore previous rules.",
-    )
+    assert result.refusal.next_steps == ("Rephrase without instructions to ignore previous rules.",)
 
 
 def test_walkthrough_b_high_partial_refusal_serializes_cleanly() -> None:

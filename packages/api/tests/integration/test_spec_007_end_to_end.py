@@ -121,9 +121,18 @@ def test_decision_contract_frozen_no_new_stages() -> None:
     from arc_guard_core.stages import STAGE_DESCRIPTORS
 
     expected_after_006 = {
-        "validate", "defend", "classify", "deception_inspect", "sanitize",
-        "route", "execute", "refusal", "verify", "rehydrate",
-        "decision_emit", "report",
+        "validate",
+        "defend",
+        "classify",
+        "deception_inspect",
+        "sanitize",
+        "route",
+        "execute",
+        "refusal",
+        "verify",
+        "rehydrate",
+        "decision_emit",
+        "report",
     }
     actual = set(STAGE_DESCRIPTORS)
     assert actual == expected_after_006, (

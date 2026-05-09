@@ -68,7 +68,9 @@ def apply_rehydration(
     else:  # partial
         accepts = dict(verdict.per_placeholder)
         out = _substitute(
-            text, entity_map, accept=lambda name: accepts.get(name, False),
+            text,
+            entity_map,
+            accept=lambda name: accepts.get(name, False),
         )
         placeholders_accepted = sum(1 for v in accepts.values() if v)
         # Partial counts as both applied AND rejected — the documented

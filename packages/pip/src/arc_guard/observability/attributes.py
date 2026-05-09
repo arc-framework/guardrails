@@ -97,12 +97,10 @@ class BoundedRedactor:
                     continue
                 # Either the attribute contains a chunk of the original,
                 # or the original is contained in the attribute.
-                if (
-                    self._has_overlap(text, original)
-                    or self._has_overlap(original, text)
-                ):
+                if self._has_overlap(text, original) or self._has_overlap(original, text):
                     return RedactionResult(
-                        accepted=False, reason=REASON_CONTAINS_INPUT_SUBSTRING,
+                        accepted=False,
+                        reason=REASON_CONTAINS_INPUT_SUBSTRING,
                     )
 
         return RedactionResult(accepted=True, value=value)

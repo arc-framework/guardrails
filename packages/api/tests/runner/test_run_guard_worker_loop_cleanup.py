@@ -23,10 +23,7 @@ async def test_worker_thread_joins_after_shutdown_helper_runs() -> None:
     # running-loop context.
     run_guard(GuardInput(text="canary"))
 
-    worker_threads = [
-        t for t in threading.enumerate()
-        if t.name == "arc-guard-service-worker-loop"
-    ]
+    worker_threads = [t for t in threading.enumerate() if t.name == "arc-guard-service-worker-loop"]
     assert len(worker_threads) == 1, (
         f"expected exactly one worker thread, got {len(worker_threads)}"
     )
@@ -34,12 +31,11 @@ async def test_worker_thread_joins_after_shutdown_helper_runs() -> None:
     _shutdown_worker_loop()
 
     worker_threads_after = [
-        t for t in threading.enumerate()
+        t
+        for t in threading.enumerate()
         if t.name == "arc-guard-service-worker-loop" and t.is_alive()
     ]
-    assert worker_threads_after == [], (
-        "worker thread did not exit after _shutdown_worker_loop()"
-    )
+    assert worker_threads_after == [], "worker thread did not exit after _shutdown_worker_loop()"
 
 
 @pytest.mark.asyncio

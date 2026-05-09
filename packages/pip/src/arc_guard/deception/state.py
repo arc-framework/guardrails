@@ -14,8 +14,14 @@ from collections.abc import Iterable
 from arc_guard_core.deception import ConversationState
 
 _ROLE_PLAY_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"\byou\s+are\s+(?:now\s+)?(?:DAN|an\s+unrestricted|jailbroken|evil|uncensored)\b", re.IGNORECASE),
-    re.compile(r"\bact\s+as\s+(?:if\s+you\s+(?:were|are)\s+)?(?:an?\s+)?(?:unrestricted|jailbroken|evil|uncensored|character|persona)\b", re.IGNORECASE),
+    re.compile(
+        r"\byou\s+are\s+(?:now\s+)?(?:DAN|an\s+unrestricted|jailbroken|evil|uncensored)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\bact\s+as\s+(?:if\s+you\s+(?:were|are)\s+)?(?:an?\s+)?(?:unrestricted|jailbroken|evil|uncensored|character|persona)\b",
+        re.IGNORECASE,
+    ),
     re.compile(r"\b(?:from\s+now\s+on|imagine\s+that)\s+you\s+are\b", re.IGNORECASE),
     re.compile(r"\bpretend\s+(?:to\s+be|you\s+(?:are|were))\b", re.IGNORECASE),
     re.compile(r"\brole[\s-]?play\s+as\b", re.IGNORECASE),
@@ -25,7 +31,10 @@ _ROLE_PLAY_PATTERNS: tuple[re.Pattern[str], ...] = (
 
 _ESCALATION_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bas\s+we\s+(?:already\s+)?(?:agreed|discussed|established)\b", re.IGNORECASE),
-    re.compile(r"\b(?:we|you)\s+(?:already\s+)?(?:agreed|discussed|established)\s+(?:that|earlier)\b", re.IGNORECASE),
+    re.compile(
+        r"\b(?:we|you)\s+(?:already\s+)?(?:agreed|discussed|established)\s+(?:that|earlier)\b",
+        re.IGNORECASE,
+    ),
     re.compile(r"\bas\s+i\s+mentioned\s+(?:before|earlier)\b", re.IGNORECASE),
     re.compile(r"\bnow\s+that\s+(?:we|you)\s+(?:have|are)\b", re.IGNORECASE),
     re.compile(r"\bpush\s+the\s+boundaries\b", re.IGNORECASE),
@@ -38,7 +47,8 @@ _ESCALATION_PATTERNS: tuple[re.Pattern[str], ...] = (
 
 
 def _count_matches(
-    text: str, patterns: Iterable[re.Pattern[str]],
+    text: str,
+    patterns: Iterable[re.Pattern[str]],
 ) -> int:
     """Count distinct patterns that match (not total match count).
 
@@ -65,7 +75,8 @@ def fresh_state(conversation_id: str | None = None) -> ConversationState:
 
 
 def update_state(
-    prior_state: ConversationState, current_turn_text: str,
+    prior_state: ConversationState,
+    current_turn_text: str,
 ) -> ConversationState:
     """Return a new ``ConversationState`` after observing ``current_turn_text``.
 

@@ -100,14 +100,10 @@ def _build_filter_clause(
         where.append("started_at < ?")
         params.append(until.isoformat())
     if statuses:
-        where.append(
-            "status IN (" + ",".join("?" for _ in statuses) + ")"
-        )
+        where.append("status IN (" + ",".join("?" for _ in statuses) + ")")
         params.extend(statuses)
     if actions:
-        where.append(
-            "final_action IN (" + ",".join("?" for _ in actions) + ")"
-        )
+        where.append("final_action IN (" + ",".join("?" for _ in actions) + ")")
         params.extend(actions)
     if risk_bands:
         band_clauses: list[str] = []
@@ -149,8 +145,7 @@ def build_requests_router(*, settings: ServiceSettings) -> Any:
                 "error": {
                     "code": "store_unavailable",
                     "message": (
-                        "lifecycle_sqlite_path not configured;"
-                        " dashboard data plane unavailable"
+                        "lifecycle_sqlite_path not configured; dashboard data plane unavailable"
                     ),
                 }
             },
@@ -239,10 +234,7 @@ def build_requests_router(*, settings: ServiceSettings) -> Any:
                 risk_bands=risk_bands,
                 rid_prefix=rid_prefix,
             )
-            count_sql = (
-                "SELECT COUNT(*) FROM request_summaries "
-                + (where_sql if where_sql else "")
-            )
+            count_sql = "SELECT COUNT(*) FROM request_summaries " + (where_sql if where_sql else "")
             try:
                 total = int(conn.execute(count_sql, params).fetchone()[0])
             except sqlite3.Error as exc:
@@ -256,9 +248,7 @@ def build_requests_router(*, settings: ServiceSettings) -> Any:
                 + "ORDER BY started_at DESC LIMIT ? OFFSET ?"
             )
             try:
-                rows = conn.execute(
-                    list_sql, [*params, page_size, offset]
-                ).fetchall()
+                rows = conn.execute(list_sql, [*params, page_size, offset]).fetchall()
             except sqlite3.Error as exc:
                 _LOG.warning("dashboard list query failed: %s", exc)
                 return _dashboard_unavailable()
@@ -345,9 +335,9 @@ def build_requests_router(*, settings: ServiceSettings) -> Any:
                 ).fetchone()[0]
             )
             debug_count = int(
-                conn.execute(
-                    "SELECT COUNT(*) FROM debug_entries WHERE rid = ?", (rid,)
-                ).fetchone()[0]
+                conn.execute("SELECT COUNT(*) FROM debug_entries WHERE rid = ?", (rid,)).fetchone()[
+                    0
+                ]
             )
         finally:
             conn.close()
@@ -527,9 +517,7 @@ def build_requests_router(*, settings: ServiceSettings) -> Any:
             for r in rows
         )
         next_cursor = (
-            encode_debug_cursor(rid=rid, seq=items[-1].seq)
-            if len(items) == page_size
-            else None
+            encode_debug_cursor(rid=rid, seq=items[-1].seq) if len(items) == page_size else None
         )
         page = RequestDebugPage(
             rid=rid,

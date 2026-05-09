@@ -35,8 +35,7 @@ def test_accept_verdict_emits_applied_event() -> None:
     assert rejected == []
 
     counters = [
-        m for m in metric_sink.captured_metrics
-        if m.name == "arc_guardrails.rehydration.verdict"
+        m for m in metric_sink.captured_metrics if m.name == "arc_guardrails.rehydration.verdict"
     ]
     assert len(counters) == 1
     assert counters[0].attributes["decision"] == "accept"

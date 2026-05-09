@@ -59,6 +59,7 @@ def test_mixed_types_independent_counters() -> None:
 
 def test_custom_registered_type_single() -> None:
     from arc_guard_core.placeholders import register_placeholder
+
     register_placeholder("INTERNAL_TICKET", "[INTERNAL_TICKET]")
     text = "ticket TKT-1234"
     findings = (_f("INTERNAL_TICKET", 7, 15),)
@@ -68,6 +69,7 @@ def test_custom_registered_type_single() -> None:
 
 def test_custom_registered_type_multi() -> None:
     from arc_guard_core.placeholders import register_placeholder
+
     register_placeholder("INTERNAL_TICKET", "[INTERNAL_TICKET]")
     text = "TKT-1 and TKT-2"
     findings = (

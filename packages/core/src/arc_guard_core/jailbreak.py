@@ -50,8 +50,7 @@ class JailbreakSignal:
     def __post_init__(self) -> None:
         if not (0.0 <= self.confidence <= 1.0):
             raise ValueError(
-                f"JailbreakSignal.confidence must be in [0.0, 1.0]; "
-                f"got {self.confidence}"
+                f"JailbreakSignal.confidence must be in [0.0, 1.0]; got {self.confidence}"
             )
         if not self.evidence_reference:
             raise ValueError("JailbreakSignal.evidence_reference must be non-empty")

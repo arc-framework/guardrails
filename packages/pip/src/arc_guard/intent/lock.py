@@ -33,9 +33,7 @@ def build_intent_lock(
     return IntentLock(
         original_intent_hash=_digest(original_text),
         sanitized_prompt_hash=_digest(sanitized_text),
-        rehydrated_answer_hash=(
-            _digest(rehydrated_text) if rehydrated_text is not None else None
-        ),
+        rehydrated_answer_hash=(_digest(rehydrated_text) if rehydrated_text is not None else None),
         encoder_id=encoder_id,
     )
 

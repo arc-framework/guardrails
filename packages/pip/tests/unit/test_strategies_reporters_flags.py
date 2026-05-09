@@ -120,7 +120,7 @@ class TestHashStrategy:
         replaced_token = result.split(" ")[0]
         assert replaced_token.startswith("[HASH:")
         assert replaced_token.endswith("]")
-        digest_part = replaced_token[len("[HASH:"):-1]
+        digest_part = replaced_token[len("[HASH:") : -1]
         assert len(digest_part) == 8
         assert all(c in "0123456789abcdef" for c in digest_part)
 
@@ -156,9 +156,7 @@ class TestHashStrategy:
         # The key file should contain valid hex for 32 bytes (64 chars)
         assert len(key_file.read_text().strip()) == 64
 
-    def test_key_read_from_file(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
+    def test_key_read_from_file(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         import hashlib
         import hmac
 
@@ -257,7 +255,7 @@ class TestNullReporter:
         await reporter.report(result)  # no assertion needed — must not raise or log
 
     async def test_satisfies_reporter_protocol(self) -> None:
-        from arc_guard.protocols.reporter import Reporter
+        from arc_guard_core.protocols.reporter import Reporter
 
         reporter = NullReporter()
         assert isinstance(reporter, Reporter)
@@ -325,7 +323,7 @@ class TestStaticFlagProvider:
         assert p.get_list("missing", default=["x"]) == ["x"]
 
     def test_satisfies_flag_provider_protocol(self) -> None:
-        from arc_guard.protocols.flag_provider import FlagProvider
+        from arc_guard_core.protocols.flag_provider import FlagProvider
 
         p = StaticFlagProvider({})
         assert isinstance(p, FlagProvider)
@@ -380,7 +378,7 @@ class TestEnvFlagProvider:
         assert p.get_list("items", default=["x"]) == ["x"]
 
     def test_satisfies_flag_provider_protocol(self) -> None:
-        from arc_guard.protocols.flag_provider import FlagProvider
+        from arc_guard_core.protocols.flag_provider import FlagProvider
 
         p = EnvFlagProvider()
         assert isinstance(p, FlagProvider)

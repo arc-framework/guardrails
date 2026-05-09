@@ -35,11 +35,15 @@ def _config_under_profile(profile: str) -> dict:
     """Return the parsed `docker compose config` JSON under the given profile."""
     result = subprocess.run(
         [
-            "docker", "compose",
-            "-f", str(COMPOSE_FILE),
-            "--profile", profile,
+            "docker",
+            "compose",
+            "-f",
+            str(COMPOSE_FILE),
+            "--profile",
+            profile,
             "config",
-            "--format", "json",
+            "--format",
+            "json",
         ],
         capture_output=True,
         text=True,
@@ -54,9 +58,7 @@ def _services_under_profile(profile: str) -> set[str]:
 
 def test_dev_profile_includes_sqlite_ui_service() -> None:
     services = _services_under_profile("dev")
-    assert "sqlite-ui" in services, (
-        f"dev profile must include sqlite-ui; got {sorted(services)}"
-    )
+    assert "sqlite-ui" in services, f"dev profile must include sqlite-ui; got {sorted(services)}"
 
 
 def test_prod_profile_excludes_sqlite_ui_service() -> None:
@@ -71,9 +73,7 @@ def test_both_profiles_include_api_and_ollama() -> None:
     for profile in ("dev", "prod"):
         services = _services_under_profile(profile)
         for required in ("api", "ollama", "ollama-pull"):
-            assert required in services, (
-                f"{profile} profile missing required service {required!r}"
-            )
+            assert required in services, f"{profile} profile missing required service {required!r}"
 
 
 def test_dev_profile_sqlite_ui_mounts_lifecycle_data_read_only() -> None:
@@ -97,9 +97,7 @@ def test_dev_profile_sqlite_ui_mounts_lifecycle_data_read_only() -> None:
             if "lifecycle-data" in v and "/data" in v and v.endswith(":ro"):
                 found_ro_lifecycle = True
                 break
-    assert found_ro_lifecycle, (
-        f"sqlite-ui must mount lifecycle-data:/data:ro; got {volumes!r}"
-    )
+    assert found_ro_lifecycle, f"sqlite-ui must mount lifecycle-data:/data:ro; got {volumes!r}"
 
 
 def test_dev_profile_sqlite_ui_exposes_documented_port() -> None:
@@ -127,6 +125,4 @@ def test_prod_profile_does_not_expose_port_8081() -> None:
         for p in service.get("ports", []):
             published = p.get("published") if isinstance(p, dict) else None
             if str(published) == "8081":
-                pytest.fail(
-                    f"prod profile must not expose port 8081; {service_name!r} does"
-                )
+                pytest.fail(f"prod profile must not expose port 8081; {service_name!r} does")

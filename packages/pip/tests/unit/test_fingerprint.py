@@ -76,9 +76,7 @@ def test_empty_string_yields_zero_buckets_and_stable_hash() -> None:
     assert fp["length_chars"] == 0
     assert fp["length_bytes"] == 0
     assert _bucket_sum(fp) == 0
-    assert fp["hash"] == (
-        "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    )
+    assert fp["hash"] == ("sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
 
 
 def test_fingerprint_has_documented_keys() -> None:

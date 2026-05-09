@@ -54,9 +54,7 @@ async def test_sampling_rate_matches_configured_within_tolerance() -> None:
     for i in range(WORKLOAD_SIZE):
         await pipeline.pre_process(GuardInput(text=f"sample-test-{i}"))
 
-    completed_events = [
-        e for e in logger.captured_events if e.name == "guard.run.completed"
-    ]
+    completed_events = [e for e in logger.captured_events if e.name == "guard.run.completed"]
     observed_rate = len(completed_events) / WORKLOAD_SIZE
     assert ACCEPTABLE_MIN <= observed_rate <= ACCEPTABLE_MAX, (
         f"observed sampling rate {observed_rate:.3f} outside "
@@ -84,9 +82,7 @@ async def test_sampling_rate_one_emits_every_run() -> None:
     for i in range(20):
         await pipeline.pre_process(GuardInput(text=f"full-sample-{i}"))
 
-    completed_events = [
-        e for e in logger.captured_events if e.name == "guard.run.completed"
-    ]
+    completed_events = [e for e in logger.captured_events if e.name == "guard.run.completed"]
     assert len(completed_events) == 20
 
 
@@ -112,9 +108,7 @@ async def test_sampling_rate_zero_drops_all_non_refusal_runs() -> None:
     for i in range(20):
         await pipeline.pre_process(GuardInput(text=f"zero-sample-{i}"))
 
-    completed_events = [
-        e for e in logger.captured_events if e.name == "guard.run.completed"
-    ]
+    completed_events = [e for e in logger.captured_events if e.name == "guard.run.completed"]
     assert len(completed_events) == 0
     # Metrics still emit unconditionally — the run.action counter
     # fires for every run regardless of sampling.

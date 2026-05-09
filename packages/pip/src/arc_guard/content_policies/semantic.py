@@ -20,9 +20,7 @@ from arc_guard_core.observability import Logger, NullLogger
 from arc_guard_core.protocols.content_policy import ContentPolicyDecision
 from arc_guard_core.refusal.codes import RefusalCode
 
-GUARD_CONTENT_POLICY_SEMANTIC_EXTRA_MISSING_EVENT = (
-    "guard.content_policy.semantic_extra_missing"
-)
+GUARD_CONTENT_POLICY_SEMANTIC_EXTRA_MISSING_EVENT = "guard.content_policy.semantic_extra_missing"
 
 
 @runtime_checkable
@@ -138,11 +136,11 @@ class SemanticContentPolicy:
                     },
                 )
         if not isinstance(similarity_threshold, (int, float)) or isinstance(
-            similarity_threshold, bool,
+            similarity_threshold,
+            bool,
         ):
             raise ConfigSchemaError(
-                f"SemanticContentPolicy {name!r}: similarity_threshold "
-                "must be a float",
+                f"SemanticContentPolicy {name!r}: similarity_threshold must be a float",
                 code="config.type_mismatch",
                 details={"field": "similarity_threshold", "policy_name": name},
             )

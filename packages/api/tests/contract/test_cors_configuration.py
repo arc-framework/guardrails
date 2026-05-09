@@ -27,32 +27,22 @@ async def allowed_client():
     )
     app = create_app(settings)
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
 
 
 @pytest.mark.asyncio
 async def test_allowed_origin_gets_cors_headers(allowed_client) -> None:
-    resp = await allowed_client.get(
-        "/requests", headers={"Origin": "http://127.0.0.1:5173"}
-    )
+    resp = await allowed_client.get("/requests", headers={"Origin": "http://127.0.0.1:5173"})
     # Even though /requests returns 503 (no sqlite path), the CORS layer
     # still adds the allow-origin header.
-    assert (
-        resp.headers.get("access-control-allow-origin") == "http://127.0.0.1:5173"
-    )
+    assert resp.headers.get("access-control-allow-origin") == "http://127.0.0.1:5173"
 
 
 @pytest.mark.asyncio
 async def test_disallowed_origin_gets_no_allow_header(allowed_client) -> None:
-    resp = await allowed_client.get(
-        "/requests", headers={"Origin": "http://evil.example.com"}
-    )
-    assert "access-control-allow-origin" not in {
-        k.lower() for k in resp.headers.keys()
-    }
+    resp = await allowed_client.get("/requests", headers={"Origin": "http://evil.example.com"})
+    assert "access-control-allow-origin" not in {k.lower() for k in resp.headers.keys()}
 
 
 @pytest.mark.asyncio
@@ -100,9 +90,7 @@ async def test_preflight_does_not_set_credentials(allowed_client) -> None:
             "Access-Control-Request-Method": "GET",
         },
     )
-    assert "access-control-allow-credentials" not in {
-        k.lower() for k in resp.headers.keys()
-    }
+    assert "access-control-allow-credentials" not in {k.lower() for k in resp.headers.keys()}
 
 
 @pytest.mark.asyncio
@@ -127,15 +115,9 @@ async def test_empty_origins_list_installs_no_middleware() -> None:
     )
     app = create_app(settings)
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
-        resp = await c.get(
-            "/requests", headers={"Origin": "http://127.0.0.1:5173"}
-        )
-    assert "access-control-allow-origin" not in {
-        k.lower() for k in resp.headers.keys()
-    }
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
+        resp = await c.get("/requests", headers={"Origin": "http://127.0.0.1:5173"})
+    assert "access-control-allow-origin" not in {k.lower() for k in resp.headers.keys()}
 
 
 @pytest.mark.asyncio

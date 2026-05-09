@@ -50,7 +50,10 @@ async def test_all_four_observability_sinks_receive_emissions() -> None:
     logger = RecordingLogger()
     metrics = RecordingMetricSink()
     pipeline = _build_pipeline(
-        lifecycle_hook=sink, tracer=tracer, logger=logger, metrics=metrics,
+        lifecycle_hook=sink,
+        tracer=tracer,
+        logger=logger,
+        metrics=metrics,
     )
 
     await pipeline.pre_process(
@@ -85,7 +88,10 @@ async def test_disabling_lifecycle_leaves_other_sinks_unchanged() -> None:
     sink_a = RingBufferLifecycleSink(capacity=200)
     emitter_a = LifecycleEmitter(sink_a, "rid-with-lifecycle")
     pipeline_a = _build_pipeline(
-        lifecycle_hook=sink_a, tracer=tracer_a, logger=logger_a, metrics=metrics_a,
+        lifecycle_hook=sink_a,
+        tracer=tracer_a,
+        logger=logger_a,
+        metrics=metrics_a,
     )
     await pipeline_a.pre_process(
         GuardInput(
@@ -102,7 +108,10 @@ async def test_disabling_lifecycle_leaves_other_sinks_unchanged() -> None:
     logger_b = RecordingLogger()
     metrics_b = RecordingMetricSink()
     pipeline_b = _build_pipeline(
-        lifecycle_hook=NullLifecycleSink(), tracer=tracer_b, logger=logger_b, metrics=metrics_b,
+        lifecycle_hook=NullLifecycleSink(),
+        tracer=tracer_b,
+        logger=logger_b,
+        metrics=metrics_b,
     )
     await pipeline_b.pre_process(
         GuardInput(text=text, context=GuardContext(correlation_id="fixed-corr")),

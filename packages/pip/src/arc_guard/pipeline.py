@@ -159,7 +159,8 @@ logger = logging.getLogger("arc_guard")
 # parent. ``ContextVar`` is asyncio-aware and copy-on-fork, so each
 # task gets its own value without explicit threading.
 _ACTIVE_CORRELATION_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "arc_guard_active_correlation_id", default=None,
+    "arc_guard_active_correlation_id",
+    default=None,
 )
 
 _STRATEGIES: dict[str, ActionStrategy] = {
@@ -178,7 +179,8 @@ _DEFAULT_DECEPTION_THRESHOLDS: Final[DeceptionThresholds] = DeceptionThresholds(
 
 
 def _band_for_deception_score(
-    score: DeceptionScore, thresholds: DeceptionThresholds,
+    score: DeceptionScore,
+    thresholds: DeceptionThresholds,
 ) -> str:
     """Classify a ``DeceptionScore`` into the documented band string.
 
@@ -245,9 +247,7 @@ def _entity_map_from_outcome(outcome: Any) -> dict[str, str]:
     return {}
 
 
-def _entity_map_from_result(
-    result: GuardResult, original_text: str
-) -> dict[str, str]:
+def _entity_map_from_result(result: GuardResult, original_text: str) -> dict[str, str]:
     """Reconstruct ``placeholder → original_value`` from the decisions the
     bundled strategies stamp onto ``GuardResult``.
 
@@ -276,7 +276,7 @@ def _entity_map_from_result(
             if 0 <= fidx < len(result.findings):
                 f = result.findings[fidx]
                 if 0 <= f.start <= f.end <= len(original_text):
-                    out[replacement_token] = original_text[f.start:f.end]
+                    out[replacement_token] = original_text[f.start : f.end]
     return out
 
 
@@ -426,9 +426,7 @@ class GuardPipeline:
         try:
             return await emitter.emit(
                 event_class,
-                parent_id=parent_id_override
-                if parent_id_override is not None
-                else default_parent,
+                parent_id=parent_id_override if parent_id_override is not None else default_parent,
                 **fields,
             )
         except Exception as exc:  # pragma: no cover — sink failure path
@@ -533,9 +531,7 @@ class GuardPipeline:
             decision_id=decision_id,
         )
 
-    async def _run_pipeline(
-        self, guard_input: GuardInput, phase: str
-    ) -> GuardResult:
+    async def _run_pipeline(self, guard_input: GuardInput, phase: str) -> GuardResult:
         """Core pipeline execution — shared by pre_process and post_process."""
 
         # --- Guard disabled fast-path ---
@@ -567,9 +563,7 @@ class GuardPipeline:
 
         _emitter_for_rid, _ = self._lifecycle_ctx(guard_input)
         _rid_token = (
-            rid_context_var.set(_emitter_for_rid.rid)
-            if _emitter_for_rid is not None
-            else None
+            rid_context_var.set(_emitter_for_rid.rid) if _emitter_for_rid is not None else None
         )
         # Per-run redactor: scoped to this run's input text so the
         # substring-rejection branch can scan against the actual originals.
@@ -618,7 +612,9 @@ class GuardPipeline:
         ):
             pass
         await self._emit_via_ctx(
-            guard_input, StageRan, stage=STAGE_VALIDATE,
+            guard_input,
+            StageRan,
+            stage=STAGE_VALIDATE,
             duration_ms=(time.perf_counter() - _t0_validate) * 1000,
             status="ok",
         )
@@ -662,13 +658,16 @@ class GuardPipeline:
             captured_intent = None
             _defend_status = "err"
         _stage_defend_ev = await self._emit_via_ctx(
-            guard_input, StageRan, stage=STAGE_DEFEND,
+            guard_input,
+            StageRan,
+            stage=STAGE_DEFEND,
             duration_ms=(time.perf_counter() - _t0_defend) * 1000,
             status=_defend_status,
         )
         if _stage_defend_ev is not None:
             await self._emit_via_ctx(
-                guard_input, IntentCaptured,
+                guard_input,
+                IntentCaptured,
                 parent_id_override=_stage_defend_ev.id,
                 encoder_id=self._intent_encoder.encoder_id,
                 intent_size_bytes=len(effective_input.text or ""),
@@ -725,7 +724,8 @@ class GuardPipeline:
                     # so operators can correlate to a stack-traced log line
                     # without the lifecycle event carrying full traceback.
                     await self._emit_via_ctx(
-                        guard_input, InspectorFailed,
+                        guard_input,
+                        InspectorFailed,
                         inspector_name=type(inspector).__name__,
                         exception_class=type(exc).__name__,
                         traceback_id=f"tb_{abs(hash(repr(exc))) & 0xFFFFFFFF:08x}",
@@ -733,7 +733,8 @@ class GuardPipeline:
                 # Per-inspector lifecycle event with timing + count.
                 _findings_after = len(result.findings)
                 _inspector_event = await self._emit_via_ctx(
-                    guard_input, InspectorRan,
+                    guard_input,
+                    InspectorRan,
                     name=type(inspector).__name__,
                     duration_ms=(time.perf_counter() - _t0_inspector) * 1000,
                     findings_count=_findings_after - _findings_before,
@@ -744,7 +745,8 @@ class GuardPipeline:
                     _new_findings = result.findings[_findings_before:_findings_after]
                     for f in _new_findings:
                         _fp_ev = await self._emit_via_ctx(
-                            guard_input, LifecycleFindingProduced,
+                            guard_input,
+                            LifecycleFindingProduced,
                             parent_id_override=_inspector_event.id,
                             entity_type=f.entity_type,
                             span=(f.start, f.end),
@@ -757,14 +759,13 @@ class GuardPipeline:
                             _finding_event_ids[(f.start, f.end)] = _fp_ev.id
                     if isinstance(inspector, ExplainableInspector) and _new_findings:
                         try:
-                            _explanations = inspector.explain_matches(
-                                result.text, _new_findings
-                            )
+                            _explanations = inspector.explain_matches(result.text, _new_findings)
                         except Exception:
                             _explanations = []
                         for _ex in _explanations:
                             await self._emit_via_ctx(
-                                guard_input, InspectorMatchExplain,
+                                guard_input,
+                                InspectorMatchExplain,
                                 parent_id_override=_inspector_event.id,
                                 inspector=type(inspector).__name__,
                                 pattern_id=_ex.pattern_id,
@@ -784,9 +785,7 @@ class GuardPipeline:
                     ),
                 )
                 if jailbreak_signals:
-                    classify_logger = (
-                        sampler.logger if sampler is not None else self._logger_hook
-                    )
+                    classify_logger = sampler.logger if sampler is not None else self._logger_hook
                     new_findings = list(result.findings)
                     for signal in jailbreak_signals:
                         new_findings.append(_signal_to_finding(signal))
@@ -812,7 +811,8 @@ class GuardPipeline:
                         # dashboard uses this to link to the jailbreak rule
                         # that fired without exposing the matched text.
                         await self._emit_via_ctx(
-                            guard_input, JailbreakDetected,
+                            guard_input,
+                            JailbreakDetected,
                             detector_id=signal.detector_id,
                             category=signal.category,
                             confidence=signal.confidence,
@@ -825,11 +825,13 @@ class GuardPipeline:
                     import dataclasses as _dc
 
                     result = _dc.replace(
-                        result, findings=tuple(new_findings),
+                        result,
+                        findings=tuple(new_findings),
                     )
             except Exception as exc:
                 logger.warning(
-                    "Jailbreak detector raised: %s — fail-open, no signal", exc,
+                    "Jailbreak detector raised: %s — fail-open, no signal",
+                    exc,
                 )
                 emit_stage_failed(
                     stage=STAGE_CLASSIFY,
@@ -841,7 +843,9 @@ class GuardPipeline:
                 )
                 jailbreak_signals = ()
         await self._emit_via_ctx(
-            guard_input, StageRan, stage=STAGE_CLASSIFY,
+            guard_input,
+            StageRan,
+            stage=STAGE_CLASSIFY,
             duration_ms=(time.perf_counter() - _t0_classify) * 1000,
             status="err" if had_error else "ok",
         )
@@ -878,14 +882,11 @@ class GuardPipeline:
                 STAGE_DECEPTION_INSPECT,
                 **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
             ):
-                deception_score, updated_state = (
-                    self._conversation_turn_inspector.inspect_turn(
-                        effective_input.text, prior_state=prior_state,
-                    )
+                deception_score, updated_state = self._conversation_turn_inspector.inspect_turn(
+                    effective_input.text,
+                    prior_state=prior_state,
                 )
-                deception_logger = (
-                    sampler.logger if sampler is not None else self._logger_hook
-                )
+                deception_logger = sampler.logger if sampler is not None else self._logger_hook
                 deception_band = _band_for_deception_score(
                     deception_score,
                     observability_config.deception_thresholds
@@ -912,19 +913,23 @@ class GuardPipeline:
                 )
         except Exception as exc:
             logger.warning(
-                "Deception inspector raised %s — degrading to sentinel", exc,
+                "Deception inspector raised %s — degrading to sentinel",
+                exc,
             )
             deception_score = DECEPTION_NOT_MEASURED
             updated_state = None
             _decept_status = "err"
         _stage_decept_ev = await self._emit_via_ctx(
-            guard_input, StageRan, stage=STAGE_DECEPTION_INSPECT,
+            guard_input,
+            StageRan,
+            stage=STAGE_DECEPTION_INSPECT,
             duration_ms=(time.perf_counter() - _t0_decept) * 1000,
             status=_decept_status,
         )
         if _stage_decept_ev is not None:
             await self._emit_via_ctx(
-                guard_input, DeceptionScored,
+                guard_input,
+                DeceptionScored,
                 parent_id_override=_stage_decept_ev.id,
                 score_value=deception_score.value,
                 score_sentinel=deception_score.sentinel,
@@ -956,7 +961,9 @@ class GuardPipeline:
         ):
             pass
         await self._emit_via_ctx(
-            guard_input, StageRan, stage=STAGE_SANITIZE,
+            guard_input,
+            StageRan,
+            stage=STAGE_SANITIZE,
             duration_ms=(time.perf_counter() - _t0_sanitize) * 1000,
             status="ok" if result.findings else "skipped",
         )
@@ -971,7 +978,9 @@ class GuardPipeline:
         # decision boundary even on the legacy / pass-through paths.
         if self._policy_ruleset is None:
             await self._emit_via_ctx(
-                guard_input, StageRan, stage=STAGE_ROUTE,
+                guard_input,
+                StageRan,
+                stage=STAGE_ROUTE,
                 duration_ms=0.0,
                 status="skipped",
             )
@@ -1000,7 +1009,9 @@ class GuardPipeline:
                 _rule, posture = lookup_rule(type(exc))
                 if posture == "closed":
                     refusal = self._build_closed_failure_envelope(
-                        exc, correlation_id, decision_id,
+                        exc,
+                        correlation_id,
+                        decision_id,
                     )
                     result = GuardResult(
                         text="",
@@ -1021,13 +1032,18 @@ class GuardPipeline:
                 # ``open`` or ``closed-conservative`` — log already fired
                 # in stage_runner; continue the run unchanged.
             await self._emit_via_ctx(
-                guard_input, StageRan, stage=STAGE_ROUTE,
+                guard_input,
+                StageRan,
+                stage=STAGE_ROUTE,
                 duration_ms=(time.perf_counter() - _t0_route) * 1000,
                 status=_route_status,
             )
             await self._emit_via_ctx(
-                guard_input, PolicyResolved,
-                max_risk=outcome_band if outcome_band in ("LOW", "MEDIUM", "HIGH", "CRITICAL") else "LOW",
+                guard_input,
+                PolicyResolved,
+                max_risk=outcome_band
+                if outcome_band in ("LOW", "MEDIUM", "HIGH", "CRITICAL")
+                else "LOW",
                 resolved_action=str(result.action),
                 router=type(router).__name__,
             )
@@ -1043,7 +1059,8 @@ class GuardPipeline:
                     else:
                         _r_outcome = "not_applicable"
                     await self._emit_via_ctx(
-                        guard_input, PolicyRuleEvaluated,
+                        guard_input,
+                        PolicyRuleEvaluated,
                         rule_id=_rule.id,
                         outcome=_r_outcome,
                         contributed_to_action=(_r_outcome == "matched" and _action_is_user_visible),
@@ -1054,7 +1071,9 @@ class GuardPipeline:
             # having run; status reflects whether route's strategy actually
             # produced a non-None outcome.
             _stage_exec_ev_pr = await self._emit_via_ctx(
-                guard_input, StageRan, stage=STAGE_EXECUTE,
+                guard_input,
+                StageRan,
+                stage=STAGE_EXECUTE,
                 duration_ms=0.0,
                 status="ok" if outcome is not None else "err",
             )
@@ -1071,16 +1090,15 @@ class GuardPipeline:
             ):
                 _emitter_pr, _ = self._lifecycle_ctx(guard_input)
                 _capture_text_pr = (
-                    _emitter_pr is not None
-                    and _emitter_pr.policy.should_capture_sanitized()
+                    _emitter_pr is not None and _emitter_pr.policy.should_capture_sanitized()
                 )
                 _capture_raw_pr = (
-                    _emitter_pr is not None
-                    and _emitter_pr.policy.should_capture_raw_input()
+                    _emitter_pr is not None and _emitter_pr.policy.should_capture_raw_input()
                 )
                 _first_finding_id_pr = next(iter(_finding_event_ids.values()), "")
                 await self._emit_via_ctx(
-                    guard_input, StrategyExecuted,
+                    guard_input,
+                    StrategyExecuted,
                     parent_id_override=_stage_exec_ev_pr.id,
                     strategy=type(self._resolve_strategy()).__name__,
                     finding_id=_first_finding_id_pr,
@@ -1092,7 +1110,8 @@ class GuardPipeline:
                 for f in result.findings:
                     placeholder = f"[{f.entity_type}]"
                     await self._emit_via_ctx(
-                        guard_input, SanitizationApplied,
+                        guard_input,
+                        SanitizationApplied,
                         parent_id_override=_stage_exec_ev_pr.id,
                         entity_type=f.entity_type,
                         placeholder=placeholder,
@@ -1102,11 +1121,10 @@ class GuardPipeline:
                         text_after=result.text if _capture_text_pr else None,
                     )
                     if _capture_raw_pr:
-                        _placeholder_map_pr[placeholder] = (
-                            effective_input.text[f.start:f.end]
-                        )
+                        _placeholder_map_pr[placeholder] = effective_input.text[f.start : f.end]
                 await self._emit_via_ctx(
-                    guard_input, PlaceholderMapBuilt,
+                    guard_input,
+                    PlaceholderMapBuilt,
                     parent_id_override=_stage_exec_ev_pr.id,
                     placeholder_count=len(result.findings),
                     entity_types=sorted({f.entity_type for f in result.findings}),
@@ -1124,9 +1142,7 @@ class GuardPipeline:
                     STAGE_REFUSAL,
                     **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
                 ):
-                    refusal_logger = (
-                        sampler.logger if sampler is not None else self._logger_hook
-                    )
+                    refusal_logger = sampler.logger if sampler is not None else self._logger_hook
                     refusal_logger.event(
                         "guard.refusal.constructed",
                         level="info",
@@ -1144,13 +1160,16 @@ class GuardPipeline:
                         },
                     )
                 _stage_ref_ev = await self._emit_via_ctx(
-                    guard_input, StageRan, stage=STAGE_REFUSAL,
+                    guard_input,
+                    StageRan,
+                    stage=STAGE_REFUSAL,
                     duration_ms=(time.perf_counter() - _t0_refusal) * 1000,
                     status="ok",
                 )
                 if _stage_ref_ev is not None:
                     await self._emit_via_ctx(
-                        guard_input, RefusalProduced,
+                        guard_input,
+                        RefusalProduced,
                         parent_id_override=_stage_ref_ev.id,
                         refusal_code=str(result.refusal.code),
                         human_message_chars=len(result.refusal.human_message or ""),
@@ -1201,7 +1220,9 @@ class GuardPipeline:
                 _rule, posture = lookup_rule(type(exc))
                 if posture == "closed":
                     refusal = self._build_closed_failure_envelope(
-                        exc, correlation_id, decision_id,
+                        exc,
+                        correlation_id,
+                        decision_id,
                     )
                     result = GuardResult(
                         text="",
@@ -1219,7 +1240,9 @@ class GuardPipeline:
                     outcome_band = "CRITICAL"
                     _execute_status = "err"
             _stage_exec_ev = await self._emit_via_ctx(
-                guard_input, StageRan, stage=STAGE_EXECUTE,
+                guard_input,
+                StageRan,
+                stage=STAGE_EXECUTE,
                 duration_ms=(time.perf_counter() - _t0_execute) * 1000,
                 status=_execute_status,
             )
@@ -1238,7 +1261,8 @@ class GuardPipeline:
                     and _emitter_for_strategy.policy.should_capture_sanitized()
                 )
                 await self._emit_via_ctx(
-                    guard_input, StrategyExecuted,
+                    guard_input,
+                    StrategyExecuted,
                     parent_id_override=_stage_exec_ev.id,
                     strategy=_strategy_name,
                     finding_id=_first_finding_id,
@@ -1253,18 +1277,17 @@ class GuardPipeline:
                 if str(result.action) in ("redact", "hash", "tokenize"):
                     _emitter, _ = self._lifecycle_ctx(guard_input)
                     _capture_text = (
-                        _emitter is not None
-                        and _emitter.policy.should_capture_sanitized()
+                        _emitter is not None and _emitter.policy.should_capture_sanitized()
                     )
                     _capture_raw = (
-                        _emitter is not None
-                        and _emitter.policy.should_capture_raw_input()
+                        _emitter is not None and _emitter.policy.should_capture_raw_input()
                     )
                     _placeholder_map: dict[str, str] = {}
                     for f in result.findings:
                         placeholder = f"[{f.entity_type}]"
                         await self._emit_via_ctx(
-                            guard_input, SanitizationApplied,
+                            guard_input,
+                            SanitizationApplied,
                             parent_id_override=_stage_exec_ev.id,
                             entity_type=f.entity_type,
                             placeholder=placeholder,
@@ -1277,14 +1300,13 @@ class GuardPipeline:
                             # Pre-sanitization slice that produced the
                             # placeholder. Only included when raw-input
                             # capture is opted in (security-sensitive).
-                            _placeholder_map[placeholder] = (
-                                effective_input.text[f.start:f.end]
-                            )
+                            _placeholder_map[placeholder] = effective_input.text[f.start : f.end]
                     # PlaceholderMapBuilt — per-request summary, conditional
                     # event. Carries entity_types + count always; the raw
                     # placeholder→original map only when raw capture is on.
                     await self._emit_via_ctx(
-                        guard_input, PlaceholderMapBuilt,
+                        guard_input,
+                        PlaceholderMapBuilt,
                         parent_id_override=_stage_exec_ev.id,
                         placeholder_count=len(result.findings),
                         entity_types=sorted({f.entity_type for f in result.findings}),
@@ -1295,7 +1317,9 @@ class GuardPipeline:
             # ``skipped`` execute marker so the canvas can show the stage
             # as having been considered (and intentionally bypassed).
             await self._emit_via_ctx(
-                guard_input, StageRan, stage=STAGE_EXECUTE,
+                guard_input,
+                StageRan,
+                stage=STAGE_EXECUTE,
                 duration_ms=0.0,
                 status="skipped",
             )
@@ -1316,12 +1340,13 @@ class GuardPipeline:
                 with stage_runner(
                     STAGE_VERIFY,
                     **self._stage_kwargs(
-                        correlation_id, decision_id, redactor, sampler,
+                        correlation_id,
+                        decision_id,
+                        redactor,
+                        sampler,
                     ),
                 ):
-                    verify_logger = (
-                        sampler.logger if sampler is not None else self._logger_hook
-                    )
+                    verify_logger = sampler.logger if sampler is not None else self._logger_hook
                     thresholds = (
                         observability_config.fidelity_thresholds
                         if observability_config is not None
@@ -1345,19 +1370,23 @@ class GuardPipeline:
                     )
             except Exception as exc:
                 logger.warning(
-                    "Fidelity scoring raised %s — degrading to sentinel", exc,
+                    "Fidelity scoring raised %s — degrading to sentinel",
+                    exc,
                 )
                 fidelity_score = NOT_MEASURED
                 _verify_status = "err"
         if _verify_ran:
             _stage_verify_ev = await self._emit_via_ctx(
-                guard_input, StageRan, stage=STAGE_VERIFY,
+                guard_input,
+                StageRan,
+                stage=STAGE_VERIFY,
                 duration_ms=(time.perf_counter() - _t0_verify) * 1000,
                 status=_verify_status,
             )
             if _stage_verify_ev is not None:
                 await self._emit_via_ctx(
-                    guard_input, FidelityScored,
+                    guard_input,
+                    FidelityScored,
                     parent_id_override=_stage_verify_ev.id,
                     score_value=fidelity_score.value,
                     score_sentinel=fidelity_score.sentinel,
@@ -1380,7 +1409,9 @@ class GuardPipeline:
             else _DEFAULT_JAILBREAK_THRESHOLDS
         )
         result = apply_jailbreak_ladder(
-            result, jailbreak_signals, jailbreak_thresholds,
+            result,
+            jailbreak_signals,
+            jailbreak_thresholds,
         )
 
         # Apply the deception threshold-driven action ladder. Runs
@@ -1393,7 +1424,9 @@ class GuardPipeline:
             else _DEFAULT_DECEPTION_THRESHOLDS
         )
         result = apply_deception_ladder(
-            result, deception_score, deception_ladder_thresholds,
+            result,
+            deception_score,
+            deception_ladder_thresholds,
         )
 
         # Apply the fidelity threshold-driven action ladder. Reads
@@ -1422,7 +1455,8 @@ class GuardPipeline:
         # pre-sanitization input — the apply_outcome above already mutated
         # ``result.text`` to the placeholder-bearing form.
         entity_map = _entity_map_from_outcome(outcome) or _entity_map_from_result(
-            result, original_text=effective_input.text,
+            result,
+            original_text=effective_input.text,
         )
         if entity_map and result.refusal is None:
             _t0_rehydrate = time.perf_counter()
@@ -1432,9 +1466,7 @@ class GuardPipeline:
                 STAGE_REHYDRATE,
                 **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
             ):
-                rehydrate_logger = (
-                    sampler.logger if sampler is not None else self._logger_hook
-                )
+                rehydrate_logger = sampler.logger if sampler is not None else self._logger_hook
                 try:
                     verdict = self._rehydration_verifier.verify(
                         sanitized_prompt=effective_input.text,
@@ -1466,24 +1498,26 @@ class GuardPipeline:
                             and _emitter_rehy.policy.should_capture_sanitized()
                         )
                         await self._emit_via_ctx(
-                            guard_input, RehydrationVerified,
+                            guard_input,
+                            RehydrationVerified,
                             verifier_id=type(self._rehydration_verifier).__name__,
                             outcome=_decision_to_outcome.get(verdict.decision, "verified"),
                             rejection_reason=(
                                 verdict.reason if verdict.decision == "reject" else None
                             ),
-                            text_before=(
-                                _rehydrate_text_before if _capture_rehy else None
-                            ),
+                            text_before=(_rehydrate_text_before if _capture_rehy else None),
                             text_after=result.text if _capture_rehy else None,
                         )
                 except Exception as exc:
                     logger.warning(
-                        "Rehydration verifier raised %s — keeping placeholders", exc,
+                        "Rehydration verifier raised %s — keeping placeholders",
+                        exc,
                     )
                     _rehydrate_status = "err"
             await self._emit_via_ctx(
-                guard_input, StageRan, stage=STAGE_REHYDRATE,
+                guard_input,
+                StageRan,
+                stage=STAGE_REHYDRATE,
                 duration_ms=(time.perf_counter() - _t0_rehydrate) * 1000,
                 status=_rehydrate_status,
             )
@@ -1524,7 +1558,9 @@ class GuardPipeline:
         # no record was built.
         if outcome is None:
             await self._emit_via_ctx(
-                guard_input, StageRan, stage=STAGE_DECISION_EMIT,
+                guard_input,
+                StageRan,
+                stage=STAGE_DECISION_EMIT,
                 duration_ms=0.0,
                 status="skipped",
             )
@@ -1535,7 +1571,9 @@ class GuardPipeline:
                 **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
             ):
                 record = self._decision_emitter.build(
-                    result, outcome, latency_ms,
+                    result,
+                    outcome,
+                    latency_ms,
                     fidelity_score=fidelity_score,
                     intent_lock=intent_lock,
                 )
@@ -1546,16 +1584,21 @@ class GuardPipeline:
                     metrics=self._metrics_hook,
                 )
             _stage_demit_ev = await self._emit_via_ctx(
-                guard_input, StageRan, stage=STAGE_DECISION_EMIT,
+                guard_input,
+                StageRan,
+                stage=STAGE_DECISION_EMIT,
                 duration_ms=(time.perf_counter() - _t0_demit) * 1000,
                 status="ok",
             )
             if _stage_demit_ev is not None:
                 await self._emit_via_ctx(
-                    guard_input, LifecycleDecisionEmitted,
+                    guard_input,
+                    LifecycleDecisionEmitted,
                     parent_id_override=_stage_demit_ev.id,
                     action=str(result.action),
-                    max_risk=outcome_band if outcome_band in ("LOW", "MEDIUM", "HIGH", "CRITICAL") else "LOW",
+                    max_risk=outcome_band
+                    if outcome_band in ("LOW", "MEDIUM", "HIGH", "CRITICAL")
+                    else "LOW",
                     decision_id=decision_id,
                     bypass_reason=result.bypass_reason,
                 )
@@ -1660,12 +1703,15 @@ class GuardPipeline:
         if lifecycle_emitter is not None:
             try:
                 stage_ev = await lifecycle_emitter.emit(
-                    StageRan, parent_id=lifecycle_parent_id, stage=STAGE_REPORT,
+                    StageRan,
+                    parent_id=lifecycle_parent_id,
+                    stage=STAGE_REPORT,
                     duration_ms=(time.perf_counter() - _t0_report) * 1000,
                     status=_report_status,
                 )
                 await lifecycle_emitter.emit(
-                    ReportFlushed, parent_id=stage_ev.id,
+                    ReportFlushed,
+                    parent_id=stage_ev.id,
                     reporters=[type(self._reporter).__name__],
                     fanout_count=1,
                     failure_count=_failure_count,

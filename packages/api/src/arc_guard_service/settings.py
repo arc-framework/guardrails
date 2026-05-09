@@ -102,12 +102,8 @@ class ServiceSettings(BaseSettings):
     lifecycle_sqlite_path: str | None = None
     lifecycle_sqlite_max_rows: int = Field(default=500_000, ge=1_000)
     lifecycle_sqlite_max_age_days: int = Field(default=7, ge=1, le=365)
-    lifecycle_sqlite_cleanup_interval_seconds: float = Field(
-        default=60.0, gt=0.0, le=3600.0
-    )
-    lifecycle_sse_subscriber_queue_capacity: int = Field(
-        default=1000, ge=10, le=100_000
-    )
+    lifecycle_sqlite_cleanup_interval_seconds: float = Field(default=60.0, gt=0.0, le=3600.0)
+    lifecycle_sse_subscriber_queue_capacity: int = Field(default=1000, ge=10, le=100_000)
     lifecycle_lookup_timeout_seconds: float = Field(default=5.0, gt=0.0, le=60.0)
     # Payload capture is OFF by default — events carry sizes/lengths only.
     # Enable `lifecycle_capture_payloads` to capture POST-sanitization text.
@@ -125,12 +121,8 @@ class ServiceSettings(BaseSettings):
     dashboard_origins: list[str] = Field(default_factory=list)
     dashboard_max_request_page_size: int = Field(default=200, ge=1, le=1000)
     dashboard_max_debug_page_size: int = Field(default=200, ge=1, le=1000)
-    dashboard_decision_record_queue_capacity: int = Field(
-        default=1000, ge=10, le=100_000
-    )
-    dashboard_debug_entry_queue_capacity: int = Field(
-        default=5000, ge=10, le=100_000
-    )
+    dashboard_decision_record_queue_capacity: int = Field(default=1000, ge=10, le=100_000)
+    dashboard_debug_entry_queue_capacity: int = Field(default=5000, ge=10, le=100_000)
 
     # Stale-live sweeper. The sweeper finds rows in `request_summaries` with
     # `live=1` whose `last_event_at` is older than `stale_threshold_seconds`,
@@ -163,37 +155,23 @@ class ServiceSettings(BaseSettings):
         rejected at the CORS layer."""
         for entry in value:
             if "*" in entry:
-                raise ValueError(
-                    f'invalid origin "{entry}": wildcard not allowed'
-                )
+                raise ValueError(f'invalid origin "{entry}": wildcard not allowed')
             if entry.endswith("/"):
-                raise ValueError(
-                    f'invalid origin "{entry}": trailing slash not allowed'
-                )
+                raise ValueError(f'invalid origin "{entry}": trailing slash not allowed')
             try:
                 parsed = urlparse(entry)
             except ValueError as exc:
                 raise ValueError(f'invalid origin "{entry}": {exc}') from exc
             if parsed.scheme not in ("http", "https"):
-                raise ValueError(
-                    f'invalid origin "{entry}": scheme must be http or https'
-                )
+                raise ValueError(f'invalid origin "{entry}": scheme must be http or https')
             if not parsed.netloc:
-                raise ValueError(
-                    f'invalid origin "{entry}": missing host component'
-                )
+                raise ValueError(f'invalid origin "{entry}": missing host component')
             if parsed.path:
-                raise ValueError(
-                    f'invalid origin "{entry}": path component not allowed'
-                )
+                raise ValueError(f'invalid origin "{entry}": path component not allowed')
             if parsed.query:
-                raise ValueError(
-                    f'invalid origin "{entry}": query component not allowed'
-                )
+                raise ValueError(f'invalid origin "{entry}": query component not allowed')
             if parsed.fragment:
-                raise ValueError(
-                    f'invalid origin "{entry}": fragment component not allowed'
-                )
+                raise ValueError(f'invalid origin "{entry}": fragment component not allowed')
         return value
 
 

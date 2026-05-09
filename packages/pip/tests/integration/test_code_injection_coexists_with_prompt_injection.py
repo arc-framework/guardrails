@@ -15,6 +15,7 @@ from arc_guard.inspectors.injection import InjectionInspector
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires_code_injection
 async def test_prompt_injection_and_sql_injection_both_fire_independently() -> None:
     """Content that triggers BOTH prompt-injection and SQL-injection must
     produce distinct findings with distinct entity_types.

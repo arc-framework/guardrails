@@ -24,6 +24,7 @@ class _StubInspector:
                 ),
             )
         from dataclasses import replace
+
         next_state = replace(
             prior_state,
             turn_count=prior_state.turn_count + 1,

@@ -41,19 +41,28 @@ _PATTERNS: tuple[_Pattern, ...] = (
     # --- direct_override (most regex-catchable; high confidence) ---
     _Pattern(
         category="direct_override",
-        regex=re.compile(r"\bignore\s+(?:all\s+)?(?:previous|prior|earlier)\s+(?:instructions|rules|directives)\b", re.IGNORECASE),
+        regex=re.compile(
+            r"\bignore\s+(?:all\s+)?(?:previous|prior|earlier)\s+(?:instructions|rules|directives)\b",
+            re.IGNORECASE,
+        ),
         confidence=0.95,
         evidence_token="DIRECT_OVERRIDE",
     ),
     _Pattern(
         category="direct_override",
-        regex=re.compile(r"\bdisregard\s+(?:your|the|all|previous|prior)\s+(?:prompt|instructions|rules|directives)\b", re.IGNORECASE),
+        regex=re.compile(
+            r"\bdisregard\s+(?:your|the|all|previous|prior)\s+(?:prompt|instructions|rules|directives)\b",
+            re.IGNORECASE,
+        ),
         confidence=0.95,
         evidence_token="DIRECT_OVERRIDE",
     ),
     _Pattern(
         category="direct_override",
-        regex=re.compile(r"\b(?:reveal|show|print|output|display)\s+(?:the\s+|your\s+)?system\s+prompt\b", re.IGNORECASE),
+        regex=re.compile(
+            r"\b(?:reveal|show|print|output|display)\s+(?:the\s+|your\s+)?system\s+prompt\b",
+            re.IGNORECASE,
+        ),
         confidence=0.92,
         evidence_token="DIRECT_OVERRIDE",
     ),
@@ -66,13 +75,19 @@ _PATTERNS: tuple[_Pattern, ...] = (
     # --- role_play ---
     _Pattern(
         category="role_play",
-        regex=re.compile(r"\byou\s+are\s+(?:now\s+)?(?:DAN|an\s+unrestricted|an\s+ai\s+without|jailbroken)\b", re.IGNORECASE),
+        regex=re.compile(
+            r"\byou\s+are\s+(?:now\s+)?(?:DAN|an\s+unrestricted|an\s+ai\s+without|jailbroken)\b",
+            re.IGNORECASE,
+        ),
         confidence=0.92,
         evidence_token="ROLE_PLAY",
     ),
     _Pattern(
         category="role_play",
-        regex=re.compile(r"\bact\s+as\s+(?:if\s+you\s+(?:were|are)\s+)?(?:an?\s+)?(?:unrestricted|jailbroken|evil|uncensored)\b", re.IGNORECASE),
+        regex=re.compile(
+            r"\bact\s+as\s+(?:if\s+you\s+(?:were|are)\s+)?(?:an?\s+)?(?:unrestricted|jailbroken|evil|uncensored)\b",
+            re.IGNORECASE,
+        ),
         confidence=0.88,
         evidence_token="ROLE_PLAY",
     ),
@@ -84,7 +99,10 @@ _PATTERNS: tuple[_Pattern, ...] = (
     ),
     _Pattern(
         category="role_play",
-        regex=re.compile(r"\bpretend\s+(?:to\s+be|you\s+(?:are|were))\s+(?:an?\s+)?(?:unrestricted|jailbroken|evil)\b", re.IGNORECASE),
+        regex=re.compile(
+            r"\bpretend\s+(?:to\s+be|you\s+(?:are|were))\s+(?:an?\s+)?(?:unrestricted|jailbroken|evil)\b",
+            re.IGNORECASE,
+        ),
         confidence=0.85,
         evidence_token="ROLE_PLAY",
     ),
@@ -109,14 +127,18 @@ _PATTERNS: tuple[_Pattern, ...] = (
     ),
     _Pattern(
         category="hypothetical",
-        regex=re.compile(r"\b(?:let'?s\s+)?(?:imagine|pretend)\s+(?:that\s+)?(?:we|you|i)\b", re.IGNORECASE),
+        regex=re.compile(
+            r"\b(?:let'?s\s+)?(?:imagine|pretend)\s+(?:that\s+)?(?:we|you|i)\b", re.IGNORECASE
+        ),
         confidence=0.6,
         evidence_token="HYPOTHETICAL",
     ),
     # --- policy_erosion ---
     _Pattern(
         category="policy_erosion",
-        regex=re.compile(r"\bas\s+we\s+(?:already\s+)?(?:agreed|discussed|established)\b", re.IGNORECASE),
+        regex=re.compile(
+            r"\bas\s+we\s+(?:already\s+)?(?:agreed|discussed|established)\b", re.IGNORECASE
+        ),
         confidence=0.78,
         evidence_token="POLICY_EROSION",
     ),
@@ -134,7 +156,10 @@ _PATTERNS: tuple[_Pattern, ...] = (
     ),
     _Pattern(
         category="policy_erosion",
-        regex=re.compile(r"\b(?:we|you)\s+(?:already\s+)?(?:agreed|established)\s+(?:that|earlier)\b", re.IGNORECASE),
+        regex=re.compile(
+            r"\b(?:we|you)\s+(?:already\s+)?(?:agreed|established)\s+(?:that|earlier)\b",
+            re.IGNORECASE,
+        ),
         confidence=0.7,
         evidence_token="POLICY_EROSION",
     ),
@@ -204,16 +229,11 @@ class RuleBasedJailbreakDetector:
         # Track highest confidence per category — multiple matches in
         # the same category collapse into one signal at the highest
         # confidence so per-category P/R math stays clean.
-        best_per_category: dict[
-            JailbreakCategory, tuple[float, str]
-        ] = {}
+        best_per_category: dict[JailbreakCategory, tuple[float, str]] = {}
         for pattern in _PATTERNS:
             for _ in pattern.regex.finditer(text):
                 per_category_index[pattern.category] += 1
-                token = (
-                    f"{pattern.evidence_token}_"
-                    f"{per_category_index[pattern.category]}"
-                )
+                token = f"{pattern.evidence_token}_{per_category_index[pattern.category]}"
                 prior = best_per_category.get(pattern.category)
                 if prior is None or pattern.confidence > prior[0]:
                     best_per_category[pattern.category] = (

@@ -44,7 +44,7 @@ LEAF_EXCEPTIONS = [
 
 @pytest.mark.parametrize("exc_cls", LEAF_EXCEPTIONS)
 def test_pipeline_run_does_not_leak_exception(
-        exc_cls: type[exc.ArcGuardError], monkeypatch: pytest.MonkeyPatch
+    exc_cls: type[exc.ArcGuardError], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """When the pipeline's internal _run raises a typed exception, the public
     pre/post entry points wrap it into a fail-open or fail-closed GuardResult.
@@ -117,7 +117,7 @@ def test_pipeline_run_does_not_leak_exception(
 
 
 def test_unhandled_internal_exception_does_not_propagate(
-        monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Even an unfamiliar Python exception should not leak from the public API
     once the implementation honors the contract. The empty contract pipeline

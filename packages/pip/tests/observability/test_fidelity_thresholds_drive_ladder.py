@@ -50,7 +50,9 @@ async def test_aggressive_thresholds_promote_above_warn_to_warn_band() -> None:
     config = GuardConfig(
         observability=ObservabilityConfig(
             fidelity_thresholds=FidelityThresholds(
-                warn=0.85, clarify=0.6, refuse=0.4,
+                warn=0.85,
+                clarify=0.6,
+                refuse=0.4,
             ),
         ),
     )
@@ -73,7 +75,9 @@ async def test_aggressive_thresholds_promote_warn_score_to_clarify_band() -> Non
     config = GuardConfig(
         observability=ObservabilityConfig(
             fidelity_thresholds=FidelityThresholds(
-                warn=0.85, clarify=0.6, refuse=0.4,
+                warn=0.85,
+                clarify=0.6,
+                refuse=0.4,
             ),
         ),
     )

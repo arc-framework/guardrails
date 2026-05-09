@@ -55,19 +55,23 @@ def test_cli_produces_jsonl_and_markdown(tmp_path: Path) -> None:
 
     result = subprocess.run(
         [
-            sys.executable, str(_CLI),
-            "--corpus", str(corpus_path),
-            "--configurations", "raw,sanitize_only,sanitize_plus_jailbreak",
-            "--seed", "0",
-            "--output-dir", str(output_dir),
+            sys.executable,
+            str(_CLI),
+            "--corpus",
+            str(corpus_path),
+            "--configurations",
+            "raw,sanitize_only,sanitize_plus_jailbreak",
+            "--seed",
+            "0",
+            "--output-dir",
+            str(output_dir),
         ],
         capture_output=True,
         text=True,
         timeout=120,
     )
     assert result.returncode == 0, (
-        f"CLI exited with {result.returncode}\nstdout:\n{result.stdout}\n"
-        f"stderr:\n{result.stderr}"
+        f"CLI exited with {result.returncode}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
 
     jsonl_path = output_dir / "report.jsonl"
@@ -102,9 +106,12 @@ def test_cli_exits_non_zero_on_invalid_corpus(tmp_path: Path) -> None:
 
     result = subprocess.run(
         [
-            sys.executable, str(_CLI),
-            "--corpus", str(bad_corpus),
-            "--output-dir", str(output_dir),
+            sys.executable,
+            str(_CLI),
+            "--corpus",
+            str(bad_corpus),
+            "--output-dir",
+            str(output_dir),
         ],
         capture_output=True,
         text=True,

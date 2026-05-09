@@ -54,12 +54,8 @@ LEGACY_SYMBOLS: dict[str, LegacyEntry] = {
     "Inspector": LegacyEntry("arc_guard_core.protocols.inspector", "Inspector", "0.3.0"),
     "ActionStrategy": LegacyEntry("arc_guard_core.protocols.strategy", "ActionStrategy", "0.3.0"),
     "Reporter": LegacyEntry("arc_guard_core.protocols.reporter", "Reporter", "0.3.0"),
-    "FlagProvider": LegacyEntry(
-        "arc_guard_core.protocols.flag_provider", "FlagProvider", "0.3.0"
-    ),
-    "Middleware": LegacyEntry(
-        "arc_guard_core.protocols.middleware", "Middleware", "0.3.0"
-    ),
+    "FlagProvider": LegacyEntry("arc_guard_core.protocols.flag_provider", "FlagProvider", "0.3.0"),
+    "Middleware": LegacyEntry("arc_guard_core.protocols.middleware", "Middleware", "0.3.0"),
     "EntityProvider": LegacyEntry(
         "arc_guard_core.protocols.entity_provider", "EntityProvider", "0.3.0"
     ),

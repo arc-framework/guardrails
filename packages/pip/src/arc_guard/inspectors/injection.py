@@ -97,7 +97,7 @@ class InjectionInspector:
         for f in new_findings:
             if f.entity_type != "INJECTION":
                 continue
-            span_text = text[f.start:f.end]
+            span_text = text[f.start : f.end]
             for pattern, pattern_id in zip(self._all_patterns, self._pattern_ids, strict=True):
                 if pattern.fullmatch(span_text) or pattern.search(span_text):
                     out.append(

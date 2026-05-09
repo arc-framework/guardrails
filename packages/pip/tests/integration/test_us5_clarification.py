@@ -41,7 +41,8 @@ BORDERLINE_FIXTURES: tuple[tuple[str, str, tuple[Finding, ...]], ...] = (
     ("name_with_role", "alice the admin", (_f("CUSTOMER_NAME", 0, 5, RiskLevel.MEDIUM),)),
     ("partial_email_handle", "send to alice@", (_f("EMAIL_ADDRESS", 8, 14, RiskLevel.MEDIUM),)),
     ("project_codename", "project blue", (_f("INTERNAL_PROJECT", 8, 12, RiskLevel.MEDIUM),)),
-    ("two_low_findings_aggregate_to_medium",
+    (
+        "two_low_findings_aggregate_to_medium",
         "alice@acme.com or bob@acme.com or charlie@acme.com",
         (
             _f("EMAIL_ADDRESS", 0, 14, RiskLevel.LOW),

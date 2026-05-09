@@ -26,7 +26,9 @@ def test_default_observability_config_returns_default_deception_thresholds() -> 
 def test_custom_jailbreak_thresholds_round_trip() -> None:
     config = ObservabilityConfig(
         jailbreak_thresholds=JailbreakThresholds(
-            refuse=0.9, clarify=0.7, warn=0.5,
+            refuse=0.9,
+            clarify=0.7,
+            warn=0.5,
         ),
     )
     assert config.jailbreak_thresholds.refuse == 0.9
@@ -37,7 +39,9 @@ def test_custom_jailbreak_thresholds_round_trip() -> None:
 def test_custom_deception_thresholds_round_trip() -> None:
     config = ObservabilityConfig(
         deception_thresholds=DeceptionThresholds(
-            refuse=0.6, clarify=0.4, warn=0.2,
+            refuse=0.6,
+            clarify=0.4,
+            warn=0.2,
         ),
     )
     assert config.deception_thresholds.refuse == 0.6

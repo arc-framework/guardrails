@@ -40,9 +40,7 @@ def test_core_import_does_not_pull_provider_modules() -> None:
             )
         """
     )
-    proc = subprocess.run(
-        [sys.executable, "-c", code], capture_output=True, text=True
-    )
+    proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     assert proc.returncode == 0, proc.stdout + proc.stderr
 
 

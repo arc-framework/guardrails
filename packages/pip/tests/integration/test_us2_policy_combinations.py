@@ -61,7 +61,9 @@ CASES = [
                 PolicyRule(id="r1", match="EMAIL_ADDRESS", strategy="redact"),
                 PolicyRule(id="r2", match="CREDIT_CARD", strategy="hash"),
                 PolicyRule(id="r3", match="US_SSN", strategy="redact"),
-                PolicyRule(id="r4", match="INJECTION", strategy="block", severity_floor=RiskLevel.HIGH),
+                PolicyRule(
+                    id="r4", match="INJECTION", strategy="block", severity_floor=RiskLevel.HIGH
+                ),
             ),
         ),
         "alice@acme.com card 4111111111111111",

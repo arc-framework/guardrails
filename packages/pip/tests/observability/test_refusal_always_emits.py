@@ -73,12 +73,8 @@ async def test_refusal_always_emits_overrides_zero_sampling() -> None:
         # failure event and bypasses sampling — it's emitted
         # immediately by the buffered logger.
 
-    failed_events = [
-        e for e in logger.captured_events if e.name == "guard.stage.failed"
-    ]
-    assert len(failed_events) == 5, (
-        "stage.failed events must always emit (failure-event bypass)"
-    )
+    failed_events = [e for e in logger.captured_events if e.name == "guard.stage.failed"]
+    assert len(failed_events) == 5, "stage.failed events must always emit (failure-event bypass)"
 
 
 @pytest.mark.asyncio
@@ -104,9 +100,7 @@ async def test_pass_runs_drop_when_sampling_is_zero() -> None:
         await pipeline.pre_process(GuardInput(text=f"pass-{i}"))
 
     # No refusal → sampled out — no guard.run.completed events.
-    completed = [
-        e for e in logger.captured_events if e.name == "guard.run.completed"
-    ]
+    completed = [e for e in logger.captured_events if e.name == "guard.run.completed"]
     assert completed == []
 
     # The dropped counter fired once per dropped run.

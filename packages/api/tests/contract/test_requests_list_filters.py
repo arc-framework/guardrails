@@ -59,18 +59,14 @@ def _seed(
 def dashboard_settings(tmp_path: Path) -> ServiceSettings:
     db = tmp_path / "arc_guardrail.db"
     SqliteLifecycleSink(str(db))  # run migration; we don't keep the sink
-    return ServiceSettings(
-        enable_chat_completions=False, lifecycle_sqlite_path=str(db)
-    )
+    return ServiceSettings(enable_chat_completions=False, lifecycle_sqlite_path=str(db))
 
 
 @pytest.fixture()
 async def client(dashboard_settings: ServiceSettings) -> httpx.AsyncClient:
     app = create_app(dashboard_settings)
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
 
 

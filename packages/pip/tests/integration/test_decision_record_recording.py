@@ -31,9 +31,7 @@ def _ts(s: int = 0) -> datetime:
 def _row_count(path: str) -> int:
     conn = sqlite3.connect(path)
     try:
-        return int(
-            conn.execute("SELECT COUNT(*) FROM decision_records").fetchone()[0]
-        )
+        return int(conn.execute("SELECT COUNT(*) FROM decision_records").fetchone()[0])
     finally:
         conn.close()
 
@@ -71,11 +69,7 @@ async def test_decision_emitted_writes_row(db_path: str) -> None:
 async def test_non_decision_events_ignored(db_path: str) -> None:
     rec = DecisionRecordRecorder(db_path)
     try:
-        await rec.emit(
-            RequestStarted(
-                id="ev-1", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"
-            )
-        )
+        await rec.emit(RequestStarted(id="ev-1", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"))
         await asyncio.sleep(0.05)
         assert _row_count(db_path) == 0
     finally:

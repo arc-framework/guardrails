@@ -41,14 +41,10 @@ class FidelityScore:
             if self.value is None:
                 raise ValueError("FidelityScore(sentinel='measured') requires a value")
             if not (0.0 <= self.value <= 1.0):
-                raise ValueError(
-                    f"FidelityScore.value must be in [0.0, 1.0]; got {self.value}"
-                )
+                raise ValueError(f"FidelityScore.value must be in [0.0, 1.0]; got {self.value}")
         else:
             if self.value is not None:
-                raise ValueError(
-                    "FidelityScore(sentinel='not_measured') must have value=None"
-                )
+                raise ValueError("FidelityScore(sentinel='not_measured') must have value=None")
 
     @classmethod
     def measured(cls, value: float) -> FidelityScore:

@@ -24,11 +24,13 @@ def test_default_allow_list_rejects_custom_key() -> None:
 
 def test_extended_allow_list_admits_custom_key() -> None:
     config = ObservabilityConfig(
-        metric_attribute_allow_list=frozenset({
-            "correlation_id",
-            "stage",
-            "custom_widget",
-        }),
+        metric_attribute_allow_list=frozenset(
+            {
+                "correlation_id",
+                "stage",
+                "custom_widget",
+            }
+        ),
     )
     redactor = BoundedRedactor(config)
     result = redactor.sanitize_metric_label("custom_widget", "wrench")

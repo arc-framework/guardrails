@@ -128,13 +128,12 @@ def _start_sink_background_tasks(sink: Any) -> None:
             except Exception as exc:  # pragma: no cover
                 _LOG.warning(
                     "lifecycle sink %s.start_cleanup_task() raised: %s",
-                    type(s).__name__, exc,
+                    type(s).__name__,
+                    exc,
                 )
 
 
-def _build_default_lifecycle_sink(
-    settings: ServiceSettings, broadcaster: Any | None = None
-) -> Any:
+def _build_default_lifecycle_sink(settings: ServiceSettings, broadcaster: Any | None = None) -> Any:
     """Construct the recommended lifecycle sink composite for the api.
 
     Children, in order:
@@ -181,9 +180,7 @@ def _build_default_lifecycle_sink(
                 cleanup_interval_seconds=settings.lifecycle_sqlite_cleanup_interval_seconds,
             )
         )
-        children.append(
-            RequestSummaryProjector(path=settings.lifecycle_sqlite_path)
-        )
+        children.append(RequestSummaryProjector(path=settings.lifecycle_sqlite_path))
         children.append(
             DecisionRecordRecorder(
                 path=settings.lifecycle_sqlite_path,
@@ -204,12 +201,8 @@ def _build_default_lifecycle_sink(
                 StaleLiveSweeper(
                     path=settings.lifecycle_sqlite_path,
                     lifecycle_sink=None,  # set below once composite is built
-                    stale_threshold_seconds=(
-                        settings.request_summary_stale_threshold_seconds
-                    ),
-                    sweep_interval_seconds=(
-                        settings.request_summary_sweep_interval_seconds
-                    ),
+                    stale_threshold_seconds=(settings.request_summary_stale_threshold_seconds),
+                    sweep_interval_seconds=(settings.request_summary_sweep_interval_seconds),
                 )
             )
     if broadcaster is not None:
@@ -419,9 +412,7 @@ def create_app(
             async def post(self, *args: Any, **kwargs: Any) -> Any:
                 client = http_client_holder.get("client")
                 if client is None:
-                    raise RuntimeError(
-                        "http client not initialized — lifespan startup did not run"
-                    )
+                    raise RuntimeError("http client not initialized — lifespan startup did not run")
                 return await client.post(*args, **kwargs)
 
         capture_policy = SettingsBackedPayloadCapturePolicy(
@@ -447,9 +438,7 @@ def create_app(
             lifecycle_sink=lifecycle_sink,
         )
         app.include_router(events_router)
-        lifecycle_router = build_lifecycle_router(
-            settings=settings, lifecycle_sink=lifecycle_sink
-        )
+        lifecycle_router = build_lifecycle_router(settings=settings, lifecycle_sink=lifecycle_sink)
         app.include_router(lifecycle_router)
         requests_router = build_requests_router(settings=settings)
         app.include_router(requests_router)
@@ -491,10 +480,14 @@ def create_app(
     # wildcards, non-http(s) schemes, and path/query/fragment components
     # at startup; we just consume the validated list here.
     if settings.dashboard_origins:
-        from fastapi.middleware.cors import CORSMiddleware
+        try:
+            cors_module = importlib.import_module("starlette.middleware.cors")
+        except ImportError as exc:
+            raise ImportError(_FASTAPI_INSTALL_HINT) from exc
+        cors_middleware = cors_module.CORSMiddleware
 
         app.add_middleware(
-            CORSMiddleware,
+            cors_middleware,
             allow_origins=list(settings.dashboard_origins),
             allow_origin_regex=None,
             allow_credentials=False,

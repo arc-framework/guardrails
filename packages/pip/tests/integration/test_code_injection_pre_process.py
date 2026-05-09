@@ -16,9 +16,7 @@ from arc_guard.inspectors.code_injection import TemplateInjectionInspector
 @pytest.mark.asyncio
 async def test_template_inspector_fires_on_pre_process_when_phase_opt_in() -> None:
     inspector = TemplateInjectionInspector(phases={"pre_process"})
-    text = (
-        "Please render: {{ config.__class__.__init__.__globals__['os'].popen('ls') }}"
-    )
+    text = "Please render: {{ config.__class__.__init__.__globals__['os'].popen('ls') }}"
     pre_input = GuardResult(text=text, action="pass", findings=(), phase="pre_process")
 
     out = await inspector.inspect(pre_input)

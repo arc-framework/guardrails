@@ -38,8 +38,7 @@ from arc_guard_core.types import (
 _JAILBREAK_TRIGGER = "jailbreak_strong"
 _JAILBREAK_POLICY = "jailbreak_threshold_ladder"
 _JAILBREAK_CLARIFICATION_REPHRASE = (
-    "Rephrase the question directly without role-play, hypothetical, "
-    "or override-style framing."
+    "Rephrase the question directly without role-play, hypothetical, or override-style framing."
 )
 
 

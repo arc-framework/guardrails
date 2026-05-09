@@ -57,9 +57,7 @@ def test_sentinel_score_is_no_op() -> None:
     result = GuardResult(text="answer", action="pass")
     out = apply_fidelity_ladder(result, NOT_MEASURED, THRESHOLDS)
     assert out is result or (
-        out.fidelity_warning is False
-        and out.clarification is None
-        and out.refusal is None
+        out.fidelity_warning is False and out.clarification is None and out.refusal is None
     )
 
 

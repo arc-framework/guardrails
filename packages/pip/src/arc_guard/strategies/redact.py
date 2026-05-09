@@ -46,9 +46,7 @@ class RedactStrategy:
 
         # Apply substitutions right-to-left so offsets stay stable.
         out = text
-        for _finding_idx, placeholder, start, end in sorted(
-            replacements, key=lambda r: -r[2]
-        ):
+        for _finding_idx, placeholder, start, end in sorted(replacements, key=lambda r: -r[2]):
             out = out[:start] + placeholder + out[end:]
 
         decisions = tuple(

@@ -78,9 +78,7 @@ class RuleBasedPolicyRouter:
                 transformed_text=result.text,
                 decisions=(),
                 aggregate_action=(
-                    "pass"
-                    if ruleset.default_action_when_no_rules_fire == "pass"
-                    else "block"
+                    "pass" if ruleset.default_action_when_no_rules_fire == "pass" else "block"
                 ),
                 aggregate_band=RiskBand.LOW,
                 refusal=None,
@@ -98,8 +96,7 @@ class RuleBasedPolicyRouter:
             candidates = [
                 rule
                 for rule in ruleset.rules
-                if rule.match == finding.entity_type
-                and finding.risk_level >= rule.severity_floor
+                if rule.match == finding.entity_type and finding.risk_level >= rule.severity_floor
             ]
             if not candidates:
                 continue
@@ -109,13 +106,8 @@ class RuleBasedPolicyRouter:
             strategy_name = self._resolve_strategy_name(winner, finding, result)
             rationale = winner.rationale_template or f"applied {strategy_name}"
             if losers:
-                loser_ids = ", ".join(
-                    f"{lr.id}({lr.strategy or lr.selector})" for lr in losers
-                )
-                rationale = (
-                    f"{rationale} | rule {winner.id}({strategy_name}) "
-                    f"overrode {loser_ids}"
-                )
+                loser_ids = ", ".join(f"{lr.id}({lr.strategy or lr.selector})" for lr in losers)
+                rationale = f"{rationale} | rule {winner.id}({strategy_name}) overrode {loser_ids}"
             decision_metadata: dict[str, object] = {"firing_rule_id": winner.id}
             if winner.selector is not None:
                 decision_metadata["selector"] = winner.selector
@@ -224,8 +216,7 @@ class RuleBasedPolicyRouter:
 
         if not _selector_is_registered(rule.selector):
             raise ConfigCrossFieldError(
-                f"PolicyRule {rule.id!r} references unknown selector "
-                f"{rule.selector!r}",
+                f"PolicyRule {rule.id!r} references unknown selector {rule.selector!r}",
                 code="config.cross_field_violation",
                 details={"rule_id": rule.id, "selector": rule.selector},
             )
@@ -239,8 +230,7 @@ class RuleBasedPolicyRouter:
                 exc,
             )
             raise StrategyError(
-                f"selector {rule.selector!r} raised during select for "
-                f"rule {rule.id!r}: {exc}",
+                f"selector {rule.selector!r} raised during select for rule {rule.id!r}: {exc}",
                 code="strategy.failed",
                 details={
                     "rule_id": rule.id,
@@ -339,15 +329,11 @@ class RuleBasedPolicyRouter:
                     )
                 else:
                     placeholder = ""
-                replacements.append(
-                    (f.start, f.end, str(placeholder), fi, strategy_name)
-                )
+                replacements.append((f.start, f.end, str(placeholder), fi, strategy_name))
 
         # Apply right-to-left so offsets stay stable
         out = text
-        for start, end, replacement, _fi, _sname in sorted(
-            replacements, key=lambda r: -r[0]
-        ):
+        for start, end, replacement, _fi, _sname in sorted(replacements, key=lambda r: -r[0]):
             out = out[:start] + replacement + out[end:]
 
         # Build TransformSummary tuple in finding-index order

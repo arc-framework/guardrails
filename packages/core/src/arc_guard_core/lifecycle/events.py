@@ -478,9 +478,7 @@ _CONDITIONAL_EVENT_TYPES: tuple[type[LifecycleEventBase], ...] = (
 )
 
 
-ALL_EVENT_TYPES: tuple[type[LifecycleEventBase], ...] = (
-    _BASE_EVENT_TYPES + _CONDITIONAL_EVENT_TYPES
-)
+ALL_EVENT_TYPES: tuple[type[LifecycleEventBase], ...] = _BASE_EVENT_TYPES + _CONDITIONAL_EVENT_TYPES
 
 
 __all__ = [

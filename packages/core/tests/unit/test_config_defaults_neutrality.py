@@ -60,8 +60,7 @@ def test_guard_config_defaults_are_product_neutral() -> None:
     for candidate in candidates:
         match = FORBIDDEN_RE.search(candidate)
         assert match is None, (
-            f"Default config value {candidate!r} contains forbidden token "
-            f"{match.group()!r}"
+            f"Default config value {candidate!r} contains forbidden token {match.group()!r}"
         )
 
 

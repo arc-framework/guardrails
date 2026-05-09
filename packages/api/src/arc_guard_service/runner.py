@@ -128,7 +128,8 @@ def run_guard(
 
     loop = _ensure_worker_loop()
     future: Future[GuardResult] = asyncio.run_coroutine_threadsafe(
-        pipeline.pre_process(input), loop,
+        pipeline.pre_process(input),
+        loop,
     )
     return future.result()
 

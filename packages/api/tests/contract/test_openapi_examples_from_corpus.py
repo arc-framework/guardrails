@@ -42,6 +42,4 @@ async def test_openapi_dropdown_is_sourced_from_corpus(
     body = schema["paths"]["/v1/chat/completions"]["post"]["requestBody"]
     examples = body["content"]["application/json"]["examples"]
     assert any(k.startswith("_baseline__") for k in examples)
-    assert any(
-        "__easy__" in k or "__medium__" in k or "__super_hard__" in k for k in examples
-    )
+    assert any("__easy__" in k or "__medium__" in k or "__super_hard__" in k for k in examples)

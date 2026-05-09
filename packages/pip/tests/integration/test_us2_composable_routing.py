@@ -30,7 +30,9 @@ def test_four_rules_fire_in_finding_order_with_block_winning_aggregate() -> None
         rules=(
             PolicyRule(id="r_email", match="EMAIL_ADDRESS", strategy="redact"),
             PolicyRule(id="r_card", match="CREDIT_CARD", strategy="hash"),
-            PolicyRule(id="r_inj", match="INJECTION", strategy="block", severity_floor=RiskLevel.HIGH),
+            PolicyRule(
+                id="r_inj", match="INJECTION", strategy="block", severity_floor=RiskLevel.HIGH
+            ),
             PolicyRule(id="r_name", match="CUSTOMER_NAME", strategy="warn"),
         ),
     )

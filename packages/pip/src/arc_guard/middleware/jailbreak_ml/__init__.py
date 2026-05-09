@@ -63,7 +63,8 @@ class JailbreakMlBundle:
         )
 
         detector: Any = ClassifierJailbreakDetector(
-            model_name=model_name, device=device,
+            model_name=model_name,
+            device=device,
         )
         return cls(detector=detector)
 

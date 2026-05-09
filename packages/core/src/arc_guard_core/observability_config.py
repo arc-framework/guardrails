@@ -15,19 +15,23 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 LogLevelFloor = Literal["debug", "info", "warn", "error"]
 
-_DEFAULT_METRIC_ATTRIBUTE_ALLOW_LIST: frozenset[str] = frozenset({
-    "correlation_id",
-    "decision_id",
-    "stage",
-    "action",
-    "risk_band",
-    "failure_class",
-})
+_DEFAULT_METRIC_ATTRIBUTE_ALLOW_LIST: frozenset[str] = frozenset(
+    {
+        "correlation_id",
+        "decision_id",
+        "stage",
+        "action",
+        "risk_band",
+        "failure_class",
+    }
+)
 
-_REQUIRED_METRIC_ATTRIBUTES: frozenset[str] = frozenset({
-    "correlation_id",
-    "stage",
-})
+_REQUIRED_METRIC_ATTRIBUTES: frozenset[str] = frozenset(
+    {
+        "correlation_id",
+        "stage",
+    }
+)
 
 
 class FidelityThresholds(BaseModel):

@@ -43,6 +43,7 @@ def _make_presidio_mock() -> None:
     """
     try:
         import presidio_analyzer  # noqa: F401
+
         return
     except ImportError:
         pass

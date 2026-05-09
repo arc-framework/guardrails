@@ -39,19 +39,16 @@ class IntentLock:
         _ensure_hex_digest("sanitized_prompt_hash", self.sanitized_prompt_hash)
         if self.rehydrated_answer_hash is not None:
             _ensure_hex_digest(
-                "rehydrated_answer_hash", self.rehydrated_answer_hash,
+                "rehydrated_answer_hash",
+                self.rehydrated_answer_hash,
             )
 
 
 def _ensure_hex_digest(field_name: str, value: str) -> None:
     if len(value) != _HEX_DIGEST_LEN:
-        raise ValueError(
-            f"IntentLock.{field_name} must be a 64-char SHA-256 hex digest"
-        )
+        raise ValueError(f"IntentLock.{field_name} must be a 64-char SHA-256 hex digest")
     if any(c not in "0123456789abcdef" for c in value):
-        raise ValueError(
-            f"IntentLock.{field_name} must be lowercase hexadecimal"
-        )
+        raise ValueError(f"IntentLock.{field_name} must be lowercase hexadecimal")
 
 
 __all__ = ["IntentLock"]

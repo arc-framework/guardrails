@@ -85,8 +85,16 @@ async def test_pass_through_path_emits_eleven_always_applicable_stages() -> None
     stages = await _stages_emitted(pipeline, sink, "pass-rid-1", "What is 2+2?")
 
     always = {
-        "validate", "defend", "classify", "deception_inspect", "sanitize",
-        "route", "execute", "verify", "decision_emit", "report",
+        "validate",
+        "defend",
+        "classify",
+        "deception_inspect",
+        "sanitize",
+        "route",
+        "execute",
+        "verify",
+        "decision_emit",
+        "report",
     }
     missing = always - stages
     assert not missing, f"pass-through path missing always-applicable stages: {missing}"
@@ -113,13 +121,19 @@ async def test_redact_path_emits_eleven_always_applicable_stages() -> None:
         lifecycle_hook=sink,
     )
 
-    stages = await _stages_emitted(
-        pipeline, sink, "redact-rid-1", "alice@example.com please"
-    )
+    stages = await _stages_emitted(pipeline, sink, "redact-rid-1", "alice@example.com please")
 
     always = {
-        "validate", "defend", "classify", "deception_inspect", "sanitize",
-        "route", "execute", "verify", "decision_emit", "report",
+        "validate",
+        "defend",
+        "classify",
+        "deception_inspect",
+        "sanitize",
+        "route",
+        "execute",
+        "verify",
+        "decision_emit",
+        "report",
     }
     missing = always - stages
     assert not missing, f"redact path missing always-applicable stages: {missing}"

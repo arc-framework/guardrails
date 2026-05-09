@@ -23,9 +23,13 @@ from arc_guard_core.evaluation import (
 # outcome is "pass" (no reaction). Per-category precision/recall is
 # computed by treating reactions on entries of that category as the
 # relevant population.
-_REACTION_OUTCOMES: Final[frozenset[ExpectedOutcome]] = frozenset({
-    "warn", "clarify", "refuse",
-})
+_REACTION_OUTCOMES: Final[frozenset[ExpectedOutcome]] = frozenset(
+    {
+        "warn",
+        "clarify",
+        "refuse",
+    }
+)
 
 
 def _is_reaction(outcome: ExpectedOutcome) -> bool:
@@ -69,9 +73,7 @@ def category_precision_recall(
     negatives.
     """
     pairs = [
-        (actual, expected)
-        for entry, actual, expected in samples
-        if entry.category == category
+        (actual, expected) for entry, actual, expected in samples if entry.category == category
     ]
     return _precision_recall(pairs)
 
@@ -138,15 +140,13 @@ def compute_intelligibility_score(
         raise ValueError("answers and prompts must have the same length")
     if hook is not None:
         positives = sum(
-            1 for prompt, answer in zip(prompts, answers, strict=True)
-            if hook(prompt, answer)
+            1 for prompt, answer in zip(prompts, answers, strict=True) if hook(prompt, answer)
         )
         return positives / len(answers)
     positives = sum(
-        1 for answer in answers
-        if answer
-        and "blocked" not in answer.lower()
-        and "rephrase" not in answer.lower()
+        1
+        for answer in answers
+        if answer and "blocked" not in answer.lower() and "rephrase" not in answer.lower()
     )
     return positives / len(answers)
 

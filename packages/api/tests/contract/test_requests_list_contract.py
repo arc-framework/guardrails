@@ -76,9 +76,7 @@ def dashboard_settings(tmp_path: Path) -> ServiceSettings:
 async def client(dashboard_settings: ServiceSettings) -> httpx.AsyncClient:
     app = create_app(dashboard_settings)
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
 
 
@@ -114,9 +112,7 @@ async def test_filters_echoed_in_response(
     client: httpx.AsyncClient, dashboard_settings: ServiceSettings
 ) -> None:
     _seed_summary(dashboard_settings.lifecycle_sqlite_path, "01JABC0EVT01")
-    resp = await client.get(
-        "/requests?status=completed&action=pass&rid_prefix=01J"
-    )
+    resp = await client.get("/requests?status=completed&action=pass&rid_prefix=01J")
     assert resp.status_code == 200
     page = RequestPage.model_validate(resp.json())
     assert "completed" in page.filters.status
@@ -136,14 +132,10 @@ async def test_oversized_page_size_rejected(
 @pytest.mark.asyncio
 async def test_503_when_sqlite_path_unset() -> None:
     """No lifecycle_sqlite_path → 503 with Retry-After."""
-    settings = ServiceSettings(
-        enable_chat_completions=False, lifecycle_sqlite_path=None
-    )
+    settings = ServiceSettings(enable_chat_completions=False, lifecycle_sqlite_path=None)
     app = create_app(settings)
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as client:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         resp = await client.get("/requests")
     assert resp.status_code == 503
     assert "retry-after" in {k.lower() for k in resp.headers.keys()}

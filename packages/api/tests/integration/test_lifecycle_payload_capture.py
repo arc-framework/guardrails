@@ -38,9 +38,7 @@ def _send_pii(client: TestClient, rid: str) -> dict:
         "/v1/chat/completions",
         json={
             "model": "echo",
-            "messages": [
-                {"role": "user", "content": f"my email is {PII_EMAIL} please advise"}
-            ],
+            "messages": [{"role": "user", "content": f"my email is {PII_EMAIL} please advise"}],
         },
         headers={"x-request-id": rid},
     )

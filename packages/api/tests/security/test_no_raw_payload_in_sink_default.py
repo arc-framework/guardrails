@@ -59,12 +59,8 @@ def _no_raw_pii_in_lifecycle(client: TestClient, rid: str, i: int) -> None:
     body_text = json.dumps(r.json())
     email = _EMAIL_FMT.format(i=i)
     phone = _PHONE_FMT.format(i=i)
-    assert email not in body_text, (
-        f"raw email leaked into rid={rid} envelope (request {i})"
-    )
-    assert phone not in body_text, (
-        f"raw phone leaked into rid={rid} envelope (request {i})"
-    )
+    assert email not in body_text, f"raw email leaked into rid={rid} envelope (request {i})"
+    assert phone not in body_text, f"raw phone leaked into rid={rid} envelope (request {i})"
 
 
 def test_smoke_200_pii_requests_under_default_settings(client: TestClient) -> None:

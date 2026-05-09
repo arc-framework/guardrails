@@ -26,7 +26,10 @@ class _FixedDetector:
         return "fixed-stub:1"
 
     def detect(
-        self, text: str, *, conversation_state: ConversationState | None = None,
+        self,
+        text: str,
+        *,
+        conversation_state: ConversationState | None = None,
     ) -> tuple[JailbreakSignal, ...]:
         del text, conversation_state
         return (
@@ -45,7 +48,9 @@ async def test_aggressive_thresholds_promote_borderline_to_refuse() -> None:
     config = GuardConfig(
         observability=ObservabilityConfig(
             jailbreak_thresholds=JailbreakThresholds(
-                refuse=0.5, clarify=0.3, warn=0.15,
+                refuse=0.5,
+                clarify=0.3,
+                warn=0.15,
             ),
         ),
     )
@@ -66,7 +71,9 @@ async def test_conservative_thresholds_keep_high_confidence_in_clarify() -> None
     config = GuardConfig(
         observability=ObservabilityConfig(
             jailbreak_thresholds=JailbreakThresholds(
-                refuse=0.95, clarify=0.7, warn=0.4,
+                refuse=0.95,
+                clarify=0.7,
+                warn=0.4,
             ),
         ),
     )

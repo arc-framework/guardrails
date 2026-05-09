@@ -38,9 +38,7 @@ def make_submodule_getattr(
             ) from e
 
         if not hasattr(target_module, target_name):
-            raise AttributeError(
-                f"module {submodule!r} has no attribute {name!r}"
-            )
+            raise AttributeError(f"module {submodule!r} has no attribute {name!r}")
 
         if _version_tuple(CURRENT_VERSION) >= _version_tuple(removed_in):
             raise ImportError(

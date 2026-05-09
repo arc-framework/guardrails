@@ -214,9 +214,7 @@ class GuardResult:
         # Clarification is a recovery path; it is mutually exclusive with a
         # hard block. Callers either ask the user to rephrase or refuse.
         if self.clarification is not None and self.action == "block":
-            raise ValueError(
-                "GuardResult.clarification cannot be set when action='block'"
-            )
+            raise ValueError("GuardResult.clarification cannot be set when action='block'")
 
     @property
     def is_clean(self) -> bool:

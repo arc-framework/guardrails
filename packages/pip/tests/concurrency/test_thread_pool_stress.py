@@ -87,9 +87,7 @@ def test_thread_pool_stress_does_not_trigger_registry_freeze_error() -> None:
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONCURRENT_REQUESTS) as pool:
         list(pool.map(runner, markers, timeout=30))
 
-    assert raised == [], (
-        f"steady-state runs raised RegistryFrozenError: {raised}"
-    )
+    assert raised == [], f"steady-state runs raised RegistryFrozenError: {raised}"
 
 
 @pytest.mark.parametrize("worker_count", [10, CONCURRENT_REQUESTS])

@@ -118,9 +118,7 @@ def _enum_entry(name: str, obj: type[enum.Enum]) -> dict[str, Any]:
         "module": obj.__module__,
         "stability": _stability_for(name),
         "base": obj.__base__.__qualname__ if obj.__base__ else "",
-        "values": [
-            {"name": member.name, "value": member.value} for member in obj
-        ],
+        "values": [{"name": member.name, "value": member.value} for member in obj],
     }
 
 
@@ -134,20 +132,16 @@ def _dataclass_entry(name: str, obj: type) -> dict[str, Any]:
             default = f"<factory:{field.default_factory.__qualname__}>"  # type: ignore[union-attr]
         else:
             default = None
-        fields.append(
-            {"name": field.name, "type": _type_repr(field.type), "default": default}
-        )
-    properties = sorted(
-        n for n, v in inspect.getmembers(obj, lambda x: isinstance(x, property))
-    )
+        fields.append({"name": field.name, "type": _type_repr(field.type), "default": default})
+    properties = sorted(n for n, v in inspect.getmembers(obj, lambda x: isinstance(x, property)))
     return {
         "name": name,
         "kind": "dataclass",
         "module": obj.__module__,
         "stability": _stability_for(name),
         "frozen": getattr(obj, "__dataclass_params__", None)
-                  and obj.__dataclass_params__.frozen
-                  or False,
+        and obj.__dataclass_params__.frozen
+        or False,
         "fields": fields,
         "properties": properties,
     }
@@ -203,9 +197,7 @@ def _protocol_entry(name: str, obj: type) -> dict[str, Any]:
                     "kind": p.kind.name,
                     "annotation": _type_repr(p.annotation),
                     "default": (
-                        "<empty>"
-                        if p.default is inspect.Parameter.empty
-                        else repr(p.default)
+                        "<empty>" if p.default is inspect.Parameter.empty else repr(p.default)
                     ),
                 }
             )
@@ -427,9 +419,7 @@ def diff_snapshots(old: list[dict[str, Any]], new: list[dict[str, Any]]) -> list
         for mname in sorted(set(old_methods) & set(new_methods)):
             om, nm = old_methods[mname], new_methods[mname]
             if om != nm:
-                diffs.append(
-                    Diff("changed", name, f"method {mname!r} signature changed")
-                )
+                diffs.append(Diff("changed", name, f"method {mname!r} signature changed"))
         # Exception failure-mode change is always breaking.
         if old_entry.get("failure_mode") != new_entry.get("failure_mode"):
             diffs.append(

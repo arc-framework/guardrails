@@ -204,9 +204,7 @@ def build_router(
     """
     fastapi = importlib.import_module("fastapi")
     sink: LifecycleSink = lifecycle_sink or NullLifecycleSink()
-    capture_policy: PayloadCapturePolicy = (
-        payload_capture_policy or NullPayloadCapturePolicy()
-    )
+    capture_policy: PayloadCapturePolicy = payload_capture_policy or NullPayloadCapturePolicy()
 
     Body = fastapi.Body  # noqa: N806
     HTTPException = fastapi.HTTPException  # noqa: N806
@@ -258,9 +256,7 @@ def build_router(
 
         if settings.backend == "openai":
             if not settings.openai_api_key:
-                raise HTTPException(
-                    500, "openai_api_key not set; cannot use backend=openai"
-                )
+                raise HTTPException(500, "openai_api_key not set; cannot use backend=openai")
             resp = await http_client.post(
                 settings.openai_url,
                 json=payload,
@@ -389,9 +385,7 @@ def build_router(
                 response_id="chatcmpl-arcguard-blocked-input",
                 finish_reason="content_filter",
                 arc_guard_blocked=True,
-                response_text=(
-                    refusal_text if emitter.policy.should_capture_sanitized() else None
-                ),
+                response_text=(refusal_text if emitter.policy.should_capture_sanitized() else None),
             )
             await emitter.emit(
                 RequestCompleted,
@@ -435,14 +429,10 @@ def build_router(
                     before_size=before_size,
                     after_size=len(pre_result.text or ""),
                     text_before=(
-                        before_text
-                        if emitter.policy.should_capture_sanitized()
-                        else None
+                        before_text if emitter.policy.should_capture_sanitized() else None
                     ),
                     text_after=(
-                        pre_result.text
-                        if emitter.policy.should_capture_sanitized()
-                        else None
+                        pre_result.text if emitter.policy.should_capture_sanitized() else None
                     ),
                 )
                 payload_rewritten_id = pr_event.id
@@ -466,11 +456,7 @@ def build_router(
             url=(
                 "echo://local"
                 if settings.backend == "echo"
-                else (
-                    settings.ollama_url
-                    if settings.backend == "ollama"
-                    else settings.openai_url
-                )
+                else (settings.ollama_url if settings.backend == "ollama" else settings.openai_url)
             ),
             payload_msg_count=len(payload["messages"]),
             model_config_snapshot=model_config_snapshot,
@@ -492,9 +478,7 @@ def build_router(
             backend_finish_reason = choices[0].get("finish_reason")
         except (KeyError, IndexError, TypeError) as exc:
             _LOG.error("[rid=%s] backend returned malformed response: %s", rid, exc)
-            raise HTTPException(
-                502, f"backend returned malformed response: {exc}"
-            ) from exc
+            raise HTTPException(502, f"backend returned malformed response: {exc}") from exc
 
         # Token usage is reported by OpenAI-compatible backends in the
         # ``usage`` response field. Echo backend emits no usage. We only
@@ -508,9 +492,7 @@ def build_router(
             response_msg_chars=len(assistant_text),
             response_finish_reason=backend_finish_reason,
             swap_origin_id=payload_rewritten_id,
-            response_text=(
-                assistant_text if emitter.policy.should_capture_sanitized() else None
-            ),
+            response_text=(assistant_text if emitter.policy.should_capture_sanitized() else None),
             token_usage=token_usage,
         )
 
@@ -619,9 +601,7 @@ def build_router(
             finish_reason=str(backend_response["choices"][0].get("finish_reason", "stop")),
             arc_guard_blocked=False,
             response_text=(
-                final_assistant_text
-                if emitter.policy.should_capture_sanitized()
-                else None
+                final_assistant_text if emitter.policy.should_capture_sanitized() else None
             ),
         )
         await emitter.emit(

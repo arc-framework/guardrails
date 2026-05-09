@@ -43,14 +43,12 @@ async def test_signal_appears_as_finding_with_category_entity_type() -> None:
     pipeline = GuardPipeline(
         inspectors=[],
         jailbreak_detector=_FixedDetector(
-            category="role_play", confidence=0.4,
+            category="role_play",
+            confidence=0.4,
         ),
     )
     result = await pipeline.pre_process(GuardInput(text="anything"))
-    role_findings = [
-        f for f in result.findings
-        if f.entity_type == "JAILBREAK_ROLE_PLAY"
-    ]
+    role_findings = [f for f in result.findings if f.entity_type == "JAILBREAK_ROLE_PLAY"]
     assert len(role_findings) == 1
     assert role_findings[0].score == 0.4
     assert role_findings[0].metadata["jailbreak_category"] == "role_play"
@@ -69,7 +67,8 @@ async def test_each_category_produces_distinct_entity_type() -> None:
         pipeline = GuardPipeline(
             inspectors=[],
             jailbreak_detector=_FixedDetector(
-                category=category, confidence=0.3,
+                category=category,
+                confidence=0.3,
             ),
         )
         result = await pipeline.pre_process(GuardInput(text="anything"))
@@ -93,8 +92,5 @@ async def test_no_findings_when_detector_returns_empty() -> None:
         jailbreak_detector=_NoOp(),
     )
     result = await pipeline.pre_process(GuardInput(text="benign"))
-    jb_findings = [
-        f for f in result.findings
-        if f.entity_type.startswith("JAILBREAK_")
-    ]
+    jb_findings = [f for f in result.findings if f.entity_type.startswith("JAILBREAK_")]
     assert jb_findings == []

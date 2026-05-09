@@ -42,9 +42,7 @@ def test_expected_outcome_pre_process_default_tolerance_is_strict():
 
 
 def test_expected_outcome_post_process_default_tolerance_is_subset():
-    eo = ExpectedOutcome(
-        action="redact", phase="post_process", refusal_code=None, findings=[]
-    )
+    eo = ExpectedOutcome(action="redact", phase="post_process", refusal_code=None, findings=[])
     assert eo.tolerance == "subset"
 
 
@@ -142,7 +140,9 @@ def test_load_corpus_returns_sorted_prompts(tmp_path):
 
 
 def test_load_corpus_fail_fast_on_malformed_yaml(tmp_path):
-    _write_yaml(tmp_path, "pii_presidio__easy__01.yaml", "id: pii_presidio__easy__01\n  bad: indent")
+    _write_yaml(
+        tmp_path, "pii_presidio__easy__01.yaml", "id: pii_presidio__easy__01\n  bad: indent"
+    )
     with pytest.raises(CorpusError, match="pii_presidio__easy__01.yaml"):
         load_corpus(tmp_path)
 
@@ -204,6 +204,7 @@ def test_to_openapi_examples_shape_and_description_appends_expected_block():
 
 def test_module_level_constants_resolve():
     from arc_guard_service import examples_loader
+
     assert examples_loader.CORPUS_DIR.name == "corpus"
     assert examples_loader.CORPUS_DIR.parent.name == "tests"
     assert examples_loader.CORPUS_DIR.parent.parent.name == "api"
@@ -215,7 +216,8 @@ def test_cli_validate_succeeds_on_empty_corpus(tmp_path, monkeypatch):
     monkeypatch.setenv("ARC_GUARD_CORPUS_DIR", str(tmp_path))
     result = subprocess.run(
         [sys.executable, "-m", "arc_guard_service.examples_loader", "--validate"],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
         env={**__import__("os").environ, "ARC_GUARD_CORPUS_DIR": str(tmp_path)},
     )
     assert result.returncode == 0, result.stderr
@@ -227,7 +229,8 @@ def test_cli_stats_prints_matrix(tmp_path, monkeypatch):
     monkeypatch.setenv("ARC_GUARD_CORPUS_DIR", str(tmp_path))
     result = subprocess.run(
         [sys.executable, "-m", "arc_guard_service.examples_loader", "--stats"],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
         env={**__import__("os").environ, "ARC_GUARD_CORPUS_DIR": str(tmp_path)},
     )
     assert result.returncode == 0, result.stderr

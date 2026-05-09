@@ -28,9 +28,7 @@ async def test_close_all_signals_every_subscriber() -> None:
     assert registry.subscriber_count == 3
 
     router = build_events_router(registry=registry, lifecycle_sink=None)
-    handler = next(
-        r for r in router.routes if getattr(r, "path", "") == "/events/close-all"
-    )
+    handler = next(r for r in router.routes if getattr(r, "path", "") == "/events/close-all")
     response = await handler.endpoint()  # type: ignore[no-untyped-call]
 
     # JSONResponse — body is bytes containing the JSON dict.
@@ -50,9 +48,7 @@ async def test_close_all_signals_every_subscriber() -> None:
 async def test_close_all_with_zero_subscribers_is_a_noop() -> None:
     registry = SubscriberRegistry(queue_capacity=10)
     router = build_events_router(registry=registry, lifecycle_sink=None)
-    handler = next(
-        r for r in router.routes if getattr(r, "path", "") == "/events/close-all"
-    )
+    handler = next(r for r in router.routes if getattr(r, "path", "") == "/events/close-all")
     response = await handler.endpoint()  # type: ignore[no-untyped-call]
     import json
 

@@ -55,6 +55,7 @@ def _reset() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires_code_injection
 async def test_content_policy_match_short_circuits_before_sql_inspector() -> None:
     """When a content policy fires on pre-process input, the request is
     refused. The SQL inspector configured for post-process never runs
@@ -82,6 +83,7 @@ async def test_content_policy_match_short_circuits_before_sql_inspector() -> Non
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires_code_injection
 async def test_sql_inspector_fires_when_content_policy_does_not_match() -> None:
     """A request that passes the semantic policy can still be refused
     post-process when the LLM response contains SQL injection."""
@@ -94,9 +96,7 @@ async def test_sql_inspector_fires_when_content_policy_does_not_match() -> None:
 
     # LLM response contains SQL injection
     llm_response = "SELECT * FROM users; DROP TABLE users; --"
-    post_input = GuardResult(
-        text=llm_response, action="pass", findings=(), phase="post_process"
-    )
+    post_input = GuardResult(text=llm_response, action="pass", findings=(), phase="post_process")
 
     out = await sql_inspector.inspect(post_input)
 

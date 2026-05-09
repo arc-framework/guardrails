@@ -54,7 +54,9 @@ async def test_decision_recorder_drops_on_sqlite_error(
         # non-blocking-discipline contract requires the writer to tolerate
         # this without blocking the calling pipeline.
         monkeypatch.setattr(
-            rec, "_open_conn", lambda: _BrokenConnection()  # type: ignore[return-value]
+            rec,
+            "_open_conn",
+            lambda: _BrokenConnection(),  # type: ignore[return-value]
         )
 
         for i in range(3):
