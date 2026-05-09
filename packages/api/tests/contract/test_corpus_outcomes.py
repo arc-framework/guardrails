@@ -35,8 +35,10 @@ _PROMPTS = load_corpus(CORPUS_DIR) if (CORPUS_DIR / "prompts").is_dir() else []
 
 @pytest.fixture()
 def settings(tmp_path: Path) -> ServiceSettings:
+    base_url = os.environ["OLLAMA_BASE_URL"].rstrip("/")
     return ServiceSettings(
-        backend="echo",
+        backend="ollama",
+        ollama_url=f"{base_url}/v1/chat/completions",
         lifecycle_sqlite_path=str(tmp_path / "arc_guardrail.db"),
     )
 
