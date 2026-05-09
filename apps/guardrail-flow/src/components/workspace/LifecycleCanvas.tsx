@@ -1,21 +1,30 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
+  MarkerType,
   type Edge,
   type Node,
   type NodeMouseHandler,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { CANONICAL_EDGES, CANONICAL_NODES } from "@/lib/workflow/canonical-graph";
 import { deriveNodeStates } from "@/lib/workflow/derive-node-state";
-import type { LifecycleEventBase } from "@/types/api";
+import { spreadLayout } from "@/lib/canvas/dagre-layout";
+import { usePathPlayback } from "@/hooks/usePathPlayback";
+import type { LifecycleEventBase, StageName } from "@/types/api";
 import { StageNode, type StageNodeData } from "./nodes/StageNode";
 
 // Single memoized nodeTypes map. Passed by reference to <ReactFlow>; defining
 // it at module scope avoids the React Flow re-render footgun where a fresh
-// object literal triggers a full canvas remount on every parent re-render.
+// object literal literal triggers a full canvas remount on every parent
+// re-render.
 const NODE_TYPES = { stage: StageNode };
+
+type LayoutMode = "original" | "spread";
 
 function projectNodes(events: LifecycleEventBase[]): Node<StageNodeData>[] {
   const states = deriveNodeStates(events);
@@ -35,14 +44,73 @@ function styleEdges(events: LifecycleEventBase[]): Edge[] {
       (targetState.state === "completed" ||
         targetState.state === "blocked" ||
         targetState.state === "errored");
+    const leadingActive = sourceState.state === "completed" && targetState.state === "active";
+    // Animate flowing dashes on every edge that's part of the executed
+    // path PLUS the leading edge into the currently-active stage. Idle
+    // edges stay still so the eye isn't drawn to them.
+    const animated = executed || leadingActive;
+    const stroke =
+      executed || leadingActive ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))";
     return {
       ...e,
-      animated: targetState.state === "active",
-      style: executed
-        ? { stroke: "hsl(var(--primary))", strokeWidth: 2 }
-        : { stroke: "hsl(var(--muted-foreground))", strokeWidth: 1, opacity: 0.5 },
+      animated,
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 14,
+        height: 14,
+        color: stroke,
+      },
+      style:
+        executed || leadingActive
+          ? { stroke, strokeWidth: 2 }
+          : { stroke, strokeWidth: 1, opacity: 0.5 },
     };
   });
+}
+
+/**
+ * Build the playback path: the unique sequence of stages the request
+ * actually traversed, in chronological order. We restrict to `StageRan`
+ * events so the playback skips intra-stage detail (FindingProduced /
+ * DeceptionScored / etc.) and steps from one stage card to the next.
+ */
+function buildStagePath(events: LifecycleEventBase[]): StageName[] {
+  const ordered = [...events].sort((a, b) => a.seq - b.seq);
+  const path: StageName[] = [];
+  for (const ev of ordered) {
+    if (ev.event_type !== "StageRan") continue;
+    const stage = (ev as { stage?: StageName }).stage;
+    if (!stage) continue;
+    if (path[path.length - 1] !== stage) {
+      path.push(stage);
+    }
+  }
+  return path;
+}
+
+/**
+ * During playback, expose only events up to the current playback step.
+ * StageRan events for stages BEYOND the current playhead are filtered out
+ * so the canvas state matches the playback cursor. Non-stage events
+ * (FindingProduced etc.) attached to already-played stages are kept.
+ */
+function eventsUpTo(
+  events: LifecycleEventBase[],
+  stagesPlayed: ReadonlySet<string>,
+): LifecycleEventBase[] {
+  // Find the seq of the last-played stage's StageRan event so we can keep
+  // only events at-or-before that point in time.
+  let cutoffSeq = -1;
+  const ordered = [...events].sort((a, b) => a.seq - b.seq);
+  for (const ev of ordered) {
+    if (ev.event_type !== "StageRan") continue;
+    const stage = (ev as { stage?: string }).stage;
+    if (stage && stagesPlayed.has(stage)) {
+      cutoffSeq = Math.max(cutoffSeq, ev.seq);
+    }
+  }
+  if (cutoffSeq < 0) return [];
+  return ordered.filter((e) => e.seq <= cutoffSeq);
 }
 
 export interface LifecycleCanvasProps {
@@ -52,12 +120,30 @@ export interface LifecycleCanvasProps {
 }
 
 export function LifecycleCanvas({ events, selectedNodeId, onNodeSelect }: LifecycleCanvasProps) {
-  const nodes = useMemo(() => {
-    const projected = projectNodes(events);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("original");
+
+  const stagePath = useMemo(() => buildStagePath(events), [events]);
+  const playback = usePathPlayback({ path: stagePath, stepMs: 350 });
+
+  // Effective events: the full set when not playing, sliced to the
+  // playback cursor when playing.
+  const effectiveEvents = useMemo(() => {
+    if (playback.status === "idle" || playback.currentIndex < 0) return events;
+    return eventsUpTo(events, playback.visited);
+  }, [events, playback.status, playback.currentIndex, playback.visited]);
+
+  const baseNodes = useMemo(() => {
+    const projected = projectNodes(effectiveEvents);
     if (!selectedNodeId) return projected;
     return projected.map((n) => (n.id === selectedNodeId ? { ...n, selected: true } : n));
-  }, [events, selectedNodeId]);
-  const edges = useMemo(() => styleEdges(events), [events]);
+  }, [effectiveEvents, selectedNodeId]);
+
+  const baseEdges = useMemo(() => styleEdges(effectiveEvents), [effectiveEvents]);
+
+  const spread = useMemo(() => spreadLayout(baseNodes, baseEdges, 1.5), [baseNodes, baseEdges]);
+
+  const nodes = layoutMode === "spread" ? spread.nodes : baseNodes;
+  const edges = layoutMode === "spread" ? spread.edges : baseEdges;
 
   const handleNodeClick = useCallback<NodeMouseHandler>(
     (_, node) => {
@@ -70,8 +156,17 @@ export function LifecycleCanvas({ events, selectedNodeId, onNodeSelect }: Lifecy
     onNodeSelect?.(null);
   }, [onNodeSelect]);
 
+  const toggleLayout = useCallback(() => {
+    setLayoutMode((m) => (m === "original" ? "spread" : "original"));
+  }, []);
+
+  const showPlay = playback.status === "idle";
+  const showPause = playback.status === "playing";
+  const showResume = playback.status === "paused";
+  const playbackEnabled = stagePath.length > 0;
+
   return (
-    <div className="h-full w-full" style={{ minHeight: 360 }}>
+    <div className="relative h-full w-full" style={{ minHeight: 360 }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -88,6 +183,66 @@ export function LifecycleCanvas({ events, selectedNodeId, onNodeSelect }: Lifecy
         <Background gap={16} size={1} />
         <Controls position="bottom-right" showInteractive={false} />
       </ReactFlow>
+
+      <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-md border bg-card/95 px-2 py-1 shadow-sm backdrop-blur">
+        <Button
+          variant={layoutMode === "spread" ? "default" : "outline"}
+          size="sm"
+          onClick={toggleLayout}
+          aria-pressed={layoutMode === "spread"}
+          title={
+            layoutMode === "spread"
+              ? "Return to the hand-tuned canonical layout"
+              : "Spread nodes outward for breathing room (preserves orientation)"
+          }
+        >
+          {layoutMode === "spread" ? "Original" : "Spread"}
+        </Button>
+
+        {playbackEnabled ? (
+          <>
+            <Separator orientation="vertical" className="h-5" />
+            {showPlay ? (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={playback.play}
+                title="Replay this request stage-by-stage"
+              >
+                ▶ Replay
+              </Button>
+            ) : null}
+            {showPause ? (
+              <Button variant="outline" size="sm" onClick={playback.pause} title="Pause">
+                ❚❚
+              </Button>
+            ) : null}
+            {showResume ? (
+              <Button variant="default" size="sm" onClick={playback.resume} title="Resume">
+                ▶
+              </Button>
+            ) : null}
+            {playback.status !== "idle" ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={playback.skipToEnd}
+                  title="Jump to final state"
+                >
+                  ⏭
+                </Button>
+                <Button variant="ghost" size="sm" onClick={playback.reset} title="Reset to start">
+                  ↺
+                </Button>
+              </>
+            ) : null}
+            <Badge variant="outline" className="text-[10px]">
+              {playback.currentIndex + 1} / {stagePath.length}
+            </Badge>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

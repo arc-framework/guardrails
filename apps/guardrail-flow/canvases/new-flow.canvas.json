@@ -1,0 +1,681 @@
+{
+  "nodes": [
+    {
+      "id": "grp_pipe",
+      "type": "group",
+      "x": -150,
+      "y": -790,
+      "width": 669,
+      "height": 3310,
+      "label": "GuardPipeline — 12 stages, each wrapped by stage_runner"
+    },
+    {
+      "id": "grp_inspectors",
+      "type": "group",
+      "x": 648,
+      "y": -372,
+      "width": 490,
+      "height": 662,
+      "label": "Plugs into stage 3 (classify)"
+    },
+    {
+      "id": "grp_hooks",
+      "type": "group",
+      "x": -1000,
+      "y": -372,
+      "width": 490,
+      "height": 662,
+      "label": "Per-stage emission (stage_runner)"
+    },
+    {
+      "id": "grp_strats",
+      "type": "group",
+      "x": 648,
+      "y": 934,
+      "width": 490,
+      "height": 584,
+      "label": "Plugs into stage 7 (execute)"
+    },
+    {
+      "id": "grp_reps",
+      "type": "group",
+      "x": 648,
+      "y": 1945,
+      "width": 552,
+      "height": 495,
+      "label": "Plugs into stage 12 (report)"
+    },
+    {
+      "id": "input",
+      "type": "text",
+      "text": "## GuardInput\ntext + context\n\n*entry to pre_process()*",
+      "x": 29,
+      "y": -1000,
+      "width": 309,
+      "height": 139,
+      "color": "5"
+    },
+    {
+      "id": "s_validate",
+      "type": "text",
+      "text": "### 1 · validate\nschema + size + boundary checks\n*core/stages.py: STAGE_VALIDATE*",
+      "x": -99,
+      "y": -686,
+      "width": 567,
+      "height": 156,
+      "color": "5"
+    },
+    {
+      "id": "s_defend",
+      "type": "text",
+      "text": "### 2 · defend\ncapture intent representation\n*STAGE_DEFEND — runs only if encoder configured*",
+      "x": -99,
+      "y": -478,
+      "width": 567,
+      "height": 156,
+      "color": "5"
+    },
+    {
+      "id": "s_classify",
+      "type": "text",
+      "text": "### 3 · classify\nrun all inspectors → findings\n*STAGE_CLASSIFY*",
+      "x": -99,
+      "y": -268,
+      "width": 567,
+      "height": 156,
+      "color": "5"
+    },
+    {
+      "id": "h_tracer",
+      "type": "text",
+      "text": "**Tracer** · `observability/recording.py`\nspan: name, attrs, start/end, duration_ms\n→ RecordingTracer · OTEL span",
+      "x": -974,
+      "y": -286,
+      "width": 437,
+      "height": 139,
+      "color": "2"
+    },
+    {
+      "id": "h_logger",
+      "type": "text",
+      "text": "**Logger** · `observability/recording.py`\nstructured event: name, level, fields, ts\n→ RecordingLogger · structlog",
+      "x": -974,
+      "y": -111,
+      "width": 437,
+      "height": 139,
+      "color": "2"
+    },
+    {
+      "id": "h_metric",
+      "type": "text",
+      "text": "**MetricSink** · `observability/recording.py`\ncounter / histogram with attributes\n→ RecordingMetricSink · OTEL metrics\n→ events: guard.intent.captured, guard.fidelity.scored, guard.rehydration.applied/rejected, guard.deception.scored, guard.jailbreak.detected",
+      "x": -974,
+      "y": 63,
+      "width": 437,
+      "height": 174,
+      "color": "2"
+    },
+    {
+      "id": "subp_other",
+      "type": "text",
+      "text": "## Other NEW subpackages\n\n- `concurrency/` — `run_off_loop` for ML offload\n- `decision/` — DecisionEmitter (decision records)\n- `evaluation/` — adversarial eval harness + corpus loader\n- `refusal/` — RefusalEnvelope + 12 refusal codes\n- `middleware/otel/` — OTEL exporter\n- `middleware/jailbreak_ml/` — ClassifierJailbreakDetector\n- `policy/` — RuleBasedPolicyRouter + risk classifier",
+      "x": -1000,
+      "y": 429,
+      "width": 490,
+      "height": 418,
+      "color": "3"
+    },
+    {
+      "id": "s_decept",
+      "type": "text",
+      "text": "### 4 · deception_inspect\nmulti-turn drift score\n*STAGE_DECEPTION_INSPECT*",
+      "x": -99,
+      "y": -59,
+      "width": 567,
+      "height": 156,
+      "color": "5"
+    },
+    {
+      "id": "s_sanitize",
+      "type": "text",
+      "text": "### 5 · sanitize\nbuild placeholder map / mask\n*STAGE_SANITIZE*",
+      "x": -99,
+      "y": 150,
+      "width": 567,
+      "height": 156,
+      "color": "5"
+    },
+    {
+      "id": "s_route",
+      "type": "text",
+      "text": "### 6 · route\npolicy router picks action\n*STAGE_ROUTE*",
+      "x": -99,
+      "y": 359,
+      "width": 567,
+      "height": 156,
+      "color": "5"
+    },
+    {
+      "id": "s_execute",
+      "type": "text",
+      "text": "### 7 · execute\napply chosen strategy\n*STAGE_EXECUTE*",
+      "x": -99,
+      "y": 568,
+      "width": 567,
+      "height": 156,
+      "color": "5"
+    },
+    {
+      "id": "s_refusal",
+      "type": "text",
+      "text": "### 8 · refusal\nbuild RefusalEnvelope\n*if blocked*",
+      "x": -99,
+      "y": 795,
+      "width": 258,
+      "height": 156,
+      "color": "1"
+    },
+    {
+      "id": "s_verify",
+      "type": "text",
+      "text": "### 9 · verify\nfidelity score\n*if pass*",
+      "x": 210,
+      "y": 795,
+      "width": 258,
+      "height": 156,
+      "color": "4"
+    },
+    {
+      "id": "s_rehyd",
+      "type": "text",
+      "text": "### 10 · rehydrate\nverify safety / unmask\n*STAGE_REHYDRATE*",
+      "x": 210,
+      "y": 1004,
+      "width": 258,
+      "height": 156,
+      "color": "4"
+    },
+    {
+      "id": "s_decemit",
+      "type": "text",
+      "text": "### 11 · decision_emit\nemit DecisionRecord\n*STAGE_DECISION_EMIT*",
+      "x": -99,
+      "y": 1230,
+      "width": 567,
+      "height": 156,
+      "color": "5"
+    },
+    {
+      "id": "s_report",
+      "type": "text",
+      "text": "### 12 · report\nfire all reporters async\n*STAGE_REPORT*",
+      "x": -99,
+      "y": 1440,
+      "width": 567,
+      "height": 156,
+      "color": "5"
+    },
+    {
+      "id": "result",
+      "type": "text",
+      "text": "## GuardResult\naction + findings + fidelity + decision_record",
+      "x": 29,
+      "y": 1667,
+      "width": 309,
+      "height": 139,
+      "color": "5"
+    },
+    {
+      "id": "subp_pol",
+      "type": "text",
+      "text": "**RuleBasedPolicyRouter** · `policy/router.py`\npicks action from finding risk × policy rules",
+      "x": 674,
+      "y": 725,
+      "width": 437,
+      "height": 139,
+      "color": "6"
+    },
+    {
+      "id": "st_redact",
+      "type": "text",
+      "text": "**RedactStrategy** · `strategies/redact.py`",
+      "x": 674,
+      "y": 1022,
+      "width": 437,
+      "height": 104,
+      "color": "6"
+    },
+    {
+      "id": "st_hash",
+      "type": "text",
+      "text": "**HashStrategy** · `strategies/hash.py`",
+      "x": 674,
+      "y": 1143,
+      "width": 437,
+      "height": 104,
+      "color": "6"
+    },
+    {
+      "id": "st_block",
+      "type": "text",
+      "text": "**BlockStrategy** · `strategies/block.py`",
+      "x": 674,
+      "y": 1265,
+      "width": 437,
+      "height": 104,
+      "color": "6"
+    },
+    {
+      "id": "st_token",
+      "type": "text",
+      "text": "**TokenizeStrategy** · `strategies/tokenize.py` *(NEW)*",
+      "x": 674,
+      "y": 1388,
+      "width": 437,
+      "height": 104,
+      "color": "6"
+    },
+    {
+      "id": "st_warn",
+      "type": "text",
+      "text": "**WarnStrategy** · `strategies/warn.py` *(NEW)*",
+      "x": 1137,
+      "y": 1143,
+      "width": 258,
+      "height": 104,
+      "color": "6"
+    },
+    {
+      "id": "st_reg",
+      "type": "text",
+      "text": "**registry** · `strategies/registry.py`\nfreeze/get/list APIs",
+      "x": 1137,
+      "y": 1265,
+      "width": 258,
+      "height": 104,
+      "color": "3"
+    },
+    {
+      "id": "subp_fid",
+      "type": "text",
+      "text": "**FidelityScorer** · `fidelity/scorer.py`\nNullFidelityScorer default · `[semantic]` Cosine scorer",
+      "x": 674,
+      "y": 1561,
+      "width": 437,
+      "height": 139,
+      "color": "6"
+    },
+    {
+      "id": "note_summary",
+      "type": "text",
+      "text": "## How the NEW flow works\n\n1. **12 named stages** orchestrated by `pipeline.py`. Each stage runs inside `stage_runner(stage=..., tracer=..., logger=..., metrics=...)` — uniform span / event / metric emission.\n2. **Inspectors plug into stage 3 (classify)**. JailbreakDetector also runs here (via the jailbreak/ subpackage).\n3. **Strategies plug into stage 7 (execute)** via the `registry` (5 built-in + extensible).\n4. **Research subpackages own their own stages**: intent/ → defend, deception/ → deception_inspect, fidelity/ → verify, rehydration/ → rehydrate.\n5. **Branching at stage 7**: `blocked` → refusal envelope; `pass` → verify + rehydrate. Both rejoin at decision_emit + report.\n6. **Adapters (NATS, Unleash, Webhook)** are NOT in pip/ anymore — moved to backlog §4.2 to keep the SDK provider-neutral. Operators implement Reporter Protocol externally.\n\n**Class count**: 3 inspectors + 5 strategies + 2 reporters + 2 flag providers (in pip/) + 12 new subpackages owning their own Protocol surfaces.",
+      "x": 1737,
+      "y": 847,
+      "width": 603,
+      "height": 593,
+      "color": "3"
+    },
+    {
+      "id": "subp_decept",
+      "type": "text",
+      "text": "**ConversationTurnInspector** · `deception/inspector.py`\nstateful counter-based — no ML",
+      "x": 674,
+      "y": 325,
+      "width": 437,
+      "height": 139,
+      "color": "6"
+    },
+    {
+      "id": "subp_sem",
+      "type": "text",
+      "text": "**SemanticInspector** · `middleware/semantic/`\nmoved out of inspectors/ — `[semantic]` extra",
+      "x": 674,
+      "y": 516,
+      "width": 437,
+      "height": 139,
+      "color": "6"
+    },
+    {
+      "id": "i_inj",
+      "type": "text",
+      "text": "**InjectionInspector** · `inspectors/injection.py`",
+      "x": 674,
+      "y": -286,
+      "width": 437,
+      "height": 104,
+      "color": "4"
+    },
+    {
+      "id": "subp_rehyd",
+      "type": "text",
+      "text": "**RehydrationVerifier** · `rehydration/verifier.py`\nstructural checks + `[semantic]` safety-regression check",
+      "x": 674,
+      "y": 1753,
+      "width": 437,
+      "height": 139,
+      "color": "6"
+    },
+    {
+      "id": "r_log",
+      "type": "text",
+      "text": "**LogReporter** · `reporters/log_reporter.py`",
+      "x": 674,
+      "y": 2033,
+      "width": 437,
+      "height": 104,
+      "color": "2"
+    },
+    {
+      "id": "r_null",
+      "type": "text",
+      "text": "**NullReporter** · `reporters/null_reporter.py`",
+      "x": 674,
+      "y": 2154,
+      "width": 437,
+      "height": 104,
+      "color": "2"
+    },
+    {
+      "id": "r_drop",
+      "type": "text",
+      "text": "*WebhookReporter / NatsReporter — DROPPED to backlog §4.2*",
+      "x": 674,
+      "y": 2276,
+      "width": 437,
+      "height": 104,
+      "color": "1"
+    },
+    {
+      "id": "i_pres",
+      "type": "text",
+      "text": "**PresidioInspector** · `inspectors/presidio.py`",
+      "x": 674,
+      "y": -147,
+      "width": 437,
+      "height": 104,
+      "color": "4"
+    },
+    {
+      "id": "i_cust",
+      "type": "text",
+      "text": "**CustomInspector** · `inspectors/custom.py`",
+      "x": 674,
+      "y": -7,
+      "width": 437,
+      "height": 104,
+      "color": "4"
+    },
+    {
+      "id": "i_jb",
+      "type": "text",
+      "text": "**JailbreakDetector** · `jailbreak/detector.py`\nrule-based default + `[jailbreak-ml]` ClassifierJailbreakDetector",
+      "x": 674,
+      "y": 132,
+      "width": 437,
+      "height": 139,
+      "color": "1"
+    },
+    {
+      "id": "subp_intent",
+      "type": "text",
+      "text": "**IntentEncoder** · `intent/capture.py`\nNullIntentEncoder default · `[semantic]` SentenceTransformer",
+      "x": 700,
+      "y": -686,
+      "width": 437,
+      "height": 139,
+      "color": "6"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "fromNode": "input",
+      "fromSide": "bottom",
+      "toNode": "s_validate",
+      "toSide": "top"
+    },
+    {
+      "id": "e2",
+      "fromNode": "s_validate",
+      "fromSide": "bottom",
+      "toNode": "s_defend",
+      "toSide": "top"
+    },
+    {
+      "id": "e3",
+      "fromNode": "s_defend",
+      "fromSide": "bottom",
+      "toNode": "s_classify",
+      "toSide": "top"
+    },
+    {
+      "id": "e4",
+      "fromNode": "s_classify",
+      "fromSide": "bottom",
+      "toNode": "s_decept",
+      "toSide": "top"
+    },
+    {
+      "id": "e5",
+      "fromNode": "s_decept",
+      "fromSide": "bottom",
+      "toNode": "s_sanitize",
+      "toSide": "top"
+    },
+    {
+      "id": "e6",
+      "fromNode": "s_sanitize",
+      "fromSide": "bottom",
+      "toNode": "s_route",
+      "toSide": "top"
+    },
+    {
+      "id": "e7",
+      "fromNode": "s_route",
+      "fromSide": "bottom",
+      "toNode": "s_execute",
+      "toSide": "top"
+    },
+    {
+      "id": "e8",
+      "fromNode": "s_execute",
+      "fromSide": "bottom",
+      "toNode": "s_refusal",
+      "toSide": "top",
+      "color": "1",
+      "label": "blocked"
+    },
+    {
+      "id": "e9",
+      "fromNode": "s_execute",
+      "fromSide": "bottom",
+      "toNode": "s_verify",
+      "toSide": "top",
+      "color": "4",
+      "label": "pass"
+    },
+    {
+      "id": "e10",
+      "fromNode": "s_verify",
+      "fromSide": "bottom",
+      "toNode": "s_rehyd",
+      "toSide": "top"
+    },
+    {
+      "id": "e11",
+      "fromNode": "s_refusal",
+      "fromSide": "bottom",
+      "toNode": "s_decemit",
+      "toSide": "top"
+    },
+    {
+      "id": "e12",
+      "fromNode": "s_rehyd",
+      "fromSide": "bottom",
+      "toNode": "s_decemit",
+      "toSide": "top"
+    },
+    {
+      "id": "e13",
+      "fromNode": "s_decemit",
+      "fromSide": "bottom",
+      "toNode": "s_report",
+      "toSide": "top"
+    },
+    {
+      "id": "e14",
+      "fromNode": "s_report",
+      "fromSide": "bottom",
+      "toNode": "result",
+      "toSide": "top"
+    },
+    {
+      "id": "p_intent",
+      "fromNode": "s_defend",
+      "fromSide": "right",
+      "toNode": "subp_intent",
+      "toSide": "left",
+      "label": "uses"
+    },
+    {
+      "id": "p_inj",
+      "fromNode": "s_classify",
+      "fromSide": "right",
+      "toNode": "i_inj",
+      "toSide": "left",
+      "label": "calls"
+    },
+    {
+      "id": "p_pres",
+      "fromNode": "s_classify",
+      "fromSide": "right",
+      "toNode": "i_pres",
+      "toSide": "left"
+    },
+    {
+      "id": "p_cust",
+      "fromNode": "s_classify",
+      "fromSide": "right",
+      "toNode": "i_cust",
+      "toSide": "left"
+    },
+    {
+      "id": "p_jb",
+      "fromNode": "s_classify",
+      "fromSide": "right",
+      "toNode": "i_jb",
+      "toSide": "left"
+    },
+    {
+      "id": "p_dec",
+      "fromNode": "s_decept",
+      "fromSide": "right",
+      "toNode": "subp_decept",
+      "toSide": "left",
+      "label": "uses"
+    },
+    {
+      "id": "p_sem",
+      "fromNode": "s_sanitize",
+      "fromSide": "right",
+      "toNode": "subp_sem",
+      "toSide": "left",
+      "label": "uses"
+    },
+    {
+      "id": "p_pol",
+      "fromNode": "s_route",
+      "fromSide": "right",
+      "toNode": "subp_pol",
+      "toSide": "left",
+      "label": "uses"
+    },
+    {
+      "id": "p_str_red",
+      "fromNode": "s_execute",
+      "fromSide": "right",
+      "toNode": "st_redact",
+      "toSide": "left",
+      "label": "applies"
+    },
+    {
+      "id": "p_str_h",
+      "fromNode": "s_execute",
+      "fromSide": "right",
+      "toNode": "st_hash",
+      "toSide": "left"
+    },
+    {
+      "id": "p_str_b",
+      "fromNode": "s_execute",
+      "fromSide": "right",
+      "toNode": "st_block",
+      "toSide": "left"
+    },
+    {
+      "id": "p_str_t",
+      "fromNode": "s_execute",
+      "fromSide": "right",
+      "toNode": "st_token",
+      "toSide": "left"
+    },
+    {
+      "id": "p_fid",
+      "fromNode": "s_verify",
+      "fromSide": "right",
+      "toNode": "subp_fid",
+      "toSide": "left",
+      "label": "uses"
+    },
+    {
+      "id": "p_rehyd",
+      "fromNode": "s_rehyd",
+      "fromSide": "right",
+      "toNode": "subp_rehyd",
+      "toSide": "left",
+      "label": "uses"
+    },
+    {
+      "id": "p_rep_log",
+      "fromNode": "s_report",
+      "fromSide": "right",
+      "toNode": "r_log",
+      "toSide": "left",
+      "label": "fires"
+    },
+    {
+      "id": "p_rep_null",
+      "fromNode": "s_report",
+      "fromSide": "right",
+      "toNode": "r_null",
+      "toSide": "left"
+    },
+    {
+      "id": "h_to_classify",
+      "fromNode": "h_tracer",
+      "fromSide": "right",
+      "toNode": "s_classify",
+      "toSide": "left",
+      "color": "3",
+      "label": "every stage"
+    },
+    {
+      "id": "h_to_execute",
+      "fromNode": "h_metric",
+      "fromSide": "right",
+      "toNode": "s_execute",
+      "toSide": "left",
+      "color": "3",
+      "label": "every stage"
+    },
+    {
+      "id": "h_to_logger",
+      "fromNode": "h_logger",
+      "fromSide": "right",
+      "toNode": "s_defend",
+      "toSide": "left",
+      "color": "3",
+      "label": "every stage"
+    }
+  ]
+}

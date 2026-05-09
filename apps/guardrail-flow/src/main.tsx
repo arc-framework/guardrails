@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import App from "./App";
 import { ExplorerRoute } from "./routes/explorer";
 import { WorkspaceRoute } from "./routes/workspace";
+import { ArchitectureIndexRoute } from "./routes/architecture-index";
+import { ArchitectureCanvasRoute } from "./routes/architecture-canvas";
 import { createQueryClient } from "@/lib/state/query-client";
 import { useUiStore } from "@/lib/state/ui-store";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
@@ -49,6 +51,22 @@ ReactDOM.createRoot(root).render(
                   element={
                     <RouteBoundary>
                       <WorkspaceRoute />
+                    </RouteBoundary>
+                  }
+                />
+                <Route
+                  path="/architecture"
+                  element={
+                    <RouteBoundary>
+                      <ArchitectureIndexRoute />
+                    </RouteBoundary>
+                  }
+                />
+                <Route
+                  path="/architecture/:slug"
+                  element={
+                    <RouteBoundary>
+                      <ArchitectureCanvasRoute />
                     </RouteBoundary>
                   }
                 />

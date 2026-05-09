@@ -1,6 +1,7 @@
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, NavLink } from "react-router-dom";
 import { env } from "@/lib/env";
 import { useUiStore } from "@/lib/state/ui-store";
+import { cn } from "@/lib/utils";
 
 const SSE_LABELS: Record<string, string> = {
   idle: "idle",
@@ -33,10 +34,34 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b px-4 py-2">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Link to="/requests" className="text-base font-semibold">
             GuardRailFlow
           </Link>
+          <nav className="flex items-center gap-3 text-xs">
+            <NavLink
+              to="/requests"
+              className={({ isActive }) =>
+                cn(
+                  "text-muted-foreground hover:text-foreground",
+                  isActive && "font-medium text-foreground",
+                )
+              }
+            >
+              Requests
+            </NavLink>
+            <NavLink
+              to="/architecture"
+              className={({ isActive }) =>
+                cn(
+                  "text-muted-foreground hover:text-foreground",
+                  isActive && "font-medium text-foreground",
+                )
+              }
+            >
+              Architecture
+            </NavLink>
+          </nav>
           {env.mode === "fixture" ? (
             <span className="rounded bg-yellow-200 px-2 py-0.5 text-xs font-medium text-yellow-900 dark:bg-yellow-800 dark:text-yellow-100">
               FIXTURE MODE
