@@ -154,3 +154,21 @@ def to_openapi_examples(prompts: list[CorpusPrompt]) -> dict[str, dict[str, Any]
             "value": p.request,
         }
     return out
+
+
+# `CORPUS_DIR` resolves at import time relative to the package source tree.
+# In production, an empty corpus would be a developer error — but we still
+# avoid raising at import to support the `python -m ... --validate` workflow,
+# which needs to load the module before the corpus is fully populated.
+_PACKAGE_ROOT = Path(__file__).resolve().parents[3]  # packages/api
+CORPUS_DIR = _PACKAGE_ROOT / "tests" / "corpus"
+
+
+def _load_openapi_examples() -> dict[str, dict[str, Any]]:
+    if not (CORPUS_DIR / "prompts").is_dir():
+        return {}
+    prompts = load_corpus(CORPUS_DIR)
+    return to_openapi_examples(prompts)
+
+
+OPENAPI_EXAMPLES: dict[str, dict[str, Any]] = _load_openapi_examples()

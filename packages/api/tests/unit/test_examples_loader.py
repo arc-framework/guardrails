@@ -186,3 +186,9 @@ def test_to_openapi_examples_shape_and_description_appends_expected_block():
     assert "redact" in entry["description"]
     assert "EMAIL_ADDRESS" in entry["description"]
     assert entry["value"] == p.request
+
+
+def test_module_level_constants_resolve():
+    from arc_guard_service import examples_loader
+    assert examples_loader.CORPUS_DIR.name == "corpus"
+    assert callable(examples_loader._load_openapi_examples)
