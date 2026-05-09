@@ -97,6 +97,14 @@ def test_corpus_prompt_id_third_segment_must_be_decimal():
         CorpusPrompt.model_validate(bad)
 
 
+def test_corpus_prompt_id_difficulty_segment_must_match_difficulty_field():
+    bad = _valid_prompt_dict()
+    bad["id"] = "pii_presidio__easy__01"
+    bad["difficulty"] = "medium"
+    with pytest.raises(ValidationError, match="difficulty segment"):
+        CorpusPrompt.model_validate(bad)
+
+
 def _write_yaml(tmp_path: Path, name: str, body: str) -> Path:
     prompts = tmp_path / "prompts"
     prompts.mkdir(parents=True, exist_ok=True)
