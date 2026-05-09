@@ -84,6 +84,29 @@ services:
       api:
         condition: service_healthy
 
+  # GuardRailFlow operator dashboard (Vite dev server). Dev profile only.
+  # Source is bind-mounted for hot-reload; node_modules live in a named volume
+  # so the host directory does not stomp on the container's installed packages.
+  # The browser talks directly to the api service via localhost:8766 — the env
+  # var must use the host address, not the Docker-internal service name.
+  dashboard:
+    profiles: ["dev"]
+    build:
+      context: ../../apps/guardrail-flow
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_DASHBOARD_MODE: live
+      VITE_DASHBOARD_API_URL: "http://localhost:8766"
+    volumes:
+      - ../../apps/guardrail-flow:/app
+      - guardrail-flow-modules:/app/node_modules
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   ollama-models:
   lifecycle-data:
+  guardrail-flow-modules:

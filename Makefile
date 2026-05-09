@@ -12,7 +12,7 @@ TOOLS_DIR    := tools
 .PHONY: help init install install-minimal \
         smoke \
         api-up api-down api-logs demo sse \
-        docker-build docker-up docker-up-prod docker-down docker-logs docker-nuke \
+        docker-build docker-up docker-up-prod docker-down docker-logs docker-nuke dashboard-logs \
         test test-core test-pip test-api \
         lint lint-core lint-pip lint-api \
         typecheck typecheck-core typecheck-pip typecheck-api \
@@ -42,12 +42,13 @@ help:
 	@echo "  sse                live terminal dashboard for the /events SSE feed (foreground; Ctrl-C to stop)"
 	@echo "                       SSE_URL=http://host:port/events make sse  # point at a different api"
 	@echo
-	@echo "Docker (full Compose stack — api + ollama + llama3.2 + sqlite-ui):"
+	@echo "Docker (full Compose stack — api + ollama + llama3.2 + sqlite-ui + dashboard):"
 	@echo "  docker-build       build the arc-guard-service image"
-	@echo "  docker-up          boot dev profile (api + ollama + sqlite-web DB browser); auto-pulls llama3.2 ~2GB on first run"
-	@echo "  docker-up-prod     boot prod profile (DB browser suppressed)"
+	@echo "  docker-up          boot dev profile (api + ollama + sqlite-web + GuardRailFlow dashboard); auto-pulls llama3.2 ~2GB on first run"
+	@echo "  docker-up-prod     boot prod profile (DB browser + dashboard suppressed)"
 	@echo "  docker-down        stop the stack"
 	@echo "  docker-logs        follow the api container's logs"
+	@echo "  dashboard-logs     follow the GuardRailFlow dashboard container's logs"
 	@echo "  docker-nuke        DESTRUCTIVE: stop stack + remove volumes + remove project images (frees ~5-6GB)"
 	@echo
 	@echo "Per-package quality gates:"
@@ -211,11 +212,14 @@ docker-up:
 	@until curl -sf http://127.0.0.1:8766/ >/dev/null 2>&1; do sleep 1; done
 	@echo "waiting for sqlite-ui (dev profile) to respond on http://127.0.0.1:8081/ ..."
 	@until curl -sf http://127.0.0.1:8081/ >/dev/null 2>&1; do sleep 1; done
+	@echo "waiting for dashboard (GuardRailFlow) to respond on http://127.0.0.1:5173/ ..."
+	@until curl -sf http://127.0.0.1:5173/ >/dev/null 2>&1; do sleep 2; done
 	@echo
 	@echo "Stack up (dev profile):"
 	@echo "  api         http://127.0.0.1:8766"
 	@echo "  ollama      http://127.0.0.1:11434"
 	@echo "  sqlite-ui   http://127.0.0.1:8081  (DB browser; dev profile only)"
+	@echo "  dashboard   http://127.0.0.1:5173  (GuardRailFlow; dev profile only)"
 	@echo
 	@echo "  Guard endpoint:    POST http://127.0.0.1:8766/v1/guard"
 	@echo "  Chat endpoint:     POST http://127.0.0.1:8766/v1/chat/completions"
@@ -253,6 +257,9 @@ docker-down:
 docker-logs:
 	docker compose -f $(COMPOSE_FILE) logs -f api
 
+dashboard-logs:
+	docker compose -f $(COMPOSE_FILE) logs -f dashboard
+
 # docker-nuke — full teardown. DESTRUCTIVE: deletes the llama3.2 model cache
 # (~2GB) AND the entire lifecycle event history stored in api_lifecycle-data.
 # Removes every image this project has ever built (current + stale tags from
@@ -262,9 +269,9 @@ docker-nuke:
 	@echo "tearing down containers and named volumes (deletes lifecycle event history)..."
 	-docker compose -f $(COMPOSE_FILE) --profile dev --profile prod down --volumes --remove-orphans
 	@echo "removing any orphaned project volumes..."
-	-docker volume rm api_lifecycle-data api_ollama-models 2>/dev/null || true
+	-docker volume rm api_lifecycle-data api_ollama-models api_guardrail-flow-modules 2>/dev/null || true
 	@echo "removing project images..."
-	-docker image rm $(DOCKER_IMAGE) arc-guard-api:dev api-api:latest 2>/dev/null || true
+	-docker image rm $(DOCKER_IMAGE) arc-guard-api:dev api-api:latest api-dashboard:latest 2>/dev/null || true
 	@echo "done. next 'make docker-up' will rebuild from scratch and re-pull llama3.2 (~2GB)."
 
 # ---------- Tests ----------
