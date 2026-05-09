@@ -54,8 +54,8 @@ def test_tagged_union_is_exhaustive() -> None:
 
 
 def test_event_count_matches_spec() -> None:
-    """Spec promises 28 types: 23 base + 5 conditional."""
-    assert len(ALL_EVENT_TYPES) == 28
+    """Spec promises 29 types: 24 base + 5 conditional."""
+    assert len(ALL_EVENT_TYPES) == 29
 
 
 def _sample_event(cls: type[LifecycleEventBase]) -> LifecycleEventBase:

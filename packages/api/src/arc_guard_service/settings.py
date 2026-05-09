@@ -132,6 +132,20 @@ class ServiceSettings(BaseSettings):
         default=5000, ge=10, le=100_000
     )
 
+    # Stale-live sweeper. The sweeper finds rows in `request_summaries` with
+    # `live=1` whose `last_event_at` is older than `stale_threshold_seconds`,
+    # emits a `RequestErrored` event for each, and lets the projector flip
+    # the row to `live=0 status=errored`. Set
+    # `request_summary_sweep_interval_seconds` to 0 (or any value <= 0) to
+    # disable the sweeper entirely — useful for dev sessions that want stuck
+    # rows to persist for inspection.
+    #
+    # Env vars:
+    #   ARC_GUARD_SERVICE_REQUEST_SUMMARY_STALE_THRESHOLD_SECONDS
+    #   ARC_GUARD_SERVICE_REQUEST_SUMMARY_SWEEP_INTERVAL_SECONDS
+    request_summary_stale_threshold_seconds: int = Field(default=600, ge=1)
+    request_summary_sweep_interval_seconds: int = Field(default=60, ge=0)
+
     @field_validator("dashboard_origins", mode="before")
     @classmethod
     def _coerce_origins_from_env(cls, value: object) -> object:

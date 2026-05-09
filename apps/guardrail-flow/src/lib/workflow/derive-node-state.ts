@@ -16,7 +16,10 @@
  *     - RefusalProduced     → refusal stage flips to `blocked` (terminal)
  * - The "currently executing" stage (only meaningful in live mode) is
  *   the one whose `*Started` event has fired but whose `StageRan` has
- *   not — represented as `active`.
+ *   not — represented as `active`. During replay of a *completed*
+ *   request, callers can pass `activeOverride` to mark whichever stage
+ *   the replay cursor currently sits on as `active` so the leading-
+ *   dashed-edge animation triggers the same way it does in live mode.
  */
 
 import type { LifecycleEventBase, StageName } from "@/types/api";
@@ -44,6 +47,7 @@ function initialMap(): Record<StageName, WorkflowNodeState> {
 
 export function deriveNodeStates(
   events: LifecycleEventBase[],
+  activeOverride: StageName | null = null,
 ): Record<StageName, WorkflowNodeState> {
   const out = initialMap();
 
@@ -93,6 +97,15 @@ export function deriveNodeStates(
       out.refusal.state = "blocked";
       continue;
     }
+  }
+
+  // Replay-cursor override: paint whichever stage the cursor currently
+  // sits on as ``active`` so the canvas's leading-dashed-edge animation
+  // fires the same way it does in true-live mode. We only override when
+  // the override targets a stage that already terminated — leaving live
+  // requests' active state alone.
+  if (activeOverride && activeOverride in out) {
+    out[activeOverride].state = "active";
   }
 
   return out;

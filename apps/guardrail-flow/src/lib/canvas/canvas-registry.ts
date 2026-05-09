@@ -31,7 +31,7 @@ export const CANVAS_REGISTRY: readonly CanvasRegistryEntry[] = [
     slug: "request-flow",
     title: "Request flow — four request shapes",
     description:
-      "Four real request shapes that hit the running arc-guard-service: benign chat, PII redaction, prompt-injection block, and the generic /v1/guard direct call. Each column lists every class on the call path top-to-bottom.",
+      "Three live request shapes that hit the running arc-guard-service via /v1/chat/completions: benign chat, PII redaction, and prompt-injection block. The fourth column is the retired /v1/guard lane (now a 410 Gone tombstone) kept as a historical reference. Each column lists every class on the call path top-to-bottom.",
     data: requestFlowJson as unknown as CanvasFile,
     ridDrivable: false,
   },

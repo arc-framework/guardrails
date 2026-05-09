@@ -121,7 +121,8 @@ def test_backend_responded_token_usage_round_trips() -> None:
     assert asdict(ev)["token_usage"] == usage
 
 
-def test_closed_taxonomy_unchanged() -> None:
-    """The closed lifecycle event union must stay at 28 types — no new
-    event classes were added by this spec."""
-    assert len(ALL_EVENT_TYPES) == 28
+def test_closed_taxonomy_size() -> None:
+    """The closed lifecycle event union ships 29 types: 24 base + 5
+    conditional. ``RequestErrored`` is the terminal sister-class to
+    ``RequestCompleted``."""
+    assert len(ALL_EVENT_TYPES) == 29

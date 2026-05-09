@@ -1,7 +1,7 @@
-# arc-guard-service container.
+# arc-guardrail-service container.
 #
 # Build context: repo root (so the packages/ workspace is available).
-#   docker build -f packages/api/Dockerfile -t arc-guard-service .
+#   docker build -f packages/api/Dockerfile -t arc-guardrail-service .
 
 FROM python:3.11-slim AS base
 

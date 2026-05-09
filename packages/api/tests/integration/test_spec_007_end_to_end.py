@@ -27,13 +27,18 @@ def test_us1_part1_in_process_run_guard_works() -> None:
 
 @pytest.mark.asyncio
 async def test_us1_part2_http_transport_works() -> None:
+    """The HTTP transport is reachable. ``/v1/guard`` is now a tombstone
+    (410 Gone with a pointer envelope to ``/v1/chat/completions``); the
+    transport itself still serves the request, which is the property
+    this canary actually cares about."""
     app = create_app(ServiceSettings())
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.post("/v1/guard", json={"text": "hello"})
-    assert response.status_code == 200
+    assert response.status_code == 410
     body = response.json()
-    assert "action" in body
+    assert body["error"]["code"] == "endpoint_removed"
+    assert body["error"]["replacement"] == "/v1/chat/completions"
 
 
 def test_us2_public_surface_manifest_check_passes() -> None:

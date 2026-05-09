@@ -106,6 +106,8 @@ from arc_guard_core.stages import (
     STAGE_REHYDRATE,
     STAGE_REPORT,
     STAGE_ROUTE,
+    STAGE_SANITIZE,
+    STAGE_VALIDATE,
     STAGE_VERIFY,
 )
 from arc_guard_core.types import (
@@ -556,6 +558,24 @@ class GuardPipeline:
             **run_started_fields,
         )
 
+        # --- Input validation marker (STAGE_VALIDATE) ---
+        # The pipeline never accepts a malformed ``GuardInput`` — the
+        # dataclass + validators at the API boundary reject it before we
+        # ever get here. By the time _run_pipeline runs, we know the input
+        # is structurally valid, so we record a zero-duration marker so
+        # the canvas can show the stage as "completed" rather than dark.
+        _t0_validate = time.perf_counter()
+        with stage_runner(
+            STAGE_VALIDATE,
+            **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
+        ):
+            pass
+        await self._emit_via_ctx(
+            guard_input, StageRan, stage=STAGE_VALIDATE,
+            duration_ms=(time.perf_counter() - _t0_validate) * 1000,
+            status="ok",
+        )
+
         # --- Middleware before ---
         effective_input = guard_input
         for mw in self._middlewares:
@@ -875,10 +895,39 @@ class GuardPipeline:
             conversation_state=updated_state,
         )
 
+        # --- Sanitization marker (STAGE_SANITIZE) ---
+        # The actual placeholder substitution happens inside the strategy
+        # invoked by STAGE_EXECUTE below; sanitize is the canonical pipeline
+        # boundary at which "we know there are entities and they MAY be
+        # placeholdered downstream". Status is "skipped" when there are no
+        # findings (nothing to sanitize) so the canvas can render the
+        # distinction.
+        _t0_sanitize = time.perf_counter()
+        with stage_runner(
+            STAGE_SANITIZE,
+            **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
+        ):
+            pass
+        await self._emit_via_ctx(
+            guard_input, StageRan, stage=STAGE_SANITIZE,
+            duration_ms=(time.perf_counter() - _t0_sanitize) * 1000,
+            status="ok" if result.findings else "skipped",
+        )
+
         # --- ActionStrategy / PolicyRouter (STAGE_ROUTE + STAGE_EXECUTE + STAGE_DECISION_EMIT) ---
         outcome_band: str = "LOW"
         outcome: Any = None
         latency_ms: float = 0.0
+        # When no policy ruleset is wired the canonical route stage is a no-op —
+        # the pipeline still considers the routing question, just immediately
+        # falls through. Emit a skipped marker so the canvas reflects the
+        # decision boundary even on the legacy / pass-through paths.
+        if self._policy_ruleset is None:
+            await self._emit_via_ctx(
+                guard_input, StageRan, stage=STAGE_ROUTE,
+                duration_ms=0.0,
+                status="skipped",
+            )
         if self._policy_ruleset is not None:
             # Opt-in policy routing: per-finding decisions, aggregated band,
             # decision-record emission.
@@ -952,6 +1001,16 @@ class GuardPipeline:
                         outcome=_r_outcome,
                         contributed_to_action=(_r_outcome == "matched" and _action_is_user_visible),
                     )
+            # STAGE_EXECUTE marker — on the policy-ruleset path the strategy
+            # work happens inside ``apply_outcome`` (called within route's
+            # stage_runner). Emit a marker so the canvas shows execute as
+            # having run; status reflects whether route's strategy actually
+            # produced a non-None outcome.
+            await self._emit_via_ctx(
+                guard_input, StageRan, stage=STAGE_EXECUTE,
+                duration_ms=0.0,
+                status="ok" if outcome is not None else "err",
+            )
             # STAGE_REFUSAL marker — fires only when the run produced a refusal
             # envelope. The construction itself happens inside the router; this
             # marker makes the existence observable AND records the refusal's
@@ -1122,6 +1181,15 @@ class GuardPipeline:
                         entity_types=sorted({f.entity_type for f in result.findings}),
                         map=_placeholder_map if _capture_raw else None,
                     )
+        else:
+            # Pass-through: no policy ruleset and no findings. Emit a
+            # ``skipped`` execute marker so the canvas can show the stage
+            # as having been considered (and intentionally bypassed).
+            await self._emit_via_ctx(
+                guard_input, StageRan, stage=STAGE_EXECUTE,
+                duration_ms=0.0,
+                status="skipped",
+            )
 
         # --- Fidelity score (STAGE_VERIFY) ---
         # Runs after the existing execute / refusal-construction flow
@@ -1241,6 +1309,8 @@ class GuardPipeline:
         # the rehydrate stage is a no-op.
         entity_map = _entity_map_from_outcome(outcome)
         if entity_map and result.refusal is None:
+            _t0_rehydrate = time.perf_counter()
+            _rehydrate_status = "ok"
             with stage_runner(
                 STAGE_REHYDRATE,
                 **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
@@ -1285,6 +1355,12 @@ class GuardPipeline:
                     logger.warning(
                         "Rehydration verifier raised %s — keeping placeholders", exc,
                     )
+                    _rehydrate_status = "err"
+            await self._emit_via_ctx(
+                guard_input, StageRan, stage=STAGE_REHYDRATE,
+                duration_ms=(time.perf_counter() - _t0_rehydrate) * 1000,
+                status=_rehydrate_status,
+            )
 
         # --- Build the intent lock binding ---
         # The lock contains content-addressed hashes of the original
@@ -1315,9 +1391,17 @@ class GuardPipeline:
                 intent_lock = None
 
         # --- Decision record emission (STAGE_DECISION_EMIT) ---
-        # Only emits when the policy router actually ran (``outcome`` is
-        # not None). The record carries the fidelity score from the
-        # verify stage above and the intent lock from the defend chain.
+        # The full DecisionRecord build + emit only fires when the policy
+        # router actually ran (``outcome is not None``). On the legacy /
+        # pass-through paths we still emit a ``skipped`` StageRan marker so
+        # the canvas shows the stage as having been considered, even though
+        # no record was built.
+        if outcome is None:
+            await self._emit_via_ctx(
+                guard_input, StageRan, stage=STAGE_DECISION_EMIT,
+                duration_ms=0.0,
+                status="skipped",
+            )
         if outcome is not None:
             _t0_demit = time.perf_counter()
             with stage_runner(

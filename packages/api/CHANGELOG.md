@@ -2,6 +2,21 @@
 
 All notable changes to the `arc-guard-service` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.7.0] — 2026-05-09
+
+### Removed
+- `POST /v1/guard` — retired. The route is now a tombstone returning HTTP 410 Gone with a JSON envelope pointing at `POST /v1/chat/completions`. Migration: switch any `/v1/guard` caller to `/v1/chat/completions`; that endpoint runs the full 12-stage guard pipeline (inbound `pre_process` + outbound `post_process`) and returns OpenAI-compatible chat-completion bodies. The legacy endpoint had zero observed production callers — removal was preferred over a deprecation window.
+
+### Added
+- Two new sweeper settings on `ServiceSettings`:
+  - `request_summary_stale_threshold_seconds` (int, default 600, ge=1) — rows in `request_summaries` with `live=1` and `last_event_at` older than this threshold are considered stuck.
+  - `request_summary_sweep_interval_seconds` (int, default 60, ge=0) — how often the sweeper polls. Set to 0 (or any value <= 0) to disable the sweeper entirely (useful for dev sessions that want stuck rows to persist for inspection).
+  - Env vars: `ARC_GUARD_SERVICE_REQUEST_SUMMARY_STALE_THRESHOLD_SECONDS`, `ARC_GUARD_SERVICE_REQUEST_SUMMARY_SWEEP_INTERVAL_SECONDS`.
+
+### Changed
+- `app.state.arc_guard_metrics` no longer carries `requests_total` or `duration` — those counters were `/v1/guard` specific. The `timeout` counter remains (the `RequestTimeoutMiddleware` is still wired against the chat-completions path).
+- HTTP transport's `create_app` no longer imports `validate_request_payload`, `pipeline_error_to_http`, `envelope_for_invalid_request`, or `ArcGuardError` / `ApiBoundaryValidationError` — those were used only by the retired `/v1/guard` handler. The validators / error-mapping helpers themselves remain in `arc_guard_service.validators` / `arc_guard_service.transport.errors` for downstream callers that import them directly.
+
 ## [0.6.0] — 2026-05-09
 
 ### Added

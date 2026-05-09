@@ -170,7 +170,70 @@ export interface BackendRespondedEvent extends LifecycleEventBase {
   event_type: "BackendResponded";
   duration_ms: number;
   http_status: number;
+  response_text: string | null;
   token_usage: Record<string, number> | null;
+}
+
+export interface RequestStartedEvent extends LifecycleEventBase {
+  event_type: "RequestStarted";
+  route: string;
+  model: string | null;
+  msg_count: number | null;
+  input_size_bytes: number;
+  raw_input: string | null;
+}
+
+export interface SanitizationAppliedEvent extends LifecycleEventBase {
+  event_type: "SanitizationApplied";
+  entity_type: string;
+  placeholder: string;
+  span: [number, number];
+  finding_id: string;
+  text_before: string | null;
+  text_after: string | null;
+}
+
+export interface StrategyExecutedEvent extends LifecycleEventBase {
+  event_type: "StrategyExecuted";
+  strategy: string;
+  finding_id: string;
+  text_after_size: number;
+  text_before: string | null;
+  text_after: string | null;
+}
+
+export interface PayloadRewrittenEvent extends LifecycleEventBase {
+  event_type: "PayloadRewritten";
+  message_index: number;
+  field: string;
+  before_size: number;
+  after_size: number;
+  text_before: string | null;
+  text_after: string | null;
+}
+
+export interface ResponseAssembledEvent extends LifecycleEventBase {
+  event_type: "ResponseAssembled";
+  response_id: string;
+  finish_reason: string;
+  arc_guard_blocked: boolean;
+  response_text: string | null;
+}
+
+export interface RehydrationVerifiedEvent extends LifecycleEventBase {
+  event_type: "RehydrationVerified";
+  verifier_id: string;
+  outcome: "verified" | "rejected" | "partial";
+  rejection_reason: string | null;
+  text_before: string | null;
+  text_after: string | null;
+}
+
+export interface RequestErroredEvent extends LifecycleEventBase {
+  event_type: "RequestErrored";
+  reason: "stale_live_sweep" | "pipeline_exception" | "manual_abort";
+  terminated_by: string;
+  last_event_seq: number;
 }
 
 export interface TerminatedSentinel {

@@ -26,16 +26,22 @@ const NODE_TYPES = { stage: StageNode };
 
 type LayoutMode = "original" | "spread";
 
-function projectNodes(events: LifecycleEventBase[]): Node<StageNodeData>[] {
-  const states = deriveNodeStates(events);
+function projectNodes(
+  events: LifecycleEventBase[],
+  activeOverride: StageName | null,
+): Node<StageNodeData>[] {
+  const states = deriveNodeStates(events, activeOverride);
   return CANONICAL_NODES.map((n) => ({
     ...n,
     data: { ...n.data, runtime: states[n.data.stage] },
   }));
 }
 
-function styleEdges(events: LifecycleEventBase[]): Edge[] {
-  const states = deriveNodeStates(events);
+function styleEdges(
+  events: LifecycleEventBase[],
+  activeOverride: StageName | null,
+): Edge[] {
+  const states = deriveNodeStates(events, activeOverride);
   return CANONICAL_EDGES.map((e) => {
     const sourceState = states[e.source as keyof typeof states];
     const targetState = states[e.target as keyof typeof states];
@@ -132,13 +138,23 @@ export function LifecycleCanvas({ events, selectedNodeId, onNodeSelect }: Lifecy
     return eventsUpTo(events, playback.visited);
   }, [events, playback.status, playback.currentIndex, playback.visited]);
 
+  // The replay cursor only paints a stage as ``active`` while playback is
+  // live. ``complete`` returns the canvas to its natural terminal state.
+  const replayActive = useMemo<StageName | null>(() => {
+    if (playback.status !== "playing" && playback.status !== "paused") return null;
+    return (playback.currentId as StageName | null) ?? null;
+  }, [playback.status, playback.currentId]);
+
   const baseNodes = useMemo(() => {
-    const projected = projectNodes(effectiveEvents);
+    const projected = projectNodes(effectiveEvents, replayActive);
     if (!selectedNodeId) return projected;
     return projected.map((n) => (n.id === selectedNodeId ? { ...n, selected: true } : n));
-  }, [effectiveEvents, selectedNodeId]);
+  }, [effectiveEvents, replayActive, selectedNodeId]);
 
-  const baseEdges = useMemo(() => styleEdges(effectiveEvents), [effectiveEvents]);
+  const baseEdges = useMemo(
+    () => styleEdges(effectiveEvents, replayActive),
+    [effectiveEvents, replayActive],
+  );
 
   const spread = useMemo(() => spreadLayout(baseNodes, baseEdges, 1.5), [baseNodes, baseEdges]);
 

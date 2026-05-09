@@ -43,7 +43,7 @@ help:
 	@echo "                       SSE_URL=http://host:port/events make sse  # point at a different api"
 	@echo
 	@echo "Docker (full Compose stack — api + ollama + llama3.2 + sqlite-ui + dashboard):"
-	@echo "  docker-build       build the arc-guard-service image"
+	@echo "  docker-build       build the arc-guardrail-service image"
 	@echo "  docker-up          boot dev profile (api + ollama + sqlite-web + GuardRailFlow dashboard); auto-pulls llama3.2 ~2GB on first run"
 	@echo "  docker-up-prod     boot prod profile (DB browser + dashboard suppressed)"
 	@echo "  docker-down        stop the stack"
@@ -189,7 +189,7 @@ demo:
 
 # ---------- Docker — full stack with Ollama ----------
 #
-# docker-build      : build the arc-guard-service image
+# docker-build      : build the arc-guardrail-service image
 # docker-up         : DEV profile — api + ollama + auto-pulled llama3.2 + sqlite-web DB browser
 # docker-up-prod    : PROD profile — api + ollama only (sqlite-web suppressed)
 # docker-down       : stop the stack
@@ -198,7 +198,7 @@ demo:
 # For api without an LLM, use `make api-up` locally — faster than running
 # the container in isolation.
 
-DOCKER_IMAGE := arc-guard-service:dev
+DOCKER_IMAGE := arc-guardrail-service:dev
 COMPOSE_FILE := packages/api/docker-compose.yml
 
 docker-build:
@@ -269,9 +269,9 @@ docker-nuke:
 	@echo "tearing down containers and named volumes (deletes lifecycle event history)..."
 	-docker compose -f $(COMPOSE_FILE) --profile dev --profile prod down --volumes --remove-orphans
 	@echo "removing any orphaned project volumes..."
-	-docker volume rm api_lifecycle-data api_ollama-models api_guardrail-flow-modules 2>/dev/null || true
+	-docker volume rm api_lifecycle-data api_ollama-models api_arc-guardrail-flow-modules 2>/dev/null || true
 	@echo "removing project images..."
-	-docker image rm $(DOCKER_IMAGE) arc-guard-api:dev api-api:latest api-dashboard:latest 2>/dev/null || true
+	-docker image rm $(DOCKER_IMAGE) arc-guardrail-flow:dev 2>/dev/null || true
 	@echo "done. next 'make docker-up' will rebuild from scratch and re-pull llama3.2 (~2GB)."
 
 # ---------- Tests ----------

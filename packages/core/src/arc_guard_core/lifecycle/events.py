@@ -1,7 +1,7 @@
 """Lifecycle event taxonomy — typed, frozen dataclasses forming a closed
 tagged union over `LifecycleEvent`.
 
-Twenty-eight types ship: twenty-three base events (always emitted when their
+Twenty-nine types ship: twenty-four base events (always emitted when their
 upstream condition is met) plus five conditional events (only when an
 optional component is wired or an exceptional condition fires).
 
@@ -33,7 +33,7 @@ class LifecycleEventBase:
 
 
 # ---------------------------------------------------------------------------
-# Base events (23)
+# Base events (24)
 # ---------------------------------------------------------------------------
 
 
@@ -174,6 +174,10 @@ class SanitizationApplied(LifecycleEventBase):
     span: tuple[int, int] = (0, 0)
     finding_id: str = ""
     # Populated only when the configured PayloadCapturePolicy permits
+    # sanitized capture (off by default). Carries the pre-sanitization
+    # text — sister to ``text_after``.
+    text_before: str | None = None
+    # Populated only when the configured PayloadCapturePolicy permits
     # sanitized capture (off by default). Carries the post-sanitization
     # text — placeholder substitutions already applied.
     text_after: str | None = None
@@ -203,6 +207,11 @@ class StrategyExecuted(LifecycleEventBase):
     strategy: str = ""
     finding_id: str = ""
     text_after_size: int = 0
+    # Populated only when ``ServiceSettings.lifecycle_capture_payloads`` is
+    # true. Capture the pre/post-strategy text so the dashboard's Diff/Replay
+    # tab can render the transformation.
+    text_before: str | None = None
+    text_after: str | None = None
 
 
 @dataclass(frozen=True)
@@ -263,6 +272,11 @@ class PayloadRewritten(LifecycleEventBase):
     field: str = "content"
     before_size: int = 0
     after_size: int = 0
+    # Populated only when ``ServiceSettings.lifecycle_capture_payloads`` is
+    # true. Captures the inbound message's text before and after the policy
+    # router rewrites it.
+    text_before: str | None = None
+    text_after: str | None = None
 
 
 @dataclass(frozen=True)
@@ -271,6 +285,10 @@ class ResponseAssembled(LifecycleEventBase):
     response_id: str = ""
     finish_reason: str = "stop"
     arc_guard_blocked: bool = False
+    # Populated only when ``ServiceSettings.lifecycle_capture_payloads`` is
+    # true. Captures the assistant text the API ultimately returns to the
+    # caller (post-rehydrate, post-refusal-substitution).
+    response_text: str | None = None
 
 
 @dataclass(frozen=True)
@@ -292,6 +310,27 @@ class ReportFlushed(LifecycleEventBase):
     reporters: list[str] = field(default_factory=list)
     fanout_count: int = 0
     failure_count: int = 0
+
+
+@dataclass(frozen=True)
+class RequestErrored(LifecycleEventBase):
+    """Terminal event for requests that did NOT complete normally.
+
+    Sister-class to ``RequestCompleted``. Subscribers that don't recognize
+    ``RequestErrored`` SHOULD treat it as terminal — same handling as
+    ``RequestCompleted``. ``last_event_seq`` carries the highest ``seq`` the
+    sweeper observed for this rid before erroring out (zero when no events
+    were ever recorded).
+    """
+
+    event_type: ClassVar[str] = "RequestErrored"
+    reason: Literal[
+        "stale_live_sweep",
+        "pipeline_exception",
+        "manual_abort",
+    ] = "stale_live_sweep"
+    terminated_by: str = ""
+    last_event_seq: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -341,6 +380,12 @@ class RehydrationVerified(LifecycleEventBase):
     verifier_id: str = ""
     outcome: Literal["verified", "rejected", "partial"] = "verified"
     rejection_reason: str | None = None
+    # Populated only when ``ServiceSettings.lifecycle_capture_payloads`` is
+    # true AND a real (non-Null) verifier is wired. Captures the placeholder-
+    # carrying text and the rehydrated text so the dashboard's Diff/Replay
+    # tab can render the rehydration step.
+    text_before: str | None = None
+    text_after: str | None = None
 
 
 @dataclass(frozen=True)
@@ -387,6 +432,7 @@ LifecycleEvent = (
     | ResponseAssembled
     | RequestCompleted
     | ReportFlushed
+    | RequestErrored
     | PolicyRuleEvaluated
     | InspectorFailed
     | PlaceholderMapBuilt
@@ -419,6 +465,7 @@ _BASE_EVENT_TYPES: tuple[type[LifecycleEventBase], ...] = (
     ResponseAssembled,
     RequestCompleted,
     ReportFlushed,
+    RequestErrored,
 )
 
 
@@ -463,6 +510,7 @@ __all__ = [
     "ResponseAssembled",
     "RequestCompleted",
     "ReportFlushed",
+    "RequestErrored",
     "PolicyRuleEvaluated",
     "InspectorFailed",
     "PlaceholderMapBuilt",
