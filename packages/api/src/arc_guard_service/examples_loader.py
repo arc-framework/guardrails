@@ -79,6 +79,10 @@ class CorpusPrompt(BaseModel):
             raise ValueError(
                 f"id {self.id!r} first segment must equal inspector {self.inspector!r}"
             )
+        if self.inspector != "_baseline" and not parts[2].isdecimal():
+            raise ValueError(
+                f"id {self.id!r} third segment must be a decimal integer, got {parts[2]!r}"
+            )
         return self
 
 

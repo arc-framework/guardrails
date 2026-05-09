@@ -90,6 +90,13 @@ def test_corpus_prompt_request_must_be_valid_chat_completion_request():
         CorpusPrompt.model_validate(bad)
 
 
+def test_corpus_prompt_id_third_segment_must_be_decimal():
+    bad = _valid_prompt_dict()
+    bad["id"] = "pii_presidio__easy__draft"
+    with pytest.raises(ValidationError, match="third segment must be a decimal integer"):
+        CorpusPrompt.model_validate(bad)
+
+
 def _write_yaml(tmp_path: Path, name: str, body: str) -> Path:
     prompts = tmp_path / "prompts"
     prompts.mkdir(parents=True, exist_ok=True)
