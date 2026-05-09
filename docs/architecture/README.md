@@ -34,6 +34,7 @@ verifies that the documented supported imports still resolve at runtime.
 | [010](../../specs/010-lifecycle-sink/spec.md)              | Per-request lifecycle sink — typed event substrate, SSE feed, replay, SQLite tier            | Implemented |
 | [011](../../specs/011-detection-extensibility/spec.md)     | Detection extensibility — semantic content policies, automatic masking, code injection       | Implemented |
 | [012](../../specs/012-dashboard-backend-data-plane/spec.md) | Dashboard backend data plane — paginated requests, workspace, filtered SSE, CORS allow-list  | Implemented |
+| [013](../../specs/013-guardrailflow-dashboard/spec.md)      | GuardRailFlow dashboard — Vite SPA, 12-stage canvas, inspector + debug dock, fixture mode    | Implemented |
 
 ## Constitution
 

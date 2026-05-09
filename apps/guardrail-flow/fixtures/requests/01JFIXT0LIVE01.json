@@ -1,0 +1,27 @@
+{
+  "summary": {
+    "rid": "01JFIXT0LIVE01",
+    "started_at": "2026-05-09T12:05:00.000Z",
+    "last_event_at": "2026-05-09T12:05:01.420Z",
+    "status": "live",
+    "final_action": null,
+    "max_risk": 0.62,
+    "duration_ms": null,
+    "refusal_code": null,
+    "decision_id": null,
+    "live": true,
+    "stage": "execute"
+  },
+  "resources": {
+    "lifecycle": true,
+    "decision": false,
+    "debug": true,
+    "live_stream": true
+  },
+  "links": {
+    "lifecycle": "/lifecycle/01JFIXT0LIVE01",
+    "decision": "/requests/01JFIXT0LIVE01/decision",
+    "debug": "/requests/01JFIXT0LIVE01/debug",
+    "live_stream": "/events?rid=01JFIXT0LIVE01"
+  }
+}

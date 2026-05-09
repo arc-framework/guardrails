@@ -323,9 +323,25 @@ boundary:
 docs-links:
 	cd $(PACKAGES_DIR) && uv run --package arc-guard python ../$(TOOLS_DIR)/check_docs_links.py
 
+# ---------- Dashboard (apps/guardrail-flow) ----------
+
+DASHBOARD_DIR := apps/guardrail-flow
+
+dashboard-install:
+	cd $(DASHBOARD_DIR) && pnpm install
+
+dashboard-dev:
+	cd $(DASHBOARD_DIR) && pnpm dev
+
+dashboard-build:
+	cd $(DASHBOARD_DIR) && pnpm build
+
+dashboard-check:
+	cd $(DASHBOARD_DIR) && pnpm typecheck && pnpm lint && pnpm format && pnpm test
+
 # ---------- Aggregate ----------
 
-all: lint typecheck test boundary
+all: lint typecheck test boundary dashboard-check
 
 ci: all
 

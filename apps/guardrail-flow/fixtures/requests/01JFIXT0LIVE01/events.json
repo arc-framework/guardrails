@@ -1,0 +1,75 @@
+{
+  "rid": "01JFIXT0LIVE01",
+  "captured_at": "2026-05-09T12:05:01.420Z",
+  "served_from": "fixture",
+  "phases": ["pre_process"],
+  "events": [
+    {
+      "id": "live_evt_01",
+      "parent_id": null,
+      "seq": 1,
+      "ts": "2026-05-09T12:05:00.012Z",
+      "rid": "01JFIXT0LIVE01",
+      "event_type": "StageRan",
+      "stage": "validate",
+      "status": "ok",
+      "duration_ms": 6
+    },
+    {
+      "id": "live_evt_02",
+      "parent_id": "live_evt_01",
+      "seq": 2,
+      "ts": "2026-05-09T12:05:00.080Z",
+      "rid": "01JFIXT0LIVE01",
+      "event_type": "StageRan",
+      "stage": "defend",
+      "status": "ok",
+      "duration_ms": 38
+    },
+    {
+      "id": "live_evt_03",
+      "parent_id": "live_evt_02",
+      "seq": 3,
+      "ts": "2026-05-09T12:05:00.220Z",
+      "rid": "01JFIXT0LIVE01",
+      "event_type": "StageRan",
+      "stage": "classify",
+      "status": "ok",
+      "duration_ms": 142
+    },
+    {
+      "id": "live_evt_04",
+      "parent_id": "live_evt_03",
+      "seq": 4,
+      "ts": "2026-05-09T12:05:00.310Z",
+      "rid": "01JFIXT0LIVE01",
+      "event_type": "StageRan",
+      "stage": "deception_inspect",
+      "status": "ok",
+      "duration_ms": 38
+    },
+    {
+      "id": "live_evt_05",
+      "parent_id": "live_evt_03",
+      "seq": 5,
+      "ts": "2026-05-09T12:05:00.330Z",
+      "rid": "01JFIXT0LIVE01",
+      "event_type": "StageRan",
+      "stage": "sanitize",
+      "status": "ok",
+      "duration_ms": 22
+    },
+    {
+      "id": "live_evt_06",
+      "parent_id": "live_evt_05",
+      "seq": 6,
+      "ts": "2026-05-09T12:05:00.400Z",
+      "rid": "01JFIXT0LIVE01",
+      "event_type": "StageRan",
+      "stage": "route",
+      "status": "ok",
+      "duration_ms": 58,
+      "resolved_action": "pass"
+    }
+  ]
+}

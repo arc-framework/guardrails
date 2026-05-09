@@ -1,0 +1,52 @@
+{
+  "rid": "01JFIXT0RID01",
+  "items": [
+    {
+      "rid": "01JFIXT0RID01",
+      "seq": 1,
+      "ts": "2026-05-09T12:00:00.012Z",
+      "channel": "arc_guard.pipeline",
+      "severity": "DEBUG",
+      "message": "stage=validate input_size_bytes=512",
+      "metadata": { "stage": "validate", "input_size_bytes": 512 }
+    },
+    {
+      "rid": "01JFIXT0RID01",
+      "seq": 2,
+      "ts": "2026-05-09T12:00:00.180Z",
+      "channel": "arc_guard.pipeline",
+      "severity": "DEBUG",
+      "message": "stage=classify finding=EMAIL_ADDRESS confidence=0.97",
+      "metadata": { "stage": "classify", "finding_count": 1, "detector_id": "presidio.email" }
+    },
+    {
+      "rid": "01JFIXT0RID01",
+      "seq": 3,
+      "ts": "2026-05-09T12:00:00.241Z",
+      "channel": "arc_guard.pipeline",
+      "severity": "INFO",
+      "message": "stage=route resolved_action=block",
+      "metadata": { "stage": "route", "resolved_action": "block" }
+    },
+    {
+      "rid": "01JFIXT0RID01",
+      "seq": 4,
+      "ts": "2026-05-09T12:00:00.450Z",
+      "channel": "arc_guard.refusal",
+      "severity": "WARNING",
+      "message": "refusal emitted code=PII_LEAK",
+      "metadata": { "stage": "refusal", "refusal_code": "PII_LEAK" }
+    },
+    {
+      "rid": "01JFIXT0RID01",
+      "seq": 5,
+      "ts": "2026-05-09T12:00:00.840Z",
+      "channel": "arc_guard.report",
+      "severity": "INFO",
+      "message": "decision recorded id=dec_01JFIXT",
+      "metadata": { "stage": "report", "decision_id": "dec_01JFIXT" }
+    }
+  ],
+  "next_cursor": null,
+  "page_size": 100
+}
