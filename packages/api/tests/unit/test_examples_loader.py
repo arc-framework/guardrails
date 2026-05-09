@@ -181,7 +181,7 @@ def test_to_openapi_examples_shape_and_description_appends_expected_block():
     assert "pii_presidio__easy__01" in out
     entry = out["pii_presidio__easy__01"]
     assert entry["summary"] == "PII (email)"
-    assert "**Expected:**" in entry["description"] or "**Expected SDK behavior:**" in entry["description"]
+    assert "**Expected SDK behavior:**" in entry["description"]
     assert "redact" in entry["description"]
     assert "EMAIL_ADDRESS" in entry["description"]
     assert entry["value"] == p.request
