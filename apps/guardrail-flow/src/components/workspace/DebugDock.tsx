@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useUiStore } from "@/lib/state/ui-store";
+import { cn } from "@/lib/utils";
 import type { LifecycleEventBase } from "@/types/api";
 import type { DebugTab } from "@/types/workflow";
 import { LifecycleSSETab } from "./dock/LifecycleSSETab";
@@ -24,6 +25,32 @@ const TAB_LABELS: Record<DebugTab, string> = {
   backend: "Backend",
   diff_replay: "Diff/Replay",
 };
+
+/**
+ * Per-tab data presence. Greys the tab trigger when there is nothing to
+ * render; trigger remains clickable so the operator can confirm the
+ * documented empty state.
+ */
+function dockTabHasData(tab: DebugTab, events: LifecycleEventBase[]): boolean {
+  switch (tab) {
+    case "lifecycle":
+      return events.length > 0;
+    case "logs":
+      // Always reachable — the panel calls useDebugQuery which has its own
+      // empty/error states. We don't have synchronous access to the debug
+      // entries here. Default true so the tab isn't greyed prematurely.
+      return true;
+    case "backend":
+      return events.some(
+        (e) => e.event_type === "BackendCalled" || e.event_type === "BackendResponded",
+      );
+    case "diff_replay":
+      // Phase-2 placeholder; deliberately greyed.
+      return false;
+    default:
+      return true;
+  }
+}
 
 const COLLAPSED_HEIGHT_PX = 36;
 
@@ -102,11 +129,23 @@ export function DebugDock({ rid, events, sseStatus, activeTab, onTabChange }: De
             className="flex min-h-0 flex-1 flex-col"
           >
             <TabsList className="mx-3 mt-2 grid w-fit grid-cols-4">
-              {(Object.keys(TAB_LABELS) as DebugTab[]).map((tab) => (
-                <TabsTrigger key={tab} value={tab} className="text-xs">
-                  {TAB_LABELS[tab]}
-                </TabsTrigger>
-              ))}
+              {(Object.keys(TAB_LABELS) as DebugTab[]).map((tab) => {
+                const hasData = dockTabHasData(tab, events);
+                return (
+                  <TabsTrigger
+                    key={tab}
+                    value={tab}
+                    className={cn(
+                      "text-xs",
+                      !hasData &&
+                        "text-muted-foreground/60 data-[state=active]:text-muted-foreground",
+                    )}
+                    title={hasData ? undefined : `${TAB_LABELS[tab]} — no data captured`}
+                  >
+                    {TAB_LABELS[tab]}
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
             <TabsContent value="lifecycle" className="mt-2 min-h-0 flex-1 overflow-auto px-3 pb-3">
               <LifecycleSSETab events={events} sseStatus={sseStatus} />

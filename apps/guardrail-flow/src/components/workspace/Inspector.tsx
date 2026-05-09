@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useUiStore } from "@/lib/state/ui-store";
+import { cn } from "@/lib/utils";
 import type {
   LifecycleEventBase,
   RequestDecisionEnvelope,
@@ -32,6 +33,44 @@ const TAB_LABELS: Record<InspectorTab, string> = {
   payload: "Payload",
   json: "JSON",
 };
+
+/**
+ * Per-tab data-presence check. Greys the tab trigger when there is nothing
+ * to render — keeps the trigger CLICKABLE so the operator can confirm the
+ * empty state, but signals "no data" at a glance without forcing a click.
+ */
+function tabHasData(
+  tab: InspectorTab,
+  ctx: {
+    events: LifecycleEventBase[];
+    selectedNode: WorkflowNodeState | null;
+    decisionAvailable: boolean;
+  },
+): boolean {
+  switch (tab) {
+    case "stage":
+      return ctx.selectedNode !== null;
+    case "decision":
+    case "policy":
+      return ctx.decisionAvailable;
+    case "payload":
+      return ctx.events.some((e) => {
+        const r = e as Record<string, unknown>;
+        return (
+          (e.event_type === "RequestStarted" &&
+            typeof r.raw_input === "string" &&
+            r.raw_input.length > 0) ||
+          (e.event_type === "BackendResponded" &&
+            typeof r.response_text === "string" &&
+            (r.response_text as string).length > 0)
+        );
+      });
+    case "json":
+      return ctx.events.length > 0;
+    default:
+      return true;
+  }
+}
 
 export function Inspector({
   manifest,
@@ -95,11 +134,26 @@ export function Inspector({
         className="flex min-h-0 flex-1 flex-col"
       >
         <TabsList className="grid w-full grid-cols-5">
-          {(Object.keys(TAB_LABELS) as InspectorTab[]).map((tab) => (
-            <TabsTrigger key={tab} value={tab} className="text-xs">
-              {TAB_LABELS[tab]}
-            </TabsTrigger>
-          ))}
+          {(Object.keys(TAB_LABELS) as InspectorTab[]).map((tab) => {
+            const hasData = tabHasData(tab, {
+              events,
+              selectedNode,
+              decisionAvailable: manifest.resources.decision,
+            });
+            return (
+              <TabsTrigger
+                key={tab}
+                value={tab}
+                className={cn(
+                  "text-xs",
+                  !hasData && "text-muted-foreground/60 data-[state=active]:text-muted-foreground",
+                )}
+                title={hasData ? undefined : `${TAB_LABELS[tab]} — no data captured`}
+              >
+                {TAB_LABELS[tab]}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
         <TabsContent value="stage" className="mt-2 min-h-0 flex-1 overflow-auto">
           <StageTab selectedNode={selectedNode} events={events} />

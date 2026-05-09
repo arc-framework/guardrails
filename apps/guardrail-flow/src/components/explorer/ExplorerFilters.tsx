@@ -64,7 +64,7 @@ export function ExplorerFilters({ filters, setFilter, clear }: ExplorerFiltersPr
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col gap-1">
           <label htmlFor="rid-prefix" className="text-xs font-medium text-muted-foreground">
-            rid prefix
+            RID Prefix
           </label>
           <Input
             id="rid-prefix"
@@ -76,7 +76,7 @@ export function ExplorerFilters({ filters, setFilter, clear }: ExplorerFiltersPr
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="since" className="text-xs font-medium text-muted-foreground">
-            since (ISO 8601)
+            Since (ISO 8601)
           </label>
           <Input
             id="since"
@@ -88,7 +88,7 @@ export function ExplorerFilters({ filters, setFilter, clear }: ExplorerFiltersPr
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="until" className="text-xs font-medium text-muted-foreground">
-            until (ISO 8601)
+            Until (ISO 8601)
           </label>
           <Input
             id="until"
@@ -108,19 +108,19 @@ export function ExplorerFilters({ filters, setFilter, clear }: ExplorerFiltersPr
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <MultiSelectChips
-          label="status"
+          label="Status"
           options={STATUS_OPTIONS}
           selected={filters.status}
           onChange={(v) => setFilter("status", v)}
         />
         <MultiSelectChips
-          label="action"
+          label="Action"
           options={ACTION_OPTIONS}
           selected={filters.action}
           onChange={(v) => setFilter("action", v)}
         />
         <MultiSelectChips
-          label="risk band"
+          label="Risk Band"
           options={RISK_OPTIONS}
           selected={filters.risk_band}
           onChange={(v) => setFilter("risk_band", v)}

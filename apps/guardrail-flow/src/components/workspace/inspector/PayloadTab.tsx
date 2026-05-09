@@ -58,7 +58,7 @@ export function PayloadTab({ events }: PayloadTabProps) {
               <Badge variant={badgeVariant(f)}>{statusFor(f)}</Badge>
             </header>
             {f.value !== null ? (
-              <pre className="overflow-auto rounded border bg-background p-2 text-[11px] leading-snug">
+              <pre className="max-h-[280px] min-h-[120px] overflow-auto whitespace-pre-wrap break-words rounded border bg-background p-2 text-[11px] leading-snug">
                 {f.value}
               </pre>
             ) : (
