@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import { Badge } from "@/components/ui/badge";
+import { AnimatedGradientBorder } from "@/components/visuals/AnimatedGradientBorder";
 import { cn } from "@/lib/utils";
 import type { CanonicalNodeData } from "@/lib/workflow/canonical-graph";
 import type { WorkflowNodeState } from "@/types/workflow";
@@ -43,10 +44,10 @@ function StageBadges({ rt }: { rt: WorkflowNodeState }) {
 
 function StageNodeImpl({ data, selected }: NodeProps<StageNodeData>) {
   const { runtime } = data;
-  return (
+  const card = (
     <div
       className={cn(
-        "min-w-[140px] rounded-md border-2 px-3 py-2 transition-colors",
+        "min-w-[140px] rounded-md border-2 px-3 py-2 transition-colors duration-200 ease-out",
         STATE_STYLES[runtime.state],
         selected ? "ring-2 ring-ring ring-offset-2" : "",
       )}
@@ -58,6 +59,26 @@ function StageNodeImpl({ data, selected }: NodeProps<StageNodeData>) {
       <Handle type="source" position={Position.Right} className="opacity-0" />
     </div>
   );
+
+  // Animated gradient border on the active stage during replay (and in
+  // true-live mode when this node is the currently-running one). The
+  // variant maps the stage's runtime state to a palette so blocked /
+  // errored stages get the destructive sweep.
+  if (runtime.state === "active") {
+    return (
+      <AnimatedGradientBorder active variant="primary">
+        {card}
+      </AnimatedGradientBorder>
+    );
+  }
+  if (runtime.state === "blocked" || runtime.state === "errored") {
+    return (
+      <AnimatedGradientBorder active={false} variant="destructive">
+        {card}
+      </AnimatedGradientBorder>
+    );
+  }
+  return card;
 }
 
 export const StageNode = memo(StageNodeImpl, (prev, next) => {

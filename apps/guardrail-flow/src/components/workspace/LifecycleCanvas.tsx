@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -15,6 +15,7 @@ import { CANONICAL_EDGES, CANONICAL_NODES } from "@/lib/workflow/canonical-graph
 import { deriveNodeStates } from "@/lib/workflow/derive-node-state";
 import { spreadLayout } from "@/lib/canvas/dagre-layout";
 import { usePathPlayback } from "@/hooks/usePathPlayback";
+import { useUiStore, type CanvasSpreadLevel } from "@/lib/state/ui-store";
 import type { LifecycleEventBase, StageName } from "@/types/api";
 import { StageNode, type StageNodeData } from "./nodes/StageNode";
 
@@ -24,7 +25,19 @@ import { StageNode, type StageNodeData } from "./nodes/StageNode";
 // re-render.
 const NODE_TYPES = { stage: StageNode };
 
-type LayoutMode = "original" | "spread";
+// Per FR-031e: level 1 default ("Spread"), level 2 comfortable ("Wide"),
+// level 3 wide ("Reset"). Cycling repeats from level 1.
+const SPREAD_FACTOR_BY_LEVEL: Record<CanvasSpreadLevel, number> = {
+  1: 1.05,
+  2: 1.5,
+  3: 2.2,
+};
+
+const SPREAD_LABEL_BY_LEVEL: Record<CanvasSpreadLevel, string> = {
+  1: "Spread",
+  2: "Wide",
+  3: "Reset",
+};
 
 function projectNodes(
   events: LifecycleEventBase[],
@@ -37,10 +50,7 @@ function projectNodes(
   }));
 }
 
-function styleEdges(
-  events: LifecycleEventBase[],
-  activeOverride: StageName | null,
-): Edge[] {
+function styleEdges(events: LifecycleEventBase[], activeOverride: StageName | null): Edge[] {
   const states = deriveNodeStates(events, activeOverride);
   return CANONICAL_EDGES.map((e) => {
     const sourceState = states[e.source as keyof typeof states];
@@ -126,7 +136,8 @@ export interface LifecycleCanvasProps {
 }
 
 export function LifecycleCanvas({ events, selectedNodeId, onNodeSelect }: LifecycleCanvasProps) {
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>("original");
+  const spreadLevel = useUiStore((s) => s.canvasSpreadLevel);
+  const cycleSpread = useUiStore((s) => s.cycleCanvasSpreadLevel);
 
   const stagePath = useMemo(() => buildStagePath(events), [events]);
   const playback = usePathPlayback({ path: stagePath, stepMs: 350 });
@@ -156,10 +167,13 @@ export function LifecycleCanvas({ events, selectedNodeId, onNodeSelect }: Lifecy
     [effectiveEvents, replayActive],
   );
 
-  const spread = useMemo(() => spreadLayout(baseNodes, baseEdges, 1.5), [baseNodes, baseEdges]);
+  const spread = useMemo(
+    () => spreadLayout(baseNodes, baseEdges, SPREAD_FACTOR_BY_LEVEL[spreadLevel]),
+    [baseNodes, baseEdges, spreadLevel],
+  );
 
-  const nodes = layoutMode === "spread" ? spread.nodes : baseNodes;
-  const edges = layoutMode === "spread" ? spread.edges : baseEdges;
+  const nodes = spread.nodes;
+  const edges = spread.edges;
 
   const handleNodeClick = useCallback<NodeMouseHandler>(
     (_, node) => {
@@ -171,10 +185,6 @@ export function LifecycleCanvas({ events, selectedNodeId, onNodeSelect }: Lifecy
   const handlePaneClick = useCallback(() => {
     onNodeSelect?.(null);
   }, [onNodeSelect]);
-
-  const toggleLayout = useCallback(() => {
-    setLayoutMode((m) => (m === "original" ? "spread" : "original"));
-  }, []);
 
   const showPlay = playback.status === "idle";
   const showPause = playback.status === "playing";
@@ -202,17 +212,13 @@ export function LifecycleCanvas({ events, selectedNodeId, onNodeSelect }: Lifecy
 
       <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-md border bg-card/95 px-2 py-1 shadow-sm backdrop-blur">
         <Button
-          variant={layoutMode === "spread" ? "default" : "outline"}
+          variant={spreadLevel === 1 ? "outline" : "default"}
           size="sm"
-          onClick={toggleLayout}
-          aria-pressed={layoutMode === "spread"}
-          title={
-            layoutMode === "spread"
-              ? "Return to the hand-tuned canonical layout"
-              : "Spread nodes outward for breathing room (preserves orientation)"
-          }
+          onClick={cycleSpread}
+          aria-label={`Spread level ${spreadLevel} of 3 — click to cycle`}
+          title={`Layout density level ${spreadLevel}/3. Click to cycle Spread → Wide → Reset.`}
         >
-          {layoutMode === "spread" ? "Original" : "Spread"}
+          {SPREAD_LABEL_BY_LEVEL[spreadLevel]}
         </Button>
 
         {playbackEnabled ? (

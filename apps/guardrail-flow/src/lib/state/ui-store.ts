@@ -22,12 +22,17 @@ interface PersistentSlice {
   payloadVisibility: PayloadVisibility;
 }
 
+export type CanvasSpreadLevel = 1 | 2 | 3;
+
 interface VolatileSlice {
   selectedNodeId: string | null;
   inspectorTab: InspectorTab;
   dockTab: DebugTab;
   liveSseStatus: LiveSseStatus;
   liveSseRid: string | null;
+  /** Multi-level Spread control. Level 1 (default) is one-step-out from
+   *  the canonical layout; level 2 is comfortable; level 3 is wide. */
+  canvasSpreadLevel: CanvasSpreadLevel;
 }
 
 interface UiStore extends PersistentSlice, VolatileSlice {
@@ -42,6 +47,8 @@ interface UiStore extends PersistentSlice, VolatileSlice {
   setLiveSse: (rid: string | null, status: LiveSseStatus) => void;
   setPayloadVisibility: (v: PayloadVisibility) => void;
   togglePayloadVisibility: () => void;
+  cycleCanvasSpreadLevel: () => void;
+  setCanvasSpreadLevel: (v: CanvasSpreadLevel) => void;
   resetWorkspaceState: () => void;
 }
 
@@ -62,6 +69,7 @@ const VOLATILE_DEFAULTS: VolatileSlice = {
   dockTab: "lifecycle",
   liveSseStatus: "idle",
   liveSseRid: null,
+  canvasSpreadLevel: 1,
 };
 
 export const useUiStore = create<UiStore>()(
@@ -83,6 +91,11 @@ export const useUiStore = create<UiStore>()(
         set((s) => ({
           payloadVisibility: s.payloadVisibility === "masked" ? "visible" : "masked",
         })),
+      cycleCanvasSpreadLevel: () =>
+        set((s) => ({
+          canvasSpreadLevel: ((s.canvasSpreadLevel % 3) + 1) as CanvasSpreadLevel,
+        })),
+      setCanvasSpreadLevel: (v) => set({ canvasSpreadLevel: v }),
       resetWorkspaceState: () => set({ ...VOLATILE_DEFAULTS }),
     }),
     {

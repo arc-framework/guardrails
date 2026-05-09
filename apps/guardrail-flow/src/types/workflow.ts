@@ -24,6 +24,10 @@ export interface ExplorerRowModel {
   riskBand: RiskBand | null;
   durationDisplay: string;
   liveBadge: boolean;
+  /** True when ``live=true`` AND ``last_event_at`` is older than the
+   *  client-side stale threshold (defense-in-depth against backends
+   *  with the sweeper disabled or pre-sweeper historical rows). */
+  staleBadge: boolean;
   stageDisplay: string;
 }
 

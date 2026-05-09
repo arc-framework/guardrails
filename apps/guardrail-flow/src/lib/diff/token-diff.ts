@@ -70,9 +70,10 @@ function buildLcsTable(a: readonly string[], b: readonly string[]): number[][] {
     for (let j = 1; j < cols; j += 1) {
       const prevRow = table[i - 1] as number[];
       const curRow = table[i] as number[];
-      curRow[j] = a[i - 1] === b[j - 1]
-        ? (prevRow[j - 1] as number) + 1
-        : Math.max(prevRow[j] as number, curRow[j - 1] as number);
+      curRow[j] =
+        a[i - 1] === b[j - 1]
+          ? (prevRow[j - 1] as number) + 1
+          : Math.max(prevRow[j] as number, curRow[j - 1] as number);
     }
   }
   return table;

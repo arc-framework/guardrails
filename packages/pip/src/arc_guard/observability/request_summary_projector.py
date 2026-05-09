@@ -131,6 +131,17 @@ class RequestSummaryProjector:
                 " WHERE rid = ?",
                 (duration_ms, final_action, rid),
             )
+        elif et == "RequestErrored":
+            # Stale-live sweeper (or any future caller emitting RequestErrored)
+            # promotes the row to status='errored'. We DO NOT overwrite an
+            # already-completed row — if the natural completion ordering won
+            # the race, that result stands.
+            self._conn.execute(
+                "UPDATE request_summaries"
+                " SET status = 'errored', live = 0"
+                " WHERE rid = ? AND status != 'completed'",
+                (rid,),
+            )
 
     async def query(self, rid: str) -> list[LifecycleEvent] | None:
         # Projector does not store events — only projections. Composite

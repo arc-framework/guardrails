@@ -1,6 +1,6 @@
 {
   "name": "@arc/guardrail-flow",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "GuardRailFlow — operator dashboard for the arc-guardrails Python service. Vite + React + TypeScript SPA.",

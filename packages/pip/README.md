@@ -7,13 +7,21 @@ Batteries-included guardrails library, built on [`arc-guard-core`](../core/READM
 ## Install
 
 ```bash
-pip install arc-guard               # all implementations included; presidio is the only heavy dep
+pip install arc-guard
+pip install 'arc-guard[semantic]'  # optional semantic verifier / scorer / encoder bundle
 ```
 
-Currently ships **zero optional extras**. The NATS reporter, Unleash
-flag provider, OTEL middleware, semantic inspector, and webhook
-reporter were trimmed during the rewrite. They will return as separate
-distributions; see CHANGELOG.md for per-version status.
+Optional extras:
+
+- `semantic` — installs `sentence-transformers` + `numpy` for the bundled
+  semantic intent/fidelity/rehydration helpers.
+- `otel` — OpenTelemetry middleware/exporter support.
+- `jailbreak-ml` — transformer-backed jailbreak detector.
+- `code-injection` — SQL/code-injection helper dependencies.
+
+The old rewrite-era adapters such as NATS, Unleash, and webhook delivery
+remain trimmed from this package and will return as separate distributions.
+See `CHANGELOG.md` for the per-version status.
 
 ## Recent highlights
 
@@ -23,6 +31,19 @@ distributions; see CHANGELOG.md for per-version status.
 - **Clarification flow** — opt-in: ambiguous runs return a `GuardResult.clarification` instead of blocking.
 - **Decision records** — every routed run emits a `DecisionRecord` through `Logger.event` and `MetricSink`. No raw payloads.
 - **Custom strategies** — implement the `ActionStrategy` Protocol, register via `@strategy("name")`, reference by name in your `PolicyRuleSet`. No core changes required.
+
+## Semantic verifier
+
+`RehydrationVerified` lifecycle events fire only when a non-Null
+`RehydrationVerifier` is wired on the pipeline. The bundled semantic
+verifier lives behind the `semantic` extra:
+
+```bash
+pip install 'arc-guard[semantic]'
+```
+
+Without that extra, or without a custom verifier implementation, the
+rehydrate stage still runs but stays silent on the lifecycle stream.
 
 The active spec set under `../../specs/` documents the contracts in
 detail; `../../docs/walkthrough/` carries the per-feature operator

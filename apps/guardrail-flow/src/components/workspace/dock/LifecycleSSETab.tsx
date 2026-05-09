@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { JsonView } from "@/components/shared/JsonView";
@@ -23,6 +24,7 @@ const STATUS_VARIANT: Record<
 
 export function LifecycleSSETab({ events, sseStatus }: LifecycleSSETabProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [listRef] = useAutoAnimate<HTMLUListElement>();
 
   const toggle = (id: string) => {
     setExpanded((prev) => {
@@ -45,7 +47,7 @@ export function LifecycleSSETab({ events, sseStatus }: LifecycleSSETabProps) {
           enabled on this backend.
         </p>
       ) : (
-        <ul className="space-y-1">
+        <ul ref={listRef} className="space-y-1">
           {events.map((event) => {
             const isOpen = expanded.has(event.id);
             return (

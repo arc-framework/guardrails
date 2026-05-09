@@ -1,10 +1,11 @@
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { JsonView } from "@/components/shared/JsonView";
 import { useUiStore } from "@/lib/state/ui-store";
 import { maskPayload } from "@/lib/privacy/mask";
 import type { LifecycleEventBase, StageName } from "@/types/api";
 import type { WorkflowNodeState } from "@/types/workflow";
+import { EventRenderer } from "./event-renderers";
 
 export interface StageTabProps {
   selectedNode: WorkflowNodeState | null;
@@ -29,6 +30,7 @@ const TEXT_BEARING_TO_STAGE: Record<string, StageName> = {
 
 export function StageTab({ selectedNode, events }: StageTabProps) {
   const masked = useUiStore((s) => s.payloadVisibility === "masked");
+  const [eventsListRef] = useAutoAnimate<HTMLUListElement>();
   if (!selectedNode) {
     return (
       <p className="px-1 py-2 text-xs text-muted-foreground">
@@ -77,7 +79,7 @@ export function StageTab({ selectedNode, events }: StageTabProps) {
             </h3>
             {textDeltas.map((delta, idx) => (
               <details key={`${delta.source}-${idx}`} className="rounded border bg-background">
-                <summary className="cursor-pointer px-2 py-1 text-[11px] font-mono">
+                <summary className="cursor-pointer px-2 py-1 font-mono text-[11px]">
                   {delta.source}
                 </summary>
                 <div className="space-y-1 border-t p-2">
@@ -87,9 +89,7 @@ export function StageTab({ selectedNode, events }: StageTabProps) {
                   <pre className="max-h-[280px] min-h-[120px] overflow-auto whitespace-pre-wrap break-words rounded border bg-muted/30 p-2 text-[11px] leading-snug">
                     {masked ? maskPayload(delta.before) : delta.before}
                   </pre>
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    after
-                  </p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">after</p>
                   <pre className="max-h-[280px] min-h-[120px] overflow-auto whitespace-pre-wrap break-words rounded border bg-muted/30 p-2 text-[11px] leading-snug">
                     {masked ? maskPayload(delta.after) : delta.after}
                   </pre>
@@ -107,7 +107,7 @@ export function StageTab({ selectedNode, events }: StageTabProps) {
         {scoped.length === 0 ? (
           <p className="text-xs text-muted-foreground">No events recorded for this stage.</p>
         ) : (
-          <ul className="space-y-2">
+          <ul ref={eventsListRef} className="space-y-2">
             {scoped.map((event) => (
               <li key={event.id} className="rounded border bg-background">
                 <div className="flex items-center justify-between p-2 text-xs">
@@ -115,8 +115,8 @@ export function StageTab({ selectedNode, events }: StageTabProps) {
                   <span className="text-muted-foreground">seq {event.seq}</span>
                 </div>
                 <Separator />
-                <div className="p-1">
-                  <JsonView value={event} maxHeight="200px" />
+                <div className="p-2">
+                  <EventRenderer event={event} />
                 </div>
               </li>
             ))}
@@ -134,10 +134,7 @@ function filterToStage(events: LifecycleEventBase[], stage: StageName): Lifecycl
   });
 }
 
-function extractTextDeltasForStage(
-  events: LifecycleEventBase[],
-  stage: StageName,
-): TextDelta[] {
+function extractTextDeltasForStage(events: LifecycleEventBase[], stage: StageName): TextDelta[] {
   const ordered = [...events].sort((a, b) => a.seq - b.seq);
   const out: TextDelta[] = [];
   for (const e of ordered) {

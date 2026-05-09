@@ -17,10 +17,7 @@ const READ_ONLY_EXTENSIONS = [json(), EditorView.editable.of(false), EditorView.
 export function JsonView({ value, height, maxHeight }: JsonViewProps) {
   const theme = useUiStore((s) => s.theme);
   const masked = useUiStore((s) => s.payloadVisibility === "masked");
-  const text = useMemo(
-    () => safeStringify(masked ? maskedDeep(value) : value),
-    [value, masked],
-  );
+  const text = useMemo(() => safeStringify(masked ? maskedDeep(value) : value), [value, masked]);
 
   return (
     <CodeMirror

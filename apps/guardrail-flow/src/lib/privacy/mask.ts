@@ -16,12 +16,7 @@ export function maskPayload(value: string | null | undefined): string {
  * unknown event-shaped object. Keeps non-payload metadata (sizes,
  * counts, ids, status) visible — only the textual fields get masked.
  */
-const PAYLOAD_FIELDS = new Set([
-  "raw_input",
-  "response_text",
-  "text_before",
-  "text_after",
-]);
+const PAYLOAD_FIELDS = new Set(["raw_input", "response_text", "text_before", "text_after"]);
 
 export function maskPayloadFields<T extends Record<string, unknown>>(obj: T): T {
   const out = { ...obj } as Record<string, unknown>;

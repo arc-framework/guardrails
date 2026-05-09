@@ -73,8 +73,10 @@ function DiffView({ ops }: { ops: DiffOp[] }) {
         <span
           key={idx}
           className={cn(
-            op.kind === "remove" && "rounded bg-red-100/60 text-red-900 line-through dark:bg-red-900/30 dark:text-red-100",
-            op.kind === "add" && "rounded bg-emerald-100/60 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-100",
+            op.kind === "remove" &&
+              "rounded bg-red-100/60 text-red-900 line-through dark:bg-red-900/30 dark:text-red-100",
+            op.kind === "add" &&
+              "rounded bg-emerald-100/60 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-100",
           )}
         >
           {op.text}

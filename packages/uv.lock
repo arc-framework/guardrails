@@ -49,7 +49,7 @@ wheels = [
 
 [[package]]
 name = "arc-guard"
-version = "0.10.0"
+version = "0.11.0"
 source = { editable = "pip" }
 dependencies = [
     { name = "arc-guard-core" },
@@ -93,7 +93,7 @@ provides-extras = ["otel", "semantic", "jailbreak-ml", "code-injection"]
 
 [[package]]
 name = "arc-guard-core"
-version = "0.9.0"
+version = "0.10.0"
 source = { editable = "core" }
 dependencies = [
     { name = "pydantic" },
@@ -104,7 +104,7 @@ requires-dist = [{ name = "pydantic", specifier = ">=2.0" }]
 
 [[package]]
 name = "arc-guard-service"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "api" }
 dependencies = [
     { name = "arc-guard" },

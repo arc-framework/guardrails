@@ -2,6 +2,31 @@
 
 All notable changes to the GuardRailFlow dashboard app are documented here. Format follows Keep a Changelog; this app adheres to Semantic Versioning.
 
+## [0.2.0] — 2026-05-09
+
+### Added
+
+- Privacy toggle 👁/🙈 in the App-shell header. Persisted to the Zustand UI store's PersistentSlice (`payloadVisibility`, default `"masked"`). Masks `raw_input` / `response_text` / `text_before` / `text_after` everywhere they render — PayloadTab, StageTab text deltas, Diff/Replay, and the JSON view (deep-walks objects).
+- `⚠ stale` defense-in-depth tag in the explorer table. Renders in place of the live dot when `live=true` AND `last_event_at` is older than 30 minutes — covers the gap before the backend sweeper acts.
+- Multi-level Spread control on the workspace canvas. Cycles through factors `1.05` → `1.5` → `2.2` → back. Button label transitions Spread → Wide → Reset. Persisted as `canvasSpreadLevel: 1 | 2 | 3` on the VolatileSlice (default 1).
+- reaviz `FunnelChart` card alongside the existing 4 metrics cards: Total → Pass → Redact → Block.
+- Bidirectional filter sync — clicking a Pie segment legend (Actions or Risk) sets the explorer table's filter via `useExplorerFilters().setFilter`.
+- `Diff/Replay` dock tab now renders side-by-side colored token-level diffs for `SanitizationApplied`, `StrategyExecuted`, `PayloadRewritten`, `RehydrationVerified`. Hand-rolled LCS-backtrack diff in `lib/diff/token-diff.ts` (~75 lines, no library).
+- `Text deltas` collapsible panel on the Stage tab — surfaces `text_before` / `text_after` for the selected stage's transformative events.
+- PolicyTab enrichment — `risk` badge alongside the resolved action; per-rule `applied` / `matched` / `skipped` status; `bypass_reason` chip when present. Canonical source of truth: `PolicyRuleEvaluated` events (with fallback to `decision.policy.rules`).
+- Vendored visual primitives under `src/components/visuals/`:
+  - `CurtainThemeToggle.tsx` — replaces the prior 🌞/🌙 button. Curtain animation in `--background` color over a 300ms ease-in-out sweep.
+  - `DottedSurface.tsx` — wraps `<main>`. Subtle 24px-grid radial-gradient backdrop using `--muted-foreground`.
+  - `AnimatedGradientBorder.tsx` — wraps the active stage on the workspace canvas during replay. 2s linear sweep when active; static gradient when historical.
+  - `brand/{PipelineBrand,WordmarkBrand,GuardrailBrand}.tsx` — three arc-branded variants of the 21st.dev cpu-architecture primitive. None reference "CPU" anywhere. `brand/index.ts` re-exports `PipelineBrand` as `BrandLogo` (the operator-on-call switches by editing one line).
+- `@formkit/auto-animate@0.8.4` for list-growth transitions (LifecycleSSETab events, LogsTab debug entries, StageTab events). ~1 KB bundle delta.
+- Smooth `transition-colors duration-200 ease-out` on every StageNode for natural state transitions during replay.
+
+### Changed
+
+- TypeScript types in `types/api.ts` now mirror the new optional payload-text fields on `RequestStarted`, `BackendResponded`, `SanitizationApplied`, `StrategyExecuted`, `PayloadRewritten`, `ResponseAssembled`, `RehydrationVerified`, plus the new `RequestErrored` terminal event interface.
+- Tombstone for retired `POST /v1/guard` is reflected in the canvas registry description and both copies of `request-flow.canvas`.
+
 ## [0.1.0] — 2026-05-09
 
 Initial release. Spec 013 Phase 1 scope.

@@ -190,12 +190,42 @@ def _build_default_lifecycle_sink(
                 queue_capacity=settings.dashboard_decision_record_queue_capacity,
             )
         )
+        # Stale-live sweeper rides alongside the other dashboard-tier sinks.
+        # It emits RequestErrored events for stuck rows; the projector +
+        # SQLite tier above handle the row update + persistence. When the
+        # sweep interval is non-positive the sweeper's start_cleanup_task
+        # is a no-op, so this child is inert.
+        if settings.request_summary_sweep_interval_seconds > 0:
+            from arc_guard.observability.stale_live_sweeper import (
+                StaleLiveSweeper,
+            )
+
+            children.append(
+                StaleLiveSweeper(
+                    path=settings.lifecycle_sqlite_path,
+                    lifecycle_sink=None,  # set below once composite is built
+                    stale_threshold_seconds=(
+                        settings.request_summary_stale_threshold_seconds
+                    ),
+                    sweep_interval_seconds=(
+                        settings.request_summary_sweep_interval_seconds
+                    ),
+                )
+            )
     if broadcaster is not None:
         children.append(broadcaster)
 
     if len(children) == 1:
         return children[0]
-    return CompositeLifecycleSink(children)
+    composite = CompositeLifecycleSink(children)
+    # The sweeper emits RequestErrored events back through the composite so
+    # the projector / SQLite tier / SSE broadcaster all see the transition.
+    # Bind the composite reference now that it's constructed; the sweeper's
+    # own emit() is a no-op so the back-edge does not infinite-loop.
+    for child in children:
+        if hasattr(child, "_sink") and child.__class__.__name__ == "StaleLiveSweeper":
+            child._sink = composite  # noqa: SLF001
+    return composite
 
 
 def create_app(

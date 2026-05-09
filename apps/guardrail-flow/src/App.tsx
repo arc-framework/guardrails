@@ -1,7 +1,11 @@
 import { Outlet, Link, NavLink } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { env } from "@/lib/env";
 import { useUiStore } from "@/lib/state/ui-store";
 import { cn } from "@/lib/utils";
+import { CurtainThemeToggle } from "@/components/visuals/CurtainThemeToggle";
+import { DottedSurface } from "@/components/visuals/DottedSurface";
+import { BrandLogo } from "@/components/visuals/brand";
 
 const SSE_LABELS: Record<string, string> = {
   idle: "idle",
@@ -22,21 +26,14 @@ const SSE_STYLES: Record<string, string> = {
 };
 
 export default function App() {
-  const {
-    theme,
-    toggleTheme,
-    liveSseStatus,
-    liveSseRid,
-    payloadVisibility,
-    togglePayloadVisibility,
-  } = useUiStore((s) => ({
-    theme: s.theme,
-    toggleTheme: s.toggleTheme,
-    liveSseStatus: s.liveSseStatus,
-    liveSseRid: s.liveSseRid,
-    payloadVisibility: s.payloadVisibility,
-    togglePayloadVisibility: s.togglePayloadVisibility,
-  }));
+  const { liveSseStatus, liveSseRid, payloadVisibility, togglePayloadVisibility } = useUiStore(
+    (s) => ({
+      liveSseStatus: s.liveSseStatus,
+      liveSseRid: s.liveSseRid,
+      payloadVisibility: s.payloadVisibility,
+      togglePayloadVisibility: s.togglePayloadVisibility,
+    }),
+  );
 
   const showLiveBadge = env.mode === "live" && liveSseStatus !== "idle" && liveSseRid !== null;
 
@@ -49,11 +46,8 @@ export default function App() {
               to="/requests"
               className="flex items-center gap-2 text-base font-semibold tracking-tight"
             >
-              <span
-                aria-hidden
-                className="grid h-6 w-6 place-items-center rounded bg-primary text-[11px] font-bold text-primary-foreground"
-              >
-                GR
+              <span aria-hidden className="block h-6 w-6">
+                <BrandLogo className="h-full w-full" />
               </span>
               <span>GuardRailFlow</span>
             </Link>
@@ -107,7 +101,7 @@ export default function App() {
             <button
               type="button"
               onClick={togglePayloadVisibility}
-              className="grid h-8 w-8 place-items-center rounded-md border text-base transition-colors hover:bg-muted"
+              className="grid h-8 w-8 place-items-center rounded-md border text-foreground transition-colors hover:bg-muted"
               aria-label={
                 payloadVisibility === "masked"
                   ? "Show payload text in inspector"
@@ -120,23 +114,21 @@ export default function App() {
                   : "Payload text is visible. Click to mask."
               }
             >
-              <span aria-hidden>{payloadVisibility === "masked" ? "🙈" : "👁"}</span>
+              {payloadVisibility === "masked" ? (
+                <EyeOff aria-hidden className="h-4 w-4" strokeWidth={2} />
+              ) : (
+                <Eye aria-hidden className="h-4 w-4" strokeWidth={2} />
+              )}
             </button>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="grid h-8 w-8 place-items-center rounded-md border text-base transition-colors hover:bg-muted"
-              aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-              title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-            >
-              <span aria-hidden>{theme === "dark" ? "🌞" : "🌙"}</span>
-            </button>
+            <CurtainThemeToggle />
           </div>
         </div>
       </header>
-      <main className="flex flex-1 flex-col">
-        <Outlet />
-      </main>
+      <DottedSurface>
+        <main className="flex flex-1 flex-col">
+          <Outlet />
+        </main>
+      </DottedSurface>
     </div>
   );
 }

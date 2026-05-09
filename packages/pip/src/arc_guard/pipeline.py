@@ -232,12 +232,10 @@ def _signal_to_finding(signal: JailbreakSignal) -> Finding:
 def _entity_map_from_outcome(outcome: Any) -> dict[str, str]:
     """Extract a ``placeholder → original_value`` map from a routed outcome.
 
-    Today the existing ``RuleBasedPolicyRouter`` exposes per-finding
-    transforms but does not surface the original entity values on the
-    outcome. The map is left empty in this iteration; a subsequent
-    spec wires the strategy decisions to expose the map. Returning
-    an empty dict keeps the rehydrate stage a no-op until that wiring
-    lands.
+    Some custom routers stash a ready-made ``entity_map`` directly on the
+    outcome — honor it when present. The bundled ``RuleBasedPolicyRouter``
+    does not, so callers should fall back to ``_entity_map_from_result``
+    which reconstructs the map from per-decision metadata.
     """
     if outcome is None:
         return {}
@@ -245,6 +243,41 @@ def _entity_map_from_outcome(outcome: Any) -> dict[str, str]:
     if isinstance(raw_map, dict):
         return {str(k): str(v) for k, v in raw_map.items() if k}
     return {}
+
+
+def _entity_map_from_result(
+    result: GuardResult, original_text: str
+) -> dict[str, str]:
+    """Reconstruct ``placeholder → original_value`` from the decisions the
+    bundled strategies stamp onto ``GuardResult``.
+
+    Each ``PolicyDecision`` produced by a bundled rewriting strategy carries
+    the placeholder / replacement token it minted in one of the strategy
+    metadata keys (``placeholder``, ``replacement``, ``token``) and
+    references the source finding(s) via ``decision.finding_ids``. We walk
+    those references to pick the original substring out of ``original_text``
+    (the pre-sanitization input) so the rehydrate stage has a complete map
+    even when the router itself does not surface one.
+    """
+    if not result.decisions or not original_text:
+        return {}
+    out: dict[str, str] = {}
+    for decision in result.decisions:
+        replacement_token = decision.metadata.get(
+            "placeholder",
+            decision.metadata.get(
+                "replacement",
+                decision.metadata.get("token"),
+            ),
+        )
+        if not isinstance(replacement_token, str) or not replacement_token:
+            continue
+        for fidx in decision.finding_ids:
+            if 0 <= fidx < len(result.findings):
+                f = result.findings[fidx]
+                if 0 <= f.start <= f.end <= len(original_text):
+                    out[replacement_token] = original_text[f.start:f.end]
+    return out
 
 
 class GuardPipeline:
@@ -1383,10 +1416,18 @@ class GuardPipeline:
         # Today the entity_map is passed in from policy-router transforms
         # via a per-run state holder; when no transform produced a map,
         # the rehydrate stage is a no-op.
-        entity_map = _entity_map_from_outcome(outcome)
+        # Prefer a router-supplied entity_map when available; otherwise
+        # reconstruct from the bundled-strategy decisions. The
+        # ``original_text`` for substring extraction is the
+        # pre-sanitization input — the apply_outcome above already mutated
+        # ``result.text`` to the placeholder-bearing form.
+        entity_map = _entity_map_from_outcome(outcome) or _entity_map_from_result(
+            result, original_text=effective_input.text,
+        )
         if entity_map and result.refusal is None:
             _t0_rehydrate = time.perf_counter()
             _rehydrate_status = "ok"
+            _rehydrate_text_before = result.text
             with stage_runner(
                 STAGE_REHYDRATE,
                 **self._stage_kwargs(correlation_id, decision_id, redactor, sampler),
@@ -1419,6 +1460,11 @@ class GuardPipeline:
                             "reject": "rejected",
                             "partial": "partial",
                         }
+                        _emitter_rehy, _ = self._lifecycle_ctx(guard_input)
+                        _capture_rehy = (
+                            _emitter_rehy is not None
+                            and _emitter_rehy.policy.should_capture_sanitized()
+                        )
                         await self._emit_via_ctx(
                             guard_input, RehydrationVerified,
                             verifier_id=type(self._rehydration_verifier).__name__,
@@ -1426,6 +1472,10 @@ class GuardPipeline:
                             rejection_reason=(
                                 verdict.reason if verdict.decision == "reject" else None
                             ),
+                            text_before=(
+                                _rehydrate_text_before if _capture_rehy else None
+                            ),
+                            text_after=result.text if _capture_rehy else None,
                         )
                 except Exception as exc:
                     logger.warning(

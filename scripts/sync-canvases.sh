@@ -3,11 +3,6 @@
 #
 # docs/canvases/ is the source of truth (Obsidian edits happen there).
 # Run this after editing any canvas in docs/canvases/.
-#
-# Obsidian uses the .canvas extension; the app expects .canvas.json.
-# Both are plain JSON with the same {nodes,edges} schema.
-# old-flow.canvas is intentionally excluded — it is the historical
-# pre-rewrite reference and the app does not ship it.
 
 set -euo pipefail
 
@@ -15,7 +10,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="$REPO_ROOT/docs/canvases"
 DST="$REPO_ROOT/apps/guardrail-flow/canvases"
 
-CANVASES=(new-flow request-flow request-dag-journey request-dag-brain pipeline-metro pipeline-swimlane request-flow-tree)
+CANVASES=(pipeline-swimlane request-dag-benign request-dag-pii request-dag-block request-flow request-flow-tree)
 
 echo "Syncing canvases: $SRC → $DST"
 

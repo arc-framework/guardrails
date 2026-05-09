@@ -1,10 +1,12 @@
 import { useMemo } from "react";
-import { PieChart, PieArcSeries, AreaSparklineChart } from "reaviz";
+import { AreaSparklineChart, FunnelChart, FunnelSeries, PieArcSeries, PieChart } from "reaviz";
 import { Badge } from "@/components/ui/badge";
-import type { FinalAction, RequestSummary } from "@/types/api";
+import type { FinalAction, RequestSummary, RiskBand } from "@/types/api";
 
 export interface MetricsStripProps {
   rows: RequestSummary[];
+  onActionFilter?: (action: FinalAction) => void;
+  onRiskFilter?: (band: RiskBand) => void;
 }
 
 const ACTION_ORDER: FinalAction[] = ["pass", "redact", "clarify", "block", "refuse"];
@@ -22,7 +24,7 @@ const BAND_COLORS: Record<"low" | "med" | "high", string> = {
   high: "#ef4444",
 };
 
-export function MetricsStrip({ rows }: MetricsStripProps) {
+export function MetricsStrip({ rows, onActionFilter, onRiskFilter }: MetricsStripProps) {
   const stats = useMemo(() => {
     const total = rows.length;
     const liveCount = rows.filter((r) => r.live).length;
@@ -81,6 +83,16 @@ export function MetricsStrip({ rows }: MetricsStripProps) {
       rows.filter((r) => r.duration_ms !== null).reduce((s, r) => s + (r.duration_ms ?? 0), 0) /
       Math.max(1, rows.filter((r) => r.duration_ms !== null).length);
 
+    // FunnelChart progression: Total → Pass → Redact → Block. Each step is
+    // a sub-count of the prior. Visualizes how the population funnels
+    // through the guard's coarse decision tree.
+    const funnelData = [
+      { key: "Total", data: total },
+      { key: "Pass", data: actionCounts.pass },
+      { key: "Redact", data: actionCounts.redact },
+      { key: "Block", data: actionCounts.block + actionCounts.refuse },
+    ].filter((d) => d.data > 0);
+
     return {
       total,
       liveCount,
@@ -88,12 +100,13 @@ export function MetricsStrip({ rows }: MetricsStripProps) {
       actionData,
       bandData,
       sparklineData,
+      funnelData,
       avgDuration: Math.round(avgDuration),
     };
   }, [rows]);
 
   return (
-    <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
       <Card>
         <CardHeader title="Total" subtitle="visible page" />
         <div className="flex items-baseline gap-3">
@@ -139,13 +152,21 @@ export function MetricsStrip({ rows }: MetricsStripProps) {
             </div>
             <ul className="flex flex-wrap gap-1 text-[10px]">
               {stats.actionData.map((d) => (
-                <li key={d.key} className="flex items-center gap-1">
-                  <span
-                    className="inline-block h-2 w-2 rounded-full"
-                    style={{ backgroundColor: ACTION_COLORS[d.key as FinalAction] }}
-                  />
-                  <span className="font-medium">{d.key}</span>
-                  <span className="text-muted-foreground">×{d.data}</span>
+                <li key={d.key}>
+                  <button
+                    type="button"
+                    onClick={() => onActionFilter?.(d.key as FinalAction)}
+                    disabled={!onActionFilter}
+                    className="flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
+                    title={onActionFilter ? `Filter table to action "${d.key}"` : undefined}
+                  >
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ backgroundColor: ACTION_COLORS[d.key as FinalAction] }}
+                    />
+                    <span className="font-medium">{d.key}</span>
+                    <span className="text-muted-foreground">×{d.data}</span>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -175,16 +196,35 @@ export function MetricsStrip({ rows }: MetricsStripProps) {
             </div>
             <ul className="flex flex-wrap gap-1 text-[10px]">
               {stats.bandData.map((d) => (
-                <li key={d.key} className="flex items-center gap-1">
-                  <span
-                    className="inline-block h-2 w-2 rounded-full"
-                    style={{ backgroundColor: BAND_COLORS[d.key as "low" | "med" | "high"] }}
-                  />
-                  <span className="font-medium uppercase">{d.key}</span>
-                  <span className="text-muted-foreground">×{d.data}</span>
+                <li key={d.key}>
+                  <button
+                    type="button"
+                    onClick={() => onRiskFilter?.(d.key as RiskBand)}
+                    disabled={!onRiskFilter}
+                    className="flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
+                    title={onRiskFilter ? `Filter table to risk "${d.key}"` : undefined}
+                  >
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ backgroundColor: BAND_COLORS[d.key as "low" | "med" | "high"] }}
+                    />
+                    <span className="font-medium uppercase">{d.key}</span>
+                    <span className="text-muted-foreground">×{d.data}</span>
+                  </button>
                 </li>
               ))}
             </ul>
+          </div>
+        ) : (
+          <EmptyChartState />
+        )}
+      </Card>
+
+      <Card>
+        <CardHeader title="Funnel" subtitle="Total → Pass → Redact → Block" />
+        {stats.funnelData.length > 1 ? (
+          <div className="h-32">
+            <FunnelChart data={stats.funnelData} series={<FunnelSeries />} />
           </div>
         ) : (
           <EmptyChartState />

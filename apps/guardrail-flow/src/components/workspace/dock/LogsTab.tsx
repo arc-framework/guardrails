@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/shared/ErrorState";
@@ -21,6 +22,7 @@ const SEVERITY_VARIANT: Record<DebugSeverity, "default" | "secondary" | "destruc
   };
 
 export function LogsTab({ rid }: LogsTabProps) {
+  const [listRef] = useAutoAnimate<HTMLDivElement>();
   const query = useDebugQuery(rid);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +57,7 @@ export function LogsTab({ rid }: LogsTabProps) {
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div ref={listRef} className="flex flex-col gap-1">
       {items.map((entry) => (
         <details key={`${entry.rid}-${entry.seq}`} className="rounded border bg-background text-xs">
           <summary className="flex cursor-pointer items-center gap-2 px-2 py-1">

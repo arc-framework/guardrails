@@ -2,6 +2,20 @@
 
 All notable changes to the `arc-guard` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.11.0] — 2026-05-10
+
+### Added
+- New `arc_guard.observability.stale_live_sweeper.StaleLiveSweeper` — periodic background task that promotes hung `request_summaries.live=1` rows to `status='errored'` by emitting `RequestErrored` events back through the configured composite sink. Off-switch: set `request_summary_sweep_interval_seconds <= 0`.
+- `RequestSummaryProjector` extended to handle `RequestErrored` — flips `live=0 status='errored'` while preserving any prior `'completed'` status (RequestCompleted wins races against the sweeper).
+- `_run_pipeline` now binds `rid_context_var` to the LifecycleEmitter's rid for the duration of every pipeline run. Resolves the F7 issue where `RidLogHandler` tagged debug entries with the dashboard's lookup-API rid instead of the guard request's own rid.
+- Validate / sanitize / rehydrate stage markers — every canonical stage in the 12-stage taxonomy now emits `StageRan` on every pipeline path (pass-through, redact, block, refuse). Skipped stages emit with `status="skipped"` so the workspace canvas can render them distinctly.
+- Policy-ruleset path now mirrors the legacy chain's per-finding emissions: `StrategyExecuted`, `SanitizationApplied`, `PlaceholderMapBuilt` (when capture flags engage). Previously these only fired on the legacy `elif result.findings:` branch.
+- `_entity_map_from_result` reconstructs `placeholder → original_value` from the bundled-strategy decision metadata so the rehydrate stage receives a complete map even when the policy router does not surface one.
+- Capture-gated `text_before` / `text_after` populated on the four transformative-stage emissions (SanitizationApplied, StrategyExecuted, PayloadRewritten, RehydrationVerified).
+
+### Migration notes
+- Additive only. The existing event-stream contract is unchanged; new emission sites add events on paths that were previously silent. Subscribers that subscribe to event-type denylists (rare) should audit for the newly-firing types: `PolicyResolved`, `PolicyRuleEvaluated`, `DecisionEmitted`, `RefusalProduced`, `RehydrationVerified` plus the `validate` / `sanitize` / `rehydrate` `StageRan` markers.
+
 ## [0.10.0] — 2026-05-09
 
 ### Added

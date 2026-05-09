@@ -60,7 +60,7 @@ export function ExplorerFilters({ filters, setFilter, clear }: ExplorerFiltersPr
     filters.rid_prefix !== "";
 
   return (
-    <div className="flex flex-col gap-3 rounded-md border p-3">
+    <div className="flex flex-col gap-3 rounded-md border bg-card p-3 shadow-sm">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col gap-1">
           <label htmlFor="rid-prefix" className="text-xs font-medium text-muted-foreground">

@@ -4,12 +4,12 @@ Vendored visual primitives — repo-owned source, not npm packages. Same posture
 
 ## Components
 
-| File | Source | Used by |
-| --- | --- | --- |
-| `CurtainThemeToggle.tsx` | https://21st.dev/community/components/fatih-developer/curtain-theme-toggle/default | `App.tsx` — replaces the prior 🌞/🌙 button toggle |
-| `DottedSurface.tsx` | https://21st.dev/community/components/efferd/dotted-surface/default | `App.tsx` — wraps `<main>` so the backdrop renders behind every route |
-| `AnimatedGradientBorder.tsx` | https://21st.dev/community/components/easemize/animated-gradient-border/default | `LifecycleCanvas.tsx` — wraps the active stage during workspace replay |
-| `brand/PipelineBrand.tsx` (+ siblings) | https://21st.dev/community/components/svg-ui/cpu-architecture/default | `App.tsx` header — replaces the static `GR` chip. See `brand/README.md` |
+| File                                   | Source                                                                             | Used by                                                                 |
+| -------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `CurtainThemeToggle.tsx`               | https://21st.dev/community/components/fatih-developer/curtain-theme-toggle/default | `App.tsx` — replaces the prior 🌞/🌙 button toggle                      |
+| `DottedSurface.tsx`                    | https://21st.dev/community/components/efferd/dotted-surface/default                | `App.tsx` — wraps `<main>` so the backdrop renders behind every route   |
+| `AnimatedGradientBorder.tsx`           | https://21st.dev/community/components/easemize/animated-gradient-border/default    | `LifecycleCanvas.tsx` — wraps the active stage during workspace replay  |
+| `brand/PipelineBrand.tsx` (+ siblings) | https://21st.dev/community/components/svg-ui/cpu-architecture/default              | `App.tsx` header — replaces the static `GR` chip. See `brand/README.md` |
 
 ## House rules
 

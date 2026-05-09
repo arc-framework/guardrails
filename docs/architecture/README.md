@@ -35,6 +35,7 @@ verifies that the documented supported imports still resolve at runtime.
 | [011](../../specs/011-detection-extensibility/spec.md)     | Detection extensibility — semantic content policies, automatic masking, code injection       | Implemented |
 | [012](../../specs/012-dashboard-backend-data-plane/spec.md) | Dashboard backend data plane — paginated requests, workspace, filtered SSE, CORS allow-list  | Implemented |
 | [013](../../specs/013-guardrailflow-dashboard/spec.md)      | GuardRailFlow dashboard — Vite SPA, 12-stage canvas, inspector + debug dock, fixture mode    | Implemented |
+| [014](../../specs/014-pipeline-instrumentation-completion/spec.md) | Pipeline instrumentation completion — all 12 stages emit; payload-text capture; sweeper; `/v1/guard` retired | Implemented |
 
 ## Constitution
 

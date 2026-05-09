@@ -47,11 +47,19 @@ const columns: ColumnDef<ExplorerRowModel>[] = [
   {
     id: "rid",
     accessorFn: (r) => r.summary.rid,
-    header: "rid",
+    header: "RID",
     enableSorting: true,
     cell: ({ row }) => (
       <span className="inline-flex items-center gap-2 font-mono text-xs">
-        {row.original.liveBadge ? (
+        {row.original.staleBadge ? (
+          <span
+            className="text-amber-600 dark:text-amber-400"
+            aria-label="stale (last event > 30 minutes ago)"
+            title="Live row hasn't received an event in over 30 minutes — likely stuck. Backend sweeper should resolve shortly."
+          >
+            ⚠
+          </span>
+        ) : row.original.liveBadge ? (
           <span
             className={cn("h-2 w-2 animate-pulse rounded-full bg-emerald-500")}
             aria-label="live"
@@ -64,7 +72,7 @@ const columns: ColumnDef<ExplorerRowModel>[] = [
   {
     id: "status",
     accessorFn: (r) => r.summary.status,
-    header: "status",
+    header: "Status",
     enableSorting: true,
     cell: ({ row }) => (
       <Badge variant={row.original.summary.live ? "default" : "outline"}>
@@ -75,7 +83,7 @@ const columns: ColumnDef<ExplorerRowModel>[] = [
   {
     id: "action",
     accessorFn: (r) => r.summary.final_action ?? "",
-    header: "action",
+    header: "Action",
     enableSorting: true,
     cell: ({ row }) =>
       row.original.summary.final_action ? (
@@ -89,7 +97,7 @@ const columns: ColumnDef<ExplorerRowModel>[] = [
   {
     id: "risk",
     accessorFn: (r) => (r.riskBand ? (RISK_BAND_ORDER[r.riskBand] ?? -1) : -1),
-    header: "risk",
+    header: "Risk",
     enableSorting: true,
     cell: ({ row }) =>
       row.original.riskBand ? (
@@ -101,21 +109,21 @@ const columns: ColumnDef<ExplorerRowModel>[] = [
   {
     id: "stage",
     accessorFn: (r) => r.stageDisplay,
-    header: "stage",
+    header: "Stage",
     enableSorting: false,
     cell: ({ row }) => <span className="text-muted-foreground">{row.original.stageDisplay}</span>,
   },
   {
     id: "duration",
     accessorFn: (r) => r.summary.duration_ms ?? -1,
-    header: "duration",
+    header: "Duration",
     enableSorting: true,
     cell: ({ row }) => <span className="font-mono text-xs">{row.original.durationDisplay}</span>,
   },
   {
     id: "started",
     accessorFn: (r) => r.summary.started_at,
-    header: "started",
+    header: "Started",
     enableSorting: true,
     cell: ({ row }) => (
       <span className="text-xs text-muted-foreground">
@@ -149,11 +157,11 @@ export function ExplorerTable({ page, onPage }: ExplorerTableProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-md border bg-card shadow-sm">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/40">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
+              <TableRow key={hg.id} className="hover:bg-muted/40">
                 {hg.headers.map((header) => {
                   const canSort = header.column.getCanSort();
                   const isSorted = header.column.getIsSorted();
@@ -163,7 +171,7 @@ export function ExplorerTable({ page, onPage }: ExplorerTableProps) {
                         <button
                           type="button"
                           onClick={header.column.getToggleSortingHandler()}
-                          className="flex items-center gap-1 text-left text-xs font-medium hover:text-foreground"
+                          className="flex items-center gap-1 text-left text-xs font-semibold tracking-wide text-muted-foreground hover:text-foreground"
                         >
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           <span aria-hidden className="text-[10px] opacity-60">
@@ -171,7 +179,9 @@ export function ExplorerTable({ page, onPage }: ExplorerTableProps) {
                           </span>
                         </button>
                       ) : (
-                        flexRender(header.column.columnDef.header, header.getContext())
+                        <span className="text-xs font-semibold tracking-wide text-muted-foreground">
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                        </span>
                       )}
                     </TableHead>
                   );

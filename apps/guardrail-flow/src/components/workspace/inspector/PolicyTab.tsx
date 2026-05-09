@@ -114,9 +114,8 @@ function extractRules(
   }
 
   const policy = payload.policy;
-  const rules = policy && typeof policy === "object"
-    ? (policy as Record<string, unknown>).rules
-    : null;
+  const rules =
+    policy && typeof policy === "object" ? (policy as Record<string, unknown>).rules : null;
   if (!Array.isArray(rules)) return [];
   return rules
     .filter((r): r is Record<string, unknown> => !!r && typeof r === "object")
@@ -179,9 +178,7 @@ function riskVariant(risk: string): "default" | "secondary" | "destructive" | "o
   return "outline";
 }
 
-function ruleStatusVariant(
-  rule: PolicyRule,
-): "default" | "secondary" | "destructive" | "outline" {
+function ruleStatusVariant(rule: PolicyRule): "default" | "secondary" | "destructive" | "outline" {
   if (rule.contributedToAction) return "default";
   if (rule.matched) return "secondary";
   return "outline";

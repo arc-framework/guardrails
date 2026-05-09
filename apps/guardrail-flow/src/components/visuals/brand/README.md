@@ -4,11 +4,11 @@ Three arc-branded variants of the 21st.dev CPU Architecture primitive. The CPU m
 
 ## Variants
 
-| File | Glyph | Notes |
-| --- | --- | --- |
-| `PipelineBrand.tsx` | Stylized 12-stage flow | Default. The 12 lifecycle stages traced as a pipeline. |
-| `WordmarkBrand.tsx` | `arc` wordmark + animated guard ring | The wordmark with a slow-rotating outer ring that hints at protection. |
-| `GuardrailBrand.tsx` | Abstract guardrail / shield glyph | Static silhouette. Useful when the chip needs to feel calmer (e.g. screen-share friendly). |
+| File                 | Glyph                                | Notes                                                                                      |
+| -------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `PipelineBrand.tsx`  | Stylized 12-stage flow               | Default. The 12 lifecycle stages traced as a pipeline.                                     |
+| `WordmarkBrand.tsx`  | `arc` wordmark + animated guard ring | The wordmark with a slow-rotating outer ring that hints at protection.                     |
+| `GuardrailBrand.tsx` | Abstract guardrail / shield glyph    | Static silhouette. Useful when the chip needs to feel calmer (e.g. screen-share friendly). |
 
 ## Source
 

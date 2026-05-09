@@ -28,7 +28,13 @@ export function ExplorerRoute() {
         <h1 className="text-xl font-semibold">Requests</h1>
       </header>
 
-      {query.data && query.data.items.length > 0 ? <MetricsStrip rows={query.data.items} /> : null}
+      {query.data && query.data.items.length > 0 ? (
+        <MetricsStrip
+          rows={query.data.items}
+          onActionFilter={(action) => filters.setFilter("action", [action])}
+          onRiskFilter={(band) => filters.setFilter("risk_band", [band])}
+        />
+      ) : null}
 
       <ExplorerFilters
         filters={filters.filters}

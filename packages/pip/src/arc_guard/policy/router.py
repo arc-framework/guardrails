@@ -146,7 +146,7 @@ class RuleBasedPolicyRouter:
             )
 
         # Apply strategies to produce transformed text + transform summaries.
-        transformed_text, transforms = self._apply_strategies(
+        transformed_text, routed_decisions, transforms = self._apply_strategies(
             result.text, findings, decisions, per_finding_winning_rule
         )
 
@@ -182,7 +182,7 @@ class RuleBasedPolicyRouter:
 
         return RoutedOutcome(
             transformed_text=transformed_text,
-            decisions=tuple(decisions),
+            decisions=routed_decisions,
             aggregate_action=aggregate_action,
             aggregate_band=band,
             refusal=refusal,
@@ -281,7 +281,7 @@ class RuleBasedPolicyRouter:
         findings: Sequence[Finding],
         decisions: Sequence[PolicyDecision],
         per_finding_rule: dict[int, PolicyRule],
-    ) -> tuple[str, tuple[TransformSummary, ...]]:
+    ) -> tuple[str, tuple[PolicyDecision, ...], tuple[TransformSummary, ...]]:
         """Apply each finding's chosen strategy in span order.
 
         Strategies that operate on individual spans (redact, hash, tokenize)
@@ -297,6 +297,7 @@ class RuleBasedPolicyRouter:
 
         # Build replacements list: (start, end, replacement, finding_idx, strategy)
         replacements: list[tuple[int, int, str, int, str]] = []
+        strategy_metadata_by_finding: dict[int, dict[str, object]] = {}
 
         for strategy_name, finding_indices in per_strategy.items():
             if strategy_name in ("block", "warn", "pass"):
@@ -331,6 +332,7 @@ class RuleBasedPolicyRouter:
                 # strategy's output order.
                 if idx < len(_sub_decisions):
                     sub_dec = _sub_decisions[idx]
+                    strategy_metadata_by_finding[fi] = dict(sub_dec.metadata)
                     placeholder = sub_dec.metadata.get(
                         "placeholder",
                         sub_dec.metadata.get("replacement", sub_dec.metadata.get("token", "")),
@@ -381,7 +383,23 @@ class RuleBasedPolicyRouter:
                         metadata={},
                     )
                 )
+        enriched_decisions: list[PolicyDecision] = []
+        for decision in decisions:
+            merged_metadata = dict(decision.metadata)
+            for finding_idx in decision.finding_ids:
+                if finding_idx in strategy_metadata_by_finding:
+                    merged_metadata.update(strategy_metadata_by_finding[finding_idx])
+            enriched_decisions.append(
+                PolicyDecision(
+                    finding_ids=decision.finding_ids,
+                    strategy=decision.strategy,
+                    severity=decision.severity,
+                    rationale=decision.rationale,
+                    metadata=merged_metadata,
+                )
+            )
 
+        return out, tuple(enriched_decisions), tuple(transforms)
         return out, tuple(transforms)
 
     def _highest_severity_rule(
