@@ -389,6 +389,9 @@ def build_router(
                 response_id="chatcmpl-arcguard-blocked-input",
                 finish_reason="content_filter",
                 arc_guard_blocked=True,
+                response_text=(
+                    refusal_text if emitter.policy.should_capture_sanitized() else None
+                ),
             )
             await emitter.emit(
                 RequestCompleted,
@@ -421,7 +424,8 @@ def build_router(
                 None,
             )
             if target_msg is not None:
-                before_size = len(target_msg.get("content", "") or "")
+                before_text = target_msg.get("content", "") or ""
+                before_size = len(before_text)
                 target_msg["content"] = pre_result.text
                 pr_event = await emitter.emit(
                     PayloadRewritten,
@@ -430,6 +434,16 @@ def build_router(
                     field="content",
                     before_size=before_size,
                     after_size=len(pre_result.text or ""),
+                    text_before=(
+                        before_text
+                        if emitter.policy.should_capture_sanitized()
+                        else None
+                    ),
+                    text_after=(
+                        pre_result.text
+                        if emitter.policy.should_capture_sanitized()
+                        else None
+                    ),
                 )
                 payload_rewritten_id = pr_event.id
 
@@ -565,6 +579,9 @@ def build_router(
                 response_id=str(backend_response.get("id", "")),
                 finish_reason="content_filter",
                 arc_guard_blocked=True,
+                response_text=(
+                    assistant_text if emitter.policy.should_capture_sanitized() else None
+                ),
             )
             await emitter.emit(
                 RequestCompleted,
@@ -591,12 +608,21 @@ def build_router(
             rid,
             (time.perf_counter() - started) * 1000,
         )
+        # The text the API ultimately returns to the caller is whichever
+        # post_result produced. When post_process did not modify the
+        # assistant's reply, post_result.text matches assistant_text.
+        final_assistant_text = post_result.text or assistant_text
         await emitter.emit(
             ResponseAssembled,
             parent_id=root_id,
             response_id=str(backend_response.get("id", "")),
             finish_reason=str(backend_response["choices"][0].get("finish_reason", "stop")),
             arc_guard_blocked=False,
+            response_text=(
+                final_assistant_text
+                if emitter.policy.should_capture_sanitized()
+                else None
+            ),
         )
         await emitter.emit(
             RequestCompleted,

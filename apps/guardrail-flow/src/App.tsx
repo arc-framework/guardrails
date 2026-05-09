@@ -22,11 +22,20 @@ const SSE_STYLES: Record<string, string> = {
 };
 
 export default function App() {
-  const { theme, toggleTheme, liveSseStatus, liveSseRid } = useUiStore((s) => ({
+  const {
+    theme,
+    toggleTheme,
+    liveSseStatus,
+    liveSseRid,
+    payloadVisibility,
+    togglePayloadVisibility,
+  } = useUiStore((s) => ({
     theme: s.theme,
     toggleTheme: s.toggleTheme,
     liveSseStatus: s.liveSseStatus,
     liveSseRid: s.liveSseRid,
+    payloadVisibility: s.payloadVisibility,
+    togglePayloadVisibility: s.togglePayloadVisibility,
   }));
 
   const showLiveBadge = env.mode === "live" && liveSseStatus !== "idle" && liveSseRid !== null;
@@ -95,6 +104,24 @@ export default function App() {
                 SSE · {SSE_LABELS[liveSseStatus]}
               </span>
             ) : null}
+            <button
+              type="button"
+              onClick={togglePayloadVisibility}
+              className="grid h-8 w-8 place-items-center rounded-md border text-base transition-colors hover:bg-muted"
+              aria-label={
+                payloadVisibility === "masked"
+                  ? "Show payload text in inspector"
+                  : "Mask payload text in inspector"
+              }
+              aria-pressed={payloadVisibility === "visible"}
+              title={
+                payloadVisibility === "masked"
+                  ? "Payload text is masked. Click to reveal."
+                  : "Payload text is visible. Click to mask."
+              }
+            >
+              <span aria-hidden>{payloadVisibility === "masked" ? "🙈" : "👁"}</span>
+            </button>
             <button
               type="button"
               onClick={toggleTheme}

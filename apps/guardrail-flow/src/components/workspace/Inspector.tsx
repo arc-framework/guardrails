@@ -167,7 +167,11 @@ export function Inspector({
           />
         </TabsContent>
         <TabsContent value="policy" className="mt-2 min-h-0 flex-1 overflow-auto">
-          <PolicyTab decision={decision} available={manifest.resources.decision} />
+          <PolicyTab
+            decision={decision}
+            available={manifest.resources.decision}
+            events={events}
+          />
         </TabsContent>
         <TabsContent value="payload" className="mt-2 min-h-0 flex-1 overflow-auto">
           <PayloadTab events={events} />

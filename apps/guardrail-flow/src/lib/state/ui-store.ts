@@ -12,11 +12,14 @@ export type Theme = "light" | "dark";
 
 export type LiveSseStatus = "idle" | "connecting" | "live" | "throttled" | "terminated" | "error";
 
+export type PayloadVisibility = "masked" | "visible";
+
 interface PersistentSlice {
   theme: Theme;
   inspectorCollapsed: boolean;
   dockCollapsed: boolean;
   dockHeightPx: number;
+  payloadVisibility: PayloadVisibility;
 }
 
 interface VolatileSlice {
@@ -37,6 +40,8 @@ interface UiStore extends PersistentSlice, VolatileSlice {
   setInspectorTab: (v: InspectorTab) => void;
   setDockTab: (v: DebugTab) => void;
   setLiveSse: (rid: string | null, status: LiveSseStatus) => void;
+  setPayloadVisibility: (v: PayloadVisibility) => void;
+  togglePayloadVisibility: () => void;
   resetWorkspaceState: () => void;
 }
 
@@ -45,6 +50,10 @@ const PERSISTENT_DEFAULTS: PersistentSlice = {
   inspectorCollapsed: false,
   dockCollapsed: false,
   dockHeightPx: 240,
+  // Default to MASKED — payload-bearing fields are scrubbed in every render
+  // until the operator explicitly opts in. Operators sharing screens during
+  // an incident review should leave this on the default.
+  payloadVisibility: "masked",
 };
 
 const VOLATILE_DEFAULTS: VolatileSlice = {
@@ -69,6 +78,11 @@ export const useUiStore = create<UiStore>()(
       setInspectorTab: (v) => set({ inspectorTab: v }),
       setDockTab: (v) => set({ dockTab: v }),
       setLiveSse: (rid, status) => set({ liveSseRid: rid, liveSseStatus: status }),
+      setPayloadVisibility: (v) => set({ payloadVisibility: v }),
+      togglePayloadVisibility: () =>
+        set((s) => ({
+          payloadVisibility: s.payloadVisibility === "masked" ? "visible" : "masked",
+        })),
       resetWorkspaceState: () => set({ ...VOLATILE_DEFAULTS }),
     }),
     {
@@ -79,6 +93,7 @@ export const useUiStore = create<UiStore>()(
         inspectorCollapsed: s.inspectorCollapsed,
         dockCollapsed: s.dockCollapsed,
         dockHeightPx: s.dockHeightPx,
+        payloadVisibility: s.payloadVisibility,
       }),
     },
   ),

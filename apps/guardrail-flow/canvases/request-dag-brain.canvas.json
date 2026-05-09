@@ -1,0 +1,60 @@
+{
+	"nodes":[
+		{"id":"title","type":"text","text":"# PII Redaction — Request DAG\nThis IS the DAG. `RequestStarted` at center; `parent_id` edges branch outward. Significant events are large; inert/no-op stages are small. Cross-ref edges (dashed) are non-parent causal links.","x":-1200,"y":-520,"width":2340,"height":80,"color":"3"},
+		{"id":"legend","type":"text","text":"cyan = phase boundaries  ·  green = stage events  ·  purple = inspector / strategy  ·  orange = findings / decisions  ·  yellow = backend  ·  small gray = inert / no-op","x":-1200,"y":-428,"width":2340,"height":38},
+
+		{"id":"req_start","type":"text","text":"## RequestStarted\n`rid = 61709bdd`\n`route = /v1/chat/completions`\n`model = llama3.2  input = 29 bytes`","x":-150,"y":-40,"width":300,"height":90,"color":"5"},
+
+		{"id":"pre_start","type":"text","text":"**PreProcessStarted**\n`correlation_id = 6290bd50`\n`decision_id = 157e91c0`","x":-560,"y":-40,"width":260,"height":75,"color":"5"},
+
+		{"id":"stage_defend","type":"text","text":"*defend · 0.4 ms · no-op*","x":-860,"y":-340,"width":220,"height":38},
+		{"id":"stage_classify","type":"text","text":"**CLASSIFY** · `27.9 ms`\n`InspectorRan × 3`","x":-860,"y":-270,"width":220,"height":60,"color":"4"},
+		{"id":"stage_deception","type":"text","text":"*deception · 0.2 ms · inert*","x":-860,"y":-170,"width":220,"height":38},
+		{"id":"stage_sanitize","type":"text","text":"**SANITIZE** · `0.3 ms`","x":-860,"y":-90,"width":220,"height":50,"color":"4"},
+		{"id":"stage_route","type":"text","text":"**ROUTE** · `0.1 ms`","x":-860,"y":10,"width":220,"height":50,"color":"4"},
+		{"id":"stage_execute","type":"text","text":"**EXECUTE** · `0.1 ms`","x":-860,"y":110,"width":220,"height":50,"color":"4"},
+		{"id":"stage_verify","type":"text","text":"*verify · 0.4 ms · inert*","x":-860,"y":210,"width":220,"height":38},
+		{"id":"stage_rehydrate","type":"text","text":"*rehydrate · 0.0 ms · no-op*","x":-860,"y":268,"width":220,"height":38},
+
+		{"id":"finding","type":"text","text":"### FindingProduced\n`EMAIL_ADDRESS`\n`span [12, 29]  score 1.0`\n`risk = HIGH`\n`inspector = presidio`","x":-1180,"y":-300,"width":270,"height":110,"color":"2"},
+		{"id":"sanit_applied","type":"text","text":"**SanitizationApplied**\n`alice@example.com`\n→ `[EMAIL_ADDRESS]`","x":-1180,"y":-100,"width":270,"height":75,"color":"6"},
+		{"id":"policy_res","type":"text","text":"**PolicyResolved**\n`max_risk = HIGH`\n`action = redact`","x":-1180,"y":0,"width":270,"height":75,"color":"2"},
+		{"id":"strategy_exec","type":"text","text":"**StrategyExecuted**\n`RedactStrategy`\n`finding_id → evt_008`","x":-1180,"y":100,"width":270,"height":75,"color":"6"},
+
+		{"id":"pre_done","type":"text","text":"**PreProcessCompleted**\n`action = redact  blocked = false`\n`total_ms = 30.8`","x":-560,"y":330,"width":260,"height":75,"color":"5"},
+
+		{"id":"payload_rw","type":"text","text":"**PayloadRewritten**\n`message[0].content swapped`\n`before=29  after=39 bytes`","x":260,"y":-160,"width":260,"height":75,"color":"3"},
+		{"id":"backend_called","type":"text","text":"**BackendCalled**\n`ollama  llama3.2`\n`payload_msg_count = 1`","x":260,"y":0,"width":260,"height":75,"color":"3"},
+		{"id":"backend_resp","type":"text","text":"### BackendResponded\n`3,442 ms`\n`http_status = 200`\n`183 chars  stop`\n`swap_origin_id → evt_024`","x":600,"y":0,"width":260,"height":110,"color":"3"},
+		{"id":"post_start","type":"text","text":"**PostProcessStarted**\n`correlation_id = 44194b47`","x":260,"y":160,"width":260,"height":60,"color":"5"},
+		{"id":"post_done","type":"text","text":"**PostProcessCompleted**\n`action = pass  total_ms = 8.9`","x":260,"y":280,"width":260,"height":60,"color":"5"},
+
+		{"id":"decision","type":"text","text":"**DecisionEmitted**\n`action = redact`\n`max_risk = HIGH`\n`decision_id = dec_xyz`","x":-150,"y":200,"width":260,"height":80,"color":"2"},
+		{"id":"resp_assembled","type":"text","text":"**ResponseAssembled**\n`arc_guard.blocked = false`\n`finish_reason = stop`","x":-150,"y":340,"width":260,"height":75,"color":"3"},
+		{"id":"req_complete","type":"text","text":"## RequestCompleted\n`blocked = false`\n`pre = redact  post = pass`\n`total_ms = 3,483`","x":-150,"y":480,"width":260,"height":90,"color":"5"},
+		{"id":"report_flushed","type":"text","text":"*ReportFlushed  async*\n`LogReporter  fanout=1  failures=0`","x":-150,"y":630,"width":260,"height":55}
+	],
+	"edges":[
+		{"id":"c1","fromNode":"req_start","fromSide":"left","toNode":"pre_start","toSide":"right","animated":true},
+		{"id":"c2","fromNode":"pre_start","fromSide":"left","toNode":"stage_classify","toSide":"right","animated":true},
+		{"id":"c3","fromNode":"pre_start","fromSide":"left","toNode":"stage_sanitize","toSide":"right"},
+		{"id":"c4","fromNode":"pre_start","fromSide":"left","toNode":"stage_route","toSide":"right"},
+		{"id":"c5","fromNode":"pre_start","fromSide":"left","toNode":"stage_execute","toSide":"right"},
+		{"id":"c6","fromNode":"stage_classify","fromSide":"left","toNode":"finding","toSide":"right","animated":true},
+		{"id":"c7","fromNode":"stage_sanitize","fromSide":"left","toNode":"sanit_applied","toSide":"right"},
+		{"id":"c8","fromNode":"stage_route","fromSide":"left","toNode":"policy_res","toSide":"right"},
+		{"id":"c9","fromNode":"stage_execute","fromSide":"left","toNode":"strategy_exec","toSide":"right"},
+		{"id":"c10","fromNode":"pre_start","fromSide":"bottom","toNode":"pre_done","toSide":"top"},
+		{"id":"c11","fromNode":"req_start","fromSide":"right","toNode":"payload_rw","toSide":"left"},
+		{"id":"c12","fromNode":"req_start","fromSide":"right","toNode":"backend_called","toSide":"left","animated":true},
+		{"id":"c13","fromNode":"backend_called","fromSide":"right","toNode":"backend_resp","toSide":"left","animated":true},
+		{"id":"c14","fromNode":"backend_called","fromSide":"bottom","toNode":"post_start","toSide":"top"},
+		{"id":"c15","fromNode":"post_start","fromSide":"bottom","toNode":"post_done","toSide":"top"},
+		{"id":"c16","fromNode":"req_start","fromSide":"bottom","toNode":"decision","toSide":"top"},
+		{"id":"c17","fromNode":"decision","fromSide":"bottom","toNode":"resp_assembled","toSide":"top"},
+		{"id":"c18","fromNode":"resp_assembled","fromSide":"bottom","toNode":"req_complete","toSide":"top","animated":true},
+		{"id":"c19","fromNode":"req_complete","fromSide":"bottom","toNode":"report_flushed","toSide":"top"},
+		{"id":"xref1","fromNode":"strategy_exec","fromSide":"bottom","toNode":"finding","toSide":"bottom","color":"6","label":"finding_id"},
+		{"id":"xref2","fromNode":"payload_rw","fromSide":"right","toNode":"backend_resp","toSide":"top","color":"3","label":"swap_origin_id"}
+	]
+}

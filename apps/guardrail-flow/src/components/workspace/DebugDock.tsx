@@ -45,8 +45,19 @@ function dockTabHasData(tab: DebugTab, events: LifecycleEventBase[]): boolean {
         (e) => e.event_type === "BackendCalled" || e.event_type === "BackendResponded",
       );
     case "diff_replay":
-      // Phase-2 placeholder; deliberately greyed.
-      return false;
+      // Has data when at least one transformative event carries both a
+      // ``text_before`` and ``text_after`` (capture flags must be on).
+      return events.some((e) => {
+        const r = e as Record<string, unknown>;
+        return (
+          (e.event_type === "SanitizationApplied" ||
+            e.event_type === "StrategyExecuted" ||
+            e.event_type === "PayloadRewritten" ||
+            e.event_type === "RehydrationVerified") &&
+          typeof r.text_before === "string" &&
+          typeof r.text_after === "string"
+        );
+      });
     default:
       return true;
   }
@@ -160,7 +171,7 @@ export function DebugDock({ rid, events, sseStatus, activeTab, onTabChange }: De
               value="diff_replay"
               className="mt-2 min-h-0 flex-1 overflow-auto px-3 pb-3"
             >
-              <DiffReplayTab />
+              <DiffReplayTab events={events} />
             </TabsContent>
           </Tabs>
         </>

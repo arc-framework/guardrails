@@ -1,0 +1,36 @@
+{
+	"nodes":[
+		{"id":"title","type":"text","text":"# PII Redaction — Stage Journey\nOne request passing through arc-guard's pipeline. Active stages are full-height. Inert stages (no-op or sentinel) appear as thin dividers.","x":0,"y":-160,"width":540,"height":80,"color":"3"},
+		{"id":"input","type":"text","text":"**INPUT**\n`My email is alice@example.com`\n`29 bytes · model = llama3.2 · /v1/chat/completions`","x":0,"y":-60,"width":540,"height":70,"color":"5"},
+		{"id":"entry","type":"text","text":"**ENTRY** — `RequestStarted → PreProcessStarted`\n`rid = 61709bdd  correlation_id = 6290bd50  decision_id = 157e91c0`","x":0,"y":30,"width":540,"height":60,"color":"5"},
+		{"id":"gate_defend","type":"text","text":"*defend — no-op  (no IntentEncoder configured)*","x":40,"y":110,"width":460,"height":38},
+		{"id":"gate_classify","type":"text","text":"**CLASSIFY** · `27.9 ms`\n3 inspectors run in parallel via `run_off_loop`","x":0,"y":168,"width":540,"height":65,"color":"4"},
+		{"id":"chip_inj","type":"text","text":"InjectionInspector  `3.2 ms`  →  0 findings","x":40,"y":253,"width":460,"height":38},
+		{"id":"chip_pres","type":"text","text":"**PresidioInspector**  `24.7 ms`  →  1 finding\n`EMAIL_ADDRESS  span=[12,29]  score=1.0  risk=HIGH`","x":40,"y":301,"width":460,"height":55,"color":"2"},
+		{"id":"chip_jb","type":"text","text":"JailbreakDetector  `0.0 ms`  →  0 findings  *(not emitted on clean input)*","x":40,"y":366,"width":460,"height":38},
+		{"id":"gate_deception","type":"text","text":"*deception_inspect — inert  (no ConversationState in input)*","x":40,"y":424,"width":460,"height":38},
+		{"id":"gate_sanitize","type":"text","text":"**SANITIZE** · `0.3 ms`\nRedact span [12, 29] → placeholder","x":0,"y":482,"width":540,"height":65,"color":"4"},
+		{"id":"chip_sanit","type":"text","text":"SanitizationApplied  ·  `alice@example.com` → `[EMAIL_ADDRESS]`  ·  map held in memory","x":40,"y":557,"width":460,"height":48,"color":"6"},
+		{"id":"gate_route","type":"text","text":"**ROUTE** · `0.1 ms`\nPolicyRouter: max_risk = HIGH → action = redact","x":0,"y":625,"width":540,"height":65,"color":"4"},
+		{"id":"chip_policy","type":"text","text":"PolicyResolved  ·  max_risk = HIGH  resolved_action = redact  router = default","x":40,"y":700,"width":460,"height":38,"color":"2"},
+		{"id":"gate_execute","type":"text","text":"**EXECUTE** · `0.1 ms`\nRedactStrategy applies placeholder; sanitized payload built","x":0,"y":758,"width":540,"height":65,"color":"4"},
+		{"id":"chip_strat","type":"text","text":"StrategyExecuted  ·  RedactStrategy  ·  `My email is [EMAIL_ADDRESS]`","x":40,"y":833,"width":460,"height":48,"color":"6"},
+		{"id":"gate_verify","type":"text","text":"*verify — inert  (no FidelityScorer configured)*","x":40,"y":901,"width":460,"height":38},
+		{"id":"gate_rehydrate","type":"text","text":"*rehydrate — no-op  (rehydration verifier not wired)*","x":40,"y":949,"width":460,"height":38},
+		{"id":"gate_backend","type":"text","text":"**BACKEND** · `3,442 ms`\nPayloadRewritten → BackendCalled → Ollama llama3.2 → BackendResponded\n`http_status = 200  finish_reason = stop  183 chars`","x":0,"y":1007,"width":540,"height":80,"color":"3"},
+		{"id":"gate_post","type":"text","text":"**POST-PROCESS** · `8.9 ms`\n12 stages mirror pre-process on assistant text.  No findings.  action = pass","x":0,"y":1107,"width":540,"height":65,"color":"4"},
+		{"id":"gate_complete","type":"text","text":"**COMPLETE** · `3,483 ms total`\n`blocked = false  pre = redact  post = pass`  ·  DecisionRecord → SQLite","x":0,"y":1192,"width":540,"height":65,"color":"5"},
+		{"id":"output","type":"text","text":"**RESPONSE**\n`ChatCompletion  finish_reason = stop  arc_guard.blocked = false`","x":0,"y":1277,"width":540,"height":65,"color":"5"}
+	],
+	"edges":[
+		{"id":"e1","fromNode":"input","fromSide":"bottom","toNode":"entry","toSide":"top","animated":true},
+		{"id":"e2","fromNode":"entry","fromSide":"bottom","toNode":"gate_classify","toSide":"top","animated":true},
+		{"id":"e3","fromNode":"gate_classify","fromSide":"bottom","toNode":"gate_sanitize","toSide":"top","animated":true},
+		{"id":"e4","fromNode":"gate_sanitize","fromSide":"bottom","toNode":"gate_route","toSide":"top","animated":true},
+		{"id":"e5","fromNode":"gate_route","fromSide":"bottom","toNode":"gate_execute","toSide":"top","animated":true},
+		{"id":"e6","fromNode":"gate_execute","fromSide":"bottom","toNode":"gate_backend","toSide":"top","animated":true},
+		{"id":"e7","fromNode":"gate_backend","fromSide":"bottom","toNode":"gate_post","toSide":"top","animated":true},
+		{"id":"e8","fromNode":"gate_post","fromSide":"bottom","toNode":"gate_complete","toSide":"top","animated":true},
+		{"id":"e9","fromNode":"gate_complete","fromSide":"bottom","toNode":"output","toSide":"top","animated":true}
+	]
+}

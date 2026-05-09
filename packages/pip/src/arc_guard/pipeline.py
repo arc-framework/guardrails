@@ -524,6 +524,20 @@ class GuardPipeline:
         # the parent's id is restored on return.
         parent_correlation_id = _ACTIVE_CORRELATION_ID.get()
         active_token = _ACTIVE_CORRELATION_ID.set(correlation_id)
+        # Bind ``rid_context_var`` to the LifecycleEmitter's rid for the
+        # duration of the run so structured-logging entries flowing through
+        # ``RidLogHandler`` carry the same rid the pipeline emits lifecycle
+        # events with — not whatever rid an outer HTTP middleware (e.g.,
+        # the dashboard's lookup-API) had set. ``rid_context_var`` is
+        # asyncio-aware so concurrent runs on different tasks stay isolated.
+        from arc_guard.observability.debug_log_handler import rid_context_var
+
+        _emitter_for_rid, _ = self._lifecycle_ctx(guard_input)
+        _rid_token = (
+            rid_context_var.set(_emitter_for_rid.rid)
+            if _emitter_for_rid is not None
+            else None
+        )
         # Per-run redactor: scoped to this run's input text so the
         # substring-rejection branch can scan against the actual originals.
         # Constructed fresh per run so concurrent runs do not share the
@@ -1006,11 +1020,65 @@ class GuardPipeline:
             # stage_runner). Emit a marker so the canvas shows execute as
             # having run; status reflects whether route's strategy actually
             # produced a non-None outcome.
-            await self._emit_via_ctx(
+            _stage_exec_ev_pr = await self._emit_via_ctx(
                 guard_input, StageRan, stage=STAGE_EXECUTE,
                 duration_ms=0.0,
                 status="ok" if outcome is not None else "err",
             )
+            # StrategyExecuted + per-finding SanitizationApplied on the
+            # policy-ruleset path. The router already mutated ``result``;
+            # we replay the per-finding emission so the dashboard's
+            # Diff/Replay tab can render the transformation chain on the
+            # primary production path (not just on the legacy chain).
+            if (
+                _stage_exec_ev_pr is not None
+                and outcome is not None
+                and result.findings
+                and str(result.action) in ("redact", "hash", "tokenize")
+            ):
+                _emitter_pr, _ = self._lifecycle_ctx(guard_input)
+                _capture_text_pr = (
+                    _emitter_pr is not None
+                    and _emitter_pr.policy.should_capture_sanitized()
+                )
+                _capture_raw_pr = (
+                    _emitter_pr is not None
+                    and _emitter_pr.policy.should_capture_raw_input()
+                )
+                _first_finding_id_pr = next(iter(_finding_event_ids.values()), "")
+                await self._emit_via_ctx(
+                    guard_input, StrategyExecuted,
+                    parent_id_override=_stage_exec_ev_pr.id,
+                    strategy=type(self._resolve_strategy()).__name__,
+                    finding_id=_first_finding_id_pr,
+                    text_after_size=len(result.text or ""),
+                    text_before=effective_input.text if _capture_text_pr else None,
+                    text_after=result.text if _capture_text_pr else None,
+                )
+                _placeholder_map_pr: dict[str, str] = {}
+                for f in result.findings:
+                    placeholder = f"[{f.entity_type}]"
+                    await self._emit_via_ctx(
+                        guard_input, SanitizationApplied,
+                        parent_id_override=_stage_exec_ev_pr.id,
+                        entity_type=f.entity_type,
+                        placeholder=placeholder,
+                        span=(f.start, f.end),
+                        finding_id=_finding_event_ids.get((f.start, f.end), ""),
+                        text_before=effective_input.text if _capture_text_pr else None,
+                        text_after=result.text if _capture_text_pr else None,
+                    )
+                    if _capture_raw_pr:
+                        _placeholder_map_pr[placeholder] = (
+                            effective_input.text[f.start:f.end]
+                        )
+                await self._emit_via_ctx(
+                    guard_input, PlaceholderMapBuilt,
+                    parent_id_override=_stage_exec_ev_pr.id,
+                    placeholder_count=len(result.findings),
+                    entity_types=sorted({f.entity_type for f in result.findings}),
+                    map=_placeholder_map_pr if _capture_raw_pr else None,
+                )
             # STAGE_REFUSAL marker — fires only when the run produced a refusal
             # envelope. The construction itself happens inside the router; this
             # marker makes the existence observable AND records the refusal's
@@ -1131,12 +1199,19 @@ class GuardPipeline:
                 # strategy as a whole (each decision then carries its own
                 # finding_id via SanitizationApplied below).
                 _first_finding_id = next(iter(_finding_event_ids.values()), "")
+                _emitter_for_strategy, _ = self._lifecycle_ctx(guard_input)
+                _capture_strategy = (
+                    _emitter_for_strategy is not None
+                    and _emitter_for_strategy.policy.should_capture_sanitized()
+                )
                 await self._emit_via_ctx(
                     guard_input, StrategyExecuted,
                     parent_id_override=_stage_exec_ev.id,
                     strategy=_strategy_name,
                     finding_id=_first_finding_id,
                     text_after_size=len(result.text or ""),
+                    text_before=effective_input.text if _capture_strategy else None,
+                    text_after=result.text if _capture_strategy else None,
                 )
                 # SanitizationApplied per-finding (only when the action
                 # actually mutates text — redact / hash / tokenize).
@@ -1162,6 +1237,7 @@ class GuardPipeline:
                             placeholder=placeholder,
                             span=(f.start, f.end),
                             finding_id=_finding_event_ids.get((f.start, f.end), ""),
+                            text_before=effective_input.text if _capture_text else None,
                             text_after=result.text if _capture_text else None,
                         )
                         if _capture_raw:
@@ -1502,6 +1578,8 @@ class GuardPipeline:
         # subsequent same-task run does not see this run's id as its
         # parent.
         _ACTIVE_CORRELATION_ID.reset(active_token)
+        if _rid_token is not None:
+            rid_context_var.reset(_rid_token)
 
         return result
 

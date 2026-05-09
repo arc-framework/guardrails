@@ -1,5 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useUiStore } from "@/lib/state/ui-store";
+import { maskPayload } from "@/lib/privacy/mask";
 import type { LifecycleEventBase } from "@/types/api";
 
 export interface PayloadTabProps {
@@ -17,6 +19,7 @@ interface PayloadField {
 export function PayloadTab({ events }: PayloadTabProps) {
   const fields = extractPayloadFields(events);
   const anyCaptured = fields.some((f) => f.value !== null);
+  const masked = useUiStore((s) => s.payloadVisibility === "masked");
 
   return (
     <div className="flex flex-col gap-3 px-1">
@@ -32,9 +35,16 @@ export function PayloadTab({ events }: PayloadTabProps) {
           </code>
           .
         </p>
-        <Badge variant={anyCaptured ? "default" : "outline"}>
-          {anyCaptured ? "capture: on" : "capture: off"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {masked && anyCaptured ? (
+            <Badge variant="outline" className="text-[10px]">
+              🙈 masked
+            </Badge>
+          ) : null}
+          <Badge variant={anyCaptured ? "default" : "outline"}>
+            {anyCaptured ? "capture: on" : "capture: off"}
+          </Badge>
+        </div>
       </div>
 
       {!anyCaptured ? (
@@ -59,7 +69,7 @@ export function PayloadTab({ events }: PayloadTabProps) {
             </header>
             {f.value !== null ? (
               <pre className="max-h-[280px] min-h-[120px] overflow-auto whitespace-pre-wrap break-words rounded border bg-background p-2 text-[11px] leading-snug">
-                {f.value}
+                {masked ? maskPayload(f.value) : f.value}
               </pre>
             ) : (
               <div className="rounded border border-dashed bg-muted/30 p-2 text-[11px] text-muted-foreground">
