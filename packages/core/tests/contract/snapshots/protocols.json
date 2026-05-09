@@ -1,0 +1,712 @@
+[
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": true,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "apply",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "text"
+          },
+          {
+            "annotation": "Sequence[Finding]",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "findings"
+          }
+        ],
+        "return": "tuple[str, Sequence[PolicyDecision]]"
+      }
+    ],
+    "module": "arc_guard_core.protocols.strategy",
+    "name": "ActionStrategy",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "sanitize",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "key"
+          },
+          {
+            "annotation": "Any",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "value"
+          }
+        ],
+        "return": "RedactionResult"
+      }
+    ],
+    "module": "arc_guard_core.protocols.attribute_redactor",
+    "name": "AttributeRedactor",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "evaluate",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "text"
+          }
+        ],
+        "return": "ContentPolicyDecision"
+      }
+    ],
+    "module": "arc_guard_core.protocols.content_policy",
+    "name": "ContentPolicy",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "inspect_turn",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "text"
+          },
+          {
+            "annotation": "ConversationState | None",
+            "default": "<empty>",
+            "kind": "KEYWORD_ONLY",
+            "name": "prior_state"
+          }
+        ],
+        "return": "tuple[DeceptionScore, ConversationState]"
+      }
+    ],
+    "module": "arc_guard_core.protocols.conversation_turn_inspector",
+    "name": "ConversationTurnInspector",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": true,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "entities",
+        "params": [],
+        "return": "Iterable[EntityDefinition]"
+      }
+    ],
+    "module": "arc_guard_core.protocols.entity_provider",
+    "name": "EntityProvider",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "evaluate",
+        "params": [
+          {
+            "annotation": "Iterable[CorpusEntry]",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "corpus"
+          },
+          {
+            "annotation": "tuple[Configuration, ...]",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "configurations"
+          },
+          {
+            "annotation": "int",
+            "default": "0",
+            "kind": "KEYWORD_ONLY",
+            "name": "seed"
+          }
+        ],
+        "return": "EvaluationReport"
+      }
+    ],
+    "module": "arc_guard_core.protocols.evaluation_harness",
+    "name": "EvaluationHarness",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "compatible_with",
+        "params": [
+          {
+            "annotation": "IntentEncoder",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "encoder"
+          }
+        ],
+        "return": "bool"
+      },
+      {
+        "is_async": false,
+        "name": "score",
+        "params": [
+          {
+            "annotation": "IntentRepresentation",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "intent"
+          },
+          {
+            "annotation": "IntentRepresentation",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "answer"
+          }
+        ],
+        "return": "FidelityScore"
+      }
+    ],
+    "module": "arc_guard_core.protocols.fidelity_scorer",
+    "name": "FidelityScorer",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": true,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "is_enabled",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "name"
+          },
+          {
+            "annotation": "GuardContext | None",
+            "default": "None",
+            "kind": "KEYWORD_ONLY",
+            "name": "context"
+          }
+        ],
+        "return": "bool"
+      }
+    ],
+    "module": "arc_guard_core.protocols.flag_provider",
+    "name": "FlagProvider",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": true,
+        "name": "post_process",
+        "params": [
+          {
+            "annotation": "GuardInput",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "guard_input"
+          }
+        ],
+        "return": "GuardResult"
+      },
+      {
+        "is_async": false,
+        "name": "post_process_sync",
+        "params": [
+          {
+            "annotation": "GuardInput",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "guard_input"
+          }
+        ],
+        "return": "GuardResult"
+      },
+      {
+        "is_async": true,
+        "name": "pre_process",
+        "params": [
+          {
+            "annotation": "GuardInput",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "guard_input"
+          }
+        ],
+        "return": "GuardResult"
+      },
+      {
+        "is_async": false,
+        "name": "pre_process_sync",
+        "params": [
+          {
+            "annotation": "GuardInput",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "guard_input"
+          }
+        ],
+        "return": "GuardResult"
+      }
+    ],
+    "module": "arc_guard_core.protocols.guard",
+    "name": "Guard",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": true,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "inspect",
+        "params": [
+          {
+            "annotation": "GuardResult",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "result"
+          }
+        ],
+        "return": "GuardResult"
+      }
+    ],
+    "module": "arc_guard_core.protocols.inspector",
+    "name": "Inspector",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "encode",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "text"
+          }
+        ],
+        "return": "IntentRepresentation"
+      }
+    ],
+    "module": "arc_guard_core.protocols.intent_encoder",
+    "name": "IntentEncoder",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "detect",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "text"
+          },
+          {
+            "annotation": "ConversationState | None",
+            "default": "None",
+            "kind": "KEYWORD_ONLY",
+            "name": "conversation_state"
+          }
+        ],
+        "return": "tuple[JailbreakSignal, ...]"
+      }
+    ],
+    "module": "arc_guard_core.protocols.jailbreak_detector",
+    "name": "JailbreakDetector",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "bind",
+        "params": [
+          {
+            "annotation": "Any",
+            "default": "<empty>",
+            "kind": "VAR_KEYWORD",
+            "name": "fields"
+          }
+        ],
+        "return": "Logger"
+      },
+      {
+        "is_async": false,
+        "name": "event",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "name"
+          },
+          {
+            "annotation": "str",
+            "default": "'info'",
+            "kind": "KEYWORD_ONLY",
+            "name": "level"
+          },
+          {
+            "annotation": "Any",
+            "default": "<empty>",
+            "kind": "VAR_KEYWORD",
+            "name": "fields"
+          }
+        ],
+        "return": "None"
+      }
+    ],
+    "module": "arc_guard_core.observability",
+    "name": "Logger",
+    "stability": "experimental"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "counter",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "name"
+          },
+          {
+            "annotation": "int",
+            "default": "1",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "value"
+          },
+          {
+            "annotation": "Mapping[str, Any] | None",
+            "default": "None",
+            "kind": "KEYWORD_ONLY",
+            "name": "attributes"
+          }
+        ],
+        "return": "None"
+      },
+      {
+        "is_async": false,
+        "name": "histogram",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "name"
+          },
+          {
+            "annotation": "float",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "value"
+          },
+          {
+            "annotation": "Mapping[str, Any] | None",
+            "default": "None",
+            "kind": "KEYWORD_ONLY",
+            "name": "attributes"
+          }
+        ],
+        "return": "None"
+      }
+    ],
+    "module": "arc_guard_core.observability",
+    "name": "MetricSink",
+    "stability": "experimental"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": true,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "after",
+        "params": [
+          {
+            "annotation": "GuardResult",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "result"
+          }
+        ],
+        "return": "GuardResult"
+      },
+      {
+        "is_async": true,
+        "name": "after_async",
+        "params": [
+          {
+            "annotation": "GuardResult",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "result"
+          }
+        ],
+        "return": "GuardResult"
+      },
+      {
+        "is_async": false,
+        "name": "before",
+        "params": [
+          {
+            "annotation": "GuardInput",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "guard_input"
+          }
+        ],
+        "return": "GuardInput"
+      },
+      {
+        "is_async": true,
+        "name": "before_async",
+        "params": [
+          {
+            "annotation": "GuardInput",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "guard_input"
+          }
+        ],
+        "return": "GuardInput"
+      }
+    ],
+    "module": "arc_guard_core.protocols.middleware",
+    "name": "Middleware",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": true,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "route",
+        "params": [
+          {
+            "annotation": "GuardResult",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "result"
+          },
+          {
+            "annotation": "PolicyRuleSet",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "ruleset"
+          }
+        ],
+        "return": "RoutedOutcome"
+      }
+    ],
+    "module": "arc_guard_core.protocols.policy_router",
+    "name": "PolicyRouter",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "verify",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "KEYWORD_ONLY",
+            "name": "sanitized_prompt"
+          },
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "KEYWORD_ONLY",
+            "name": "rehydration_candidate"
+          },
+          {
+            "annotation": "Mapping[str, str]",
+            "default": "<empty>",
+            "kind": "KEYWORD_ONLY",
+            "name": "entity_map"
+          }
+        ],
+        "return": "RehydrationVerdict"
+      }
+    ],
+    "module": "arc_guard_core.protocols.rehydration_verifier",
+    "name": "RehydrationVerifier",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": true,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": true,
+        "name": "close",
+        "params": [],
+        "return": "None"
+      },
+      {
+        "is_async": true,
+        "name": "report",
+        "params": [
+          {
+            "annotation": "GuardResult",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "result"
+          }
+        ],
+        "return": "None"
+      }
+    ],
+    "module": "arc_guard_core.protocols.reporter",
+    "name": "Reporter",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "select",
+        "params": [
+          {
+            "annotation": "Finding",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "finding"
+          },
+          {
+            "annotation": "GuardResult",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "guard_result"
+          }
+        ],
+        "return": "str"
+      }
+    ],
+    "module": "arc_guard_core.protocols.strategy_selector",
+    "name": "StrategySelector",
+    "stability": "stable"
+  },
+  {
+    "has_concurrency_line": true,
+    "has_failure_mode_line": true,
+    "has_thread_safety_line": false,
+    "kind": "protocol",
+    "methods": [
+      {
+        "is_async": false,
+        "name": "start_span",
+        "params": [
+          {
+            "annotation": "str",
+            "default": "<empty>",
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "name"
+          },
+          {
+            "annotation": "Mapping[str, Any] | None",
+            "default": "None",
+            "kind": "KEYWORD_ONLY",
+            "name": "attributes"
+          }
+        ],
+        "return": "AbstractContextManager[Any]"
+      }
+    ],
+    "module": "arc_guard_core.observability",
+    "name": "Tracer",
+    "stability": "experimental"
+  }
+]

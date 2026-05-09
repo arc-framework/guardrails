@@ -1,0 +1,2256 @@
+[
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "suggested_rephrase",
+        "type": "str"
+      },
+      {
+        "default": "<factory:tuple>",
+        "name": "next_steps",
+        "type": "tuple[str, ...]"
+      },
+      {
+        "default": "None",
+        "name": "triggering_rule_id",
+        "type": "str | None"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "ClarificationRequest",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "typing",
+    "name": "Configuration",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "configuration",
+        "type": "Configuration"
+      },
+      {
+        "default": null,
+        "name": "jailbreak_precision",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "jailbreak_recall",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "deception_precision",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "deception_recall",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "sanitization_precision",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "sanitization_recall",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "fidelity_score_median",
+        "type": "float | None"
+      },
+      {
+        "default": null,
+        "name": "refusal_rate",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "clarification_rate",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "latency_p50_ms",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "latency_p99_ms",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "intelligibility_score",
+        "type": "float"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.evaluation",
+    "name": "ConfigurationMetrics",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "matched",
+        "type": "bool"
+      },
+      {
+        "default": "None",
+        "name": "confidence",
+        "type": "float | None"
+      },
+      {
+        "default": "''",
+        "name": "policy_name",
+        "type": "str"
+      },
+      {
+        "default": "None",
+        "name": "refusal_code",
+        "type": "RefusalCode | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.protocols.content_policy",
+    "name": "ContentPolicyDecision",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "conversation_id",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "turn_count",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "role_play_markers",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "escalation_signals",
+        "type": "int"
+      },
+      {
+        "default": "1",
+        "name": "state_version",
+        "type": "int"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.deception",
+    "name": "ConversationState",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "typing",
+    "name": "CorpusCategory",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "category",
+        "type": "CorpusCategory"
+      },
+      {
+        "default": null,
+        "name": "prompt",
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "name": "turns",
+        "type": "tuple[str, ...] | None"
+      },
+      {
+        "default": null,
+        "name": "expected_outcomes",
+        "type": "Mapping[Configuration, ExpectedOutcome]"
+      },
+      {
+        "default": null,
+        "name": "notes",
+        "type": "str"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.evaluation",
+    "name": "CorpusEntry",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "DECEPTION_NOT_MEASURED",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "DEFAULT_PLACEHOLDERS",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "DEFAULT_REFUSAL_TEMPLATES",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "value",
+        "type": "float | None"
+      },
+      {
+        "default": null,
+        "name": "sentinel",
+        "type": "DeceptionSentinel"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.deception",
+    "name": "DeceptionScore",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "0.7",
+        "name": "refuse",
+        "required": false,
+        "type": "float"
+      },
+      {
+        "default": "0.5",
+        "name": "clarify",
+        "required": false,
+        "type": "float"
+      },
+      {
+        "default": "0.3",
+        "name": "warn",
+        "required": false,
+        "type": "float"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.observability_config",
+    "name": "DeceptionThresholds",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "correlation_id",
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "name": "phase",
+        "type": "Literal['pre_process', 'post_process']"
+      },
+      {
+        "default": null,
+        "name": "aggregate_action",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "aggregate_band",
+        "type": "RiskBand"
+      },
+      {
+        "default": null,
+        "name": "findings",
+        "type": "tuple[FindingSummary, ...]"
+      },
+      {
+        "default": null,
+        "name": "transforms",
+        "type": "tuple[TransformSummary, ...]"
+      },
+      {
+        "default": null,
+        "name": "fired_rules",
+        "type": "tuple[str, ...]"
+      },
+      {
+        "default": null,
+        "name": "refusal_code",
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "name": "clarification_present",
+        "type": "bool"
+      },
+      {
+        "default": null,
+        "name": "latency_ms",
+        "type": "float"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      },
+      {
+        "default": "None",
+        "name": "intent_lock",
+        "type": "IntentLock | None"
+      },
+      {
+        "default": "None",
+        "name": "fidelity_score",
+        "type": "FidelityScore | None"
+      },
+      {
+        "default": "()",
+        "name": "jailbreak_signals",
+        "type": "tuple[JailbreakSignal, ...]"
+      },
+      {
+        "default": "None",
+        "name": "deception_score",
+        "type": "DeceptionScore | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.decision",
+    "name": "DecisionRecord",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "name",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "category",
+        "type": "str"
+      },
+      {
+        "default": "None",
+        "name": "pattern",
+        "type": "re.Pattern[str] | None"
+      },
+      {
+        "default": "None",
+        "name": "recognizer",
+        "type": "Any | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "EntityDefinition",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "bases": [
+      "object"
+    ],
+    "kind": "class",
+    "methods": [
+      {
+        "name": "__init__",
+        "signature": "(self) -> 'None'"
+      },
+      {
+        "name": "entities",
+        "signature": "(self) -> 'Iterable[EntityDefinition]'"
+      },
+      {
+        "name": "freeze",
+        "signature": "(self) -> 'None'"
+      },
+      {
+        "name": "get_entities",
+        "signature": "(self) -> 'list[EntityDefinition]'"
+      },
+      {
+        "name": "register",
+        "signature": "(self, entity: 'EntityDefinition') -> 'None'"
+      }
+    ],
+    "module": "arc_guard_core.registry",
+    "name": "EntityRegistry",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "seed",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "corpus_size",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "configurations",
+        "type": "tuple[ConfigurationMetrics, ...]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.evaluation",
+    "name": "EvaluationReport",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "typing",
+    "name": "ExpectedOutcome",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_ADAPTER_VALIDATION",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_API_TRANSPORT",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_API_VALIDATION",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_CONFIG",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_CONVERSATION_TURN_INSPECTOR",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_CORPUS_VALIDATION",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_ENTITY_PROVIDER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_EVALUATION_HARNESS",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_FIDELITY_SCORER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_FLAG_PROVIDER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_INSPECTOR",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_INTENT_ENCODER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_JAILBREAK_DETECTOR",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_PIPELINE_CONTRACT",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_POLICY_ROUTER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_REFUSAL_ENVELOPE",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_REHYDRATION_VERIFIER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_REPORTER",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_STRATEGY",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAILURE_UNKNOWN",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "FAIL_RULE",
+    "stability": "stable"
+  },
+  {
+    "alias": "typing.Literal['open', 'closed', 'closed-conservative']",
+    "kind": "type_alias",
+    "module": "arc_guard_core.exceptions",
+    "name": "FailureMode",
+    "stability": "stable"
+  },
+  {
+    "bases": [
+      "tuple"
+    ],
+    "kind": "class",
+    "methods": [],
+    "module": "arc_guard_core.failure_modes",
+    "name": "FailureRule",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "value",
+        "type": "float | None"
+      },
+      {
+        "default": null,
+        "name": "sentinel",
+        "type": "FidelitySentinel"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.fidelity",
+    "name": "FidelityScore",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "0.7",
+        "name": "warn",
+        "required": false,
+        "type": "float"
+      },
+      {
+        "default": "0.5",
+        "name": "clarify",
+        "required": false,
+        "type": "float"
+      },
+      {
+        "default": "0.3",
+        "name": "refuse",
+        "required": false,
+        "type": "float"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.observability_config",
+    "name": "FidelityThresholds",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "entity_type",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "start",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "end",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "risk_level",
+        "type": "RiskLevel"
+      },
+      {
+        "default": null,
+        "name": "inspector",
+        "type": "str"
+      },
+      {
+        "default": "None",
+        "name": "score",
+        "type": "float | None"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "Finding",
+    "properties": [
+      "span"
+    ],
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "entity_type",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "start",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "end",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "length",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "risk_level",
+        "type": "RiskLevel"
+      },
+      {
+        "default": null,
+        "name": "inspector",
+        "type": "str"
+      },
+      {
+        "default": "None",
+        "name": "score",
+        "type": "float | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.decision",
+    "name": "FindingSummary",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "True",
+        "name": "enabled",
+        "required": false,
+        "type": "bool"
+      },
+      {
+        "default": "False",
+        "name": "lite_mode",
+        "required": false,
+        "type": "bool"
+      },
+      {
+        "default": "<factory>",
+        "name": "inspector_order",
+        "required": false,
+        "type": "tuple[str, ...]"
+      },
+      {
+        "default": "<factory>",
+        "name": "policy_hints_default",
+        "required": false,
+        "type": "frozenset[str]"
+      },
+      {
+        "default": "<factory>",
+        "name": "tracer",
+        "required": false,
+        "type": "Tracer"
+      },
+      {
+        "default": "<factory>",
+        "name": "logger",
+        "required": false,
+        "type": "Logger"
+      },
+      {
+        "default": "<factory>",
+        "name": "metrics",
+        "required": false,
+        "type": "MetricSink"
+      },
+      {
+        "default": "None",
+        "name": "policy",
+        "required": false,
+        "type": "arc_guard_core.policy.PolicyRuleSet | None"
+      },
+      {
+        "default": "<factory>",
+        "name": "observability",
+        "required": false,
+        "type": "ObservabilityConfig"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.config",
+    "name": "GuardConfig",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": "'input'",
+        "name": "source",
+        "type": "Literal['input', 'output']"
+      },
+      {
+        "default": "None",
+        "name": "user_id",
+        "type": "str | None"
+      },
+      {
+        "default": "None",
+        "name": "session_id",
+        "type": "str | None"
+      },
+      {
+        "default": "None",
+        "name": "correlation_id",
+        "type": "str | None"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      },
+      {
+        "default": "None",
+        "name": "conversation_state",
+        "type": "ConversationState | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "GuardContext",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "text",
+        "type": "str"
+      },
+      {
+        "default": "<factory:GuardContext>",
+        "name": "context",
+        "type": "GuardContext"
+      },
+      {
+        "default": "<factory:frozenset>",
+        "name": "policy_hints",
+        "type": "frozenset[str]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "GuardInput",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "bases": [
+      "object"
+    ],
+    "kind": "class",
+    "methods": [
+      {
+        "name": "__init__",
+        "signature": "(self, *, config: 'GuardConfig | None' = None) -> 'None'"
+      },
+      {
+        "name": "post_process",
+        "signature": "(self, guard_input: 'GuardInput') -> 'GuardResult'"
+      },
+      {
+        "name": "post_process_sync",
+        "signature": "(self, guard_input: 'GuardInput') -> 'GuardResult'"
+      },
+      {
+        "name": "pre_process",
+        "signature": "(self, guard_input: 'GuardInput') -> 'GuardResult'"
+      },
+      {
+        "name": "pre_process_sync",
+        "signature": "(self, guard_input: 'GuardInput') -> 'GuardResult'"
+      },
+      {
+        "name": "validate_decisions",
+        "signature": "(decisions: 'Sequence[PolicyDecision]') -> 'None'"
+      },
+      {
+        "name": "validate_findings",
+        "signature": "(findings: 'Sequence[Finding]') -> 'None'"
+      }
+    ],
+    "module": "arc_guard_core.pipeline",
+    "name": "GuardPipeline",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "text",
+        "type": "str"
+      },
+      {
+        "default": "'pass'",
+        "name": "action",
+        "type": "Literal['pass', 'redact', 'hash', 'block', 'tokenize']"
+      },
+      {
+        "default": "<factory:tuple>",
+        "name": "findings",
+        "type": "tuple[Finding, ...]"
+      },
+      {
+        "default": "<factory:tuple>",
+        "name": "decisions",
+        "type": "tuple[PolicyDecision, ...]"
+      },
+      {
+        "default": "None",
+        "name": "refusal",
+        "type": "RefusalEnvelope | None"
+      },
+      {
+        "default": "None",
+        "name": "clarification",
+        "type": "ClarificationRequest | None"
+      },
+      {
+        "default": "None",
+        "name": "bypass_reason",
+        "type": "Literal['disabled', 'error', None]"
+      },
+      {
+        "default": "'pre_process'",
+        "name": "phase",
+        "type": "Literal['pre_process', 'post_process']"
+      },
+      {
+        "default": "None",
+        "name": "fidelity_score",
+        "type": "FidelityScore | None"
+      },
+      {
+        "default": "False",
+        "name": "fidelity_warning",
+        "type": "bool"
+      },
+      {
+        "default": "None",
+        "name": "deception_score",
+        "type": "DeceptionScore | None"
+      },
+      {
+        "default": "None",
+        "name": "conversation_state",
+        "type": "ConversationState | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "GuardResult",
+    "properties": [
+      "is_clean",
+      "max_risk"
+    ],
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "original_intent_hash",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "sanitized_prompt_hash",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "rehydrated_answer_hash",
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "name": "encoder_id",
+        "type": "str | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.intent_lock",
+    "name": "IntentLock",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "bases": [
+      "object"
+    ],
+    "kind": "class",
+    "methods": [],
+    "module": "typing",
+    "name": "IntentRepresentation",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "typing",
+    "name": "JailbreakCategory",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "category",
+        "type": "JailbreakCategory"
+      },
+      {
+        "default": null,
+        "name": "confidence",
+        "type": "float"
+      },
+      {
+        "default": null,
+        "name": "evidence_reference",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "detector_id",
+        "type": "str"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.jailbreak",
+    "name": "JailbreakSignal",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "0.8",
+        "name": "refuse",
+        "required": false,
+        "type": "float"
+      },
+      {
+        "default": "0.6",
+        "name": "clarify",
+        "required": false,
+        "type": "float"
+      },
+      {
+        "default": "0.4",
+        "name": "warn",
+        "required": false,
+        "type": "float"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.observability_config",
+    "name": "JailbreakThresholds",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "typing",
+    "name": "LogLevelFloor",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "NOT_MEASURED",
+    "stability": "stable"
+  },
+  {
+    "bases": [
+      "object"
+    ],
+    "kind": "class",
+    "methods": [
+      {
+        "name": "bind",
+        "signature": "(self, **fields: 'Any') -> 'NullLogger'"
+      },
+      {
+        "name": "event",
+        "signature": "(self, name: 'str', *, level: 'str' = 'info', **fields: 'Any') -> 'None'"
+      }
+    ],
+    "module": "arc_guard_core.observability",
+    "name": "NullLogger",
+    "stability": "experimental"
+  },
+  {
+    "bases": [
+      "object"
+    ],
+    "kind": "class",
+    "methods": [
+      {
+        "name": "counter",
+        "signature": "(self, name: 'str', value: 'int' = 1, *, attributes: 'Mapping[str, Any] | None' = None) -> 'None'"
+      },
+      {
+        "name": "histogram",
+        "signature": "(self, name: 'str', value: 'float', *, attributes: 'Mapping[str, Any] | None' = None) -> 'None'"
+      }
+    ],
+    "module": "arc_guard_core.observability",
+    "name": "NullMetricSink",
+    "stability": "experimental"
+  },
+  {
+    "bases": [
+      "object"
+    ],
+    "kind": "class",
+    "methods": [
+      {
+        "name": "start_span",
+        "signature": "(self, name: 'str', *, attributes: 'Mapping[str, Any] | None' = None) -> 'AbstractContextManager[Any]'"
+      }
+    ],
+    "module": "arc_guard_core.observability",
+    "name": "NullTracer",
+    "stability": "experimental"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "1.0",
+        "name": "sampling_rate",
+        "required": false,
+        "type": "float"
+      },
+      {
+        "default": "True",
+        "name": "refusal_always_emits",
+        "required": false,
+        "type": "bool"
+      },
+      {
+        "default": "'info'",
+        "name": "log_level_floor",
+        "required": false,
+        "type": "typing.Literal['debug', 'info', 'warn', 'error']"
+      },
+      {
+        "default": "frozenset({'action', 'correlation_id', 'decision_id', 'failure_class', 'risk_band', 'stage'})",
+        "name": "metric_attribute_allow_list",
+        "required": false,
+        "type": "frozenset[str]"
+      },
+      {
+        "default": "1024",
+        "name": "max_attribute_bytes",
+        "required": false,
+        "type": "int"
+      },
+      {
+        "default": "<factory>",
+        "name": "fidelity_thresholds",
+        "required": false,
+        "type": "FidelityThresholds"
+      },
+      {
+        "default": "<factory>",
+        "name": "jailbreak_thresholds",
+        "required": false,
+        "type": "JailbreakThresholds"
+      },
+      {
+        "default": "<factory>",
+        "name": "deception_thresholds",
+        "required": false,
+        "type": "DeceptionThresholds"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.observability_config",
+    "name": "ObservabilityConfig",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "finding_ids",
+        "type": "tuple[int, ...]"
+      },
+      {
+        "default": null,
+        "name": "strategy",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "severity",
+        "type": "RiskLevel"
+      },
+      {
+        "default": null,
+        "name": "rationale",
+        "type": "str"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "PolicyDecision",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "id",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "match",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": "None",
+        "name": "strategy",
+        "required": false,
+        "type": "str | None"
+      },
+      {
+        "default": "None",
+        "name": "selector",
+        "required": false,
+        "type": "str | None"
+      },
+      {
+        "default": "<RiskLevel.LOW: 1>",
+        "name": "severity_floor",
+        "required": false,
+        "type": "RiskLevel"
+      },
+      {
+        "default": "''",
+        "name": "rationale_template",
+        "required": false,
+        "type": "str"
+      },
+      {
+        "default": "None",
+        "name": "refusal_human_message",
+        "required": false,
+        "type": "str | None"
+      },
+      {
+        "default": "None",
+        "name": "refusal_next_steps",
+        "required": false,
+        "type": "tuple[str, ...] | None"
+      },
+      {
+        "default": "<factory>",
+        "name": "metadata",
+        "required": false,
+        "type": "dict[str, typing.Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.policy",
+    "name": "PolicyRule",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "<factory>",
+        "name": "rules",
+        "required": false,
+        "type": "tuple[arc_guard_core.policy.PolicyRule, ...]"
+      },
+      {
+        "default": "<factory>",
+        "name": "risk_thresholds",
+        "required": false,
+        "type": "RiskThresholds"
+      },
+      {
+        "default": "False",
+        "name": "clarification_enabled",
+        "required": false,
+        "type": "bool"
+      },
+      {
+        "default": "<RiskBand.MEDIUM: 'medium'>",
+        "name": "ambiguous_threshold",
+        "required": false,
+        "type": "RiskBand"
+      },
+      {
+        "default": "'pass'",
+        "name": "default_action_when_no_rules_fire",
+        "required": false,
+        "type": "typing.Literal['pass', 'block']"
+      },
+      {
+        "default": "<factory>",
+        "name": "metadata",
+        "required": false,
+        "type": "dict[str, typing.Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.policy",
+    "name": "PolicyRuleSet",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "accepted",
+        "type": "bool"
+      },
+      {
+        "default": "None",
+        "name": "value",
+        "type": "Any | None"
+      },
+      {
+        "default": "None",
+        "name": "reason",
+        "type": "str | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.protocols.attribute_redactor",
+    "name": "RedactionResult",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "base": "StrEnum",
+    "kind": "enum",
+    "module": "arc_guard_core.refusal.codes",
+    "name": "RefusalCode",
+    "stability": "stable",
+    "values": [
+      {
+        "name": "JAILBREAK",
+        "value": "jailbreak"
+      },
+      {
+        "name": "JAILBREAK_STRONG",
+        "value": "jailbreak_strong"
+      },
+      {
+        "name": "DECEPTION_DRIFT",
+        "value": "deception_drift"
+      },
+      {
+        "name": "PII_CRITICAL",
+        "value": "pii_critical"
+      },
+      {
+        "name": "STRATEGY_FAILED",
+        "value": "strategy_failed"
+      },
+      {
+        "name": "POLICY_BLOCK",
+        "value": "policy_block"
+      },
+      {
+        "name": "FIDELITY_DROP",
+        "value": "fidelity_drop"
+      },
+      {
+        "name": "API_INVALID_REQUEST",
+        "value": "api_invalid_request"
+      },
+      {
+        "name": "API_TRANSPORT_TIMEOUT",
+        "value": "api_transport_timeout"
+      },
+      {
+        "name": "INTERNAL_PIPELINE_ERROR",
+        "value": "internal_pipeline_error"
+      },
+      {
+        "name": "INTERNAL_ADAPTER_ERROR",
+        "value": "internal_adapter_error"
+      },
+      {
+        "name": "INTERNAL_REFUSAL_BUILD_ERROR",
+        "value": "internal_refusal_build_error"
+      },
+      {
+        "name": "INTERNAL_ENTITY_PROVIDER_ERROR",
+        "value": "internal_entity_provider_error"
+      },
+      {
+        "name": "INTERNAL_UNKNOWN_ERROR",
+        "value": "internal_unknown_error"
+      },
+      {
+        "name": "SQL_INJECTION",
+        "value": "sql_injection"
+      },
+      {
+        "name": "SHELL_INJECTION",
+        "value": "shell_injection"
+      },
+      {
+        "name": "TEMPLATE_INJECTION",
+        "value": "template_injection"
+      }
+    ]
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "code",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "trigger",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "policy",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "human_message",
+        "type": "str"
+      },
+      {
+        "default": "<factory:tuple>",
+        "name": "decisions",
+        "type": "tuple[PolicyDecision, ...]"
+      },
+      {
+        "default": "<factory:tuple>",
+        "name": "next_steps",
+        "type": "tuple[str, ...]"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.types",
+    "name": "RefusalEnvelope",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "human_message",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "next_steps",
+        "type": "tuple[str, ...]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.refusal.templates",
+    "name": "RefusalTemplate",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "typing",
+    "name": "RehydrationDecision",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "decision",
+        "type": "RehydrationDecision"
+      },
+      {
+        "default": null,
+        "name": "reason",
+        "type": "str"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "per_placeholder",
+        "type": "Mapping[str, bool]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.protocols.rehydration_verifier",
+    "name": "RehydrationVerdict",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "rid",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "seq",
+        "required": true,
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "ts",
+        "required": true,
+        "type": "datetime"
+      },
+      {
+        "default": null,
+        "name": "channel",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "severity",
+        "required": true,
+        "type": "typing.Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']"
+      },
+      {
+        "default": null,
+        "name": "message",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "metadata",
+        "required": true,
+        "type": "dict[str, typing.Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_debug",
+    "name": "RequestDebugEntry",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "rid",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "items",
+        "required": true,
+        "type": "tuple[arc_guard_core.schemas.request_debug.RequestDebugEntry, ...]"
+      },
+      {
+        "default": null,
+        "name": "next_cursor",
+        "required": true,
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "name": "page_size",
+        "required": true,
+        "type": "int"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_debug",
+    "name": "RequestDebugPage",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "rid",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "decision_id",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "recorded_at",
+        "required": true,
+        "type": "datetime"
+      },
+      {
+        "default": null,
+        "name": "decision",
+        "required": true,
+        "type": "dict[str, typing.Any]"
+      },
+      {
+        "default": null,
+        "name": "payload_size_bytes",
+        "required": true,
+        "type": "int"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_decision",
+    "name": "RequestDecisionEnvelope",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "items",
+        "required": true,
+        "type": "tuple[arc_guard_core.schemas.request_summary.RequestSummary, ...]"
+      },
+      {
+        "default": null,
+        "name": "page",
+        "required": true,
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "page_size",
+        "required": true,
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "total",
+        "required": true,
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "has_more",
+        "required": true,
+        "type": "bool"
+      },
+      {
+        "default": null,
+        "name": "filters",
+        "required": true,
+        "type": "RequestPageFilters"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_summary",
+    "name": "RequestPage",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "None",
+        "name": "since",
+        "required": false,
+        "type": "datetime.datetime | None"
+      },
+      {
+        "default": "None",
+        "name": "until",
+        "required": false,
+        "type": "datetime.datetime | None"
+      },
+      {
+        "default": "()",
+        "name": "status",
+        "required": false,
+        "type": "tuple[typing.Literal['live', 'completed', 'errored'], ...]"
+      },
+      {
+        "default": "()",
+        "name": "action",
+        "required": false,
+        "type": "tuple[typing.Literal['pass', 'block', 'redact', 'clarify', 'refuse'], ...]"
+      },
+      {
+        "default": "()",
+        "name": "risk_band",
+        "required": false,
+        "type": "tuple[typing.Literal['low', 'med', 'high'], ...]"
+      },
+      {
+        "default": "None",
+        "name": "rid_prefix",
+        "required": false,
+        "type": "str | None"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_summary",
+    "name": "RequestPageFilters",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "rid",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "started_at",
+        "required": true,
+        "type": "datetime"
+      },
+      {
+        "default": null,
+        "name": "last_event_at",
+        "required": true,
+        "type": "datetime"
+      },
+      {
+        "default": null,
+        "name": "status",
+        "required": true,
+        "type": "typing.Literal['live', 'completed', 'errored']"
+      },
+      {
+        "default": "None",
+        "name": "final_action",
+        "required": false,
+        "type": "typing.Optional[typing.Literal['pass', 'block', 'redact', 'clarify', 'refuse']]"
+      },
+      {
+        "default": "None",
+        "name": "max_risk",
+        "required": false,
+        "type": "float | None"
+      },
+      {
+        "default": "None",
+        "name": "duration_ms",
+        "required": false,
+        "type": "int | None"
+      },
+      {
+        "default": "None",
+        "name": "refusal_code",
+        "required": false,
+        "type": "str | None"
+      },
+      {
+        "default": "None",
+        "name": "decision_id",
+        "required": false,
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "name": "live",
+        "required": true,
+        "type": "bool"
+      },
+      {
+        "default": "None",
+        "name": "stage",
+        "required": false,
+        "type": "typing.Optional[typing.Literal['validate', 'defend', 'classify', 'deception_inspect', 'sanitize', 'route', 'execute', 'refusal', 'verify', 'rehydrate', 'decision_emit', 'report']]"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_summary",
+    "name": "RequestSummary",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "summary",
+        "required": true,
+        "type": "RequestSummary"
+      },
+      {
+        "default": null,
+        "name": "resources",
+        "required": true,
+        "type": "WorkspaceResourcesAvailability"
+      },
+      {
+        "default": null,
+        "name": "links",
+        "required": true,
+        "type": "WorkspaceResourceLinks"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_summary",
+    "name": "RequestWorkspaceManifest",
+    "stability": "stable"
+  },
+  {
+    "base": "StrEnum",
+    "kind": "enum",
+    "module": "arc_guard_core.policy",
+    "name": "RiskBand",
+    "stability": "stable",
+    "values": [
+      {
+        "name": "LOW",
+        "value": "low"
+      },
+      {
+        "name": "MEDIUM",
+        "value": "medium"
+      },
+      {
+        "name": "HIGH",
+        "value": "high"
+      },
+      {
+        "name": "CRITICAL",
+        "value": "critical"
+      }
+    ]
+  },
+  {
+    "base": "IntEnum",
+    "kind": "enum",
+    "module": "arc_guard_core.types",
+    "name": "RiskLevel",
+    "stability": "stable",
+    "values": [
+      {
+        "name": "NONE",
+        "value": 0
+      },
+      {
+        "name": "LOW",
+        "value": 1
+      },
+      {
+        "name": "MEDIUM",
+        "value": 2
+      },
+      {
+        "name": "HIGH",
+        "value": 3
+      },
+      {
+        "name": "CRITICAL",
+        "value": 4
+      }
+    ]
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": "2",
+        "name": "low_max_count",
+        "required": false,
+        "type": "int"
+      },
+      {
+        "default": "4",
+        "name": "medium_max_count",
+        "required": false,
+        "type": "int"
+      },
+      {
+        "default": "1",
+        "name": "high_escalates_at",
+        "required": false,
+        "type": "int"
+      },
+      {
+        "default": "1",
+        "name": "critical_escalates_at",
+        "required": false,
+        "type": "int"
+      },
+      {
+        "default": "3",
+        "name": "soft_pii_aggregation",
+        "required": false,
+        "type": "int"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.policy",
+    "name": "RiskThresholds",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "transformed_text",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "decisions",
+        "type": "tuple[PolicyDecision, ...]"
+      },
+      {
+        "default": null,
+        "name": "aggregate_action",
+        "type": "Literal['pass', 'redact', 'hash', 'block', 'tokenize']"
+      },
+      {
+        "default": null,
+        "name": "aggregate_band",
+        "type": "RiskBand"
+      },
+      {
+        "default": "None",
+        "name": "refusal",
+        "type": "RefusalEnvelope | None"
+      },
+      {
+        "default": "None",
+        "name": "clarification",
+        "type": "ClarificationRequest | None"
+      },
+      {
+        "default": "()",
+        "name": "fired_rule_ids",
+        "type": "tuple[str, ...]"
+      },
+      {
+        "default": "()",
+        "name": "transforms",
+        "type": "tuple[TransformSummary, ...]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.policy",
+    "name": "RoutedOutcome",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_CLASSIFY",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_DECEPTION_INSPECT",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_DECISION_EMIT",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_DEFEND",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_DESCRIPTORS",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_EXECUTE",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_REFUSAL",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_REHYDRATE",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_REPORT",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_ROUTE",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_SANITIZE",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_VALIDATE",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "STAGE_VERIFY",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "typing",
+    "name": "Severity",
+    "signature": "(*args, **kwargs)",
+    "stability": "stable"
+  },
+  {
+    "fields": [
+      {
+        "default": null,
+        "name": "strategy",
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "target_finding_index",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "before_length",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "after_length",
+        "type": "int"
+      },
+      {
+        "default": null,
+        "name": "replacement_kind",
+        "type": "Literal['placeholder', 'hash', 'token', 'removed', 'warn', 'passed']"
+      },
+      {
+        "default": "<factory:dict>",
+        "name": "metadata",
+        "type": "dict[str, Any]"
+      }
+    ],
+    "frozen": true,
+    "kind": "dataclass",
+    "module": "arc_guard_core.policy",
+    "name": "TransformSummary",
+    "properties": [],
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "UNKNOWN_POSTURE",
+    "stability": "stable"
+  },
+  {
+    "kind": "unknown",
+    "name": "UNKNOWN_RULE",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "lifecycle",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "decision",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "debug",
+        "required": true,
+        "type": "str"
+      },
+      {
+        "default": null,
+        "name": "live_stream",
+        "required": true,
+        "type": "str"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_summary",
+    "name": "WorkspaceResourceLinks",
+    "stability": "stable"
+  },
+  {
+    "extra": "forbid",
+    "fields": [
+      {
+        "default": null,
+        "name": "lifecycle",
+        "required": true,
+        "type": "bool"
+      },
+      {
+        "default": null,
+        "name": "decision",
+        "required": true,
+        "type": "bool"
+      },
+      {
+        "default": null,
+        "name": "debug",
+        "required": true,
+        "type": "bool"
+      },
+      {
+        "default": null,
+        "name": "live_stream",
+        "required": true,
+        "type": "bool"
+      }
+    ],
+    "frozen": true,
+    "kind": "pydantic_model",
+    "module": "arc_guard_core.schemas.request_summary",
+    "name": "WorkspaceResourcesAvailability",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.schemas.request_debug",
+    "name": "decode_debug_cursor",
+    "signature": "(token: 'str', *, expected_rid: 'str') -> 'int'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.schemas.request_debug",
+    "name": "encode_debug_cursor",
+    "signature": "(*, rid: 'str', seq: 'int') -> 'str'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.placeholders",
+    "name": "format_placeholder",
+    "signature": "(entity_type: 'str', occurrence: 'int', total: 'int') -> 'str'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.placeholders",
+    "name": "get_placeholder",
+    "signature": "(entity_type: 'str') -> 'str'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.refusal.templates",
+    "name": "get_refusal_template",
+    "signature": "(code: 'RefusalCode') -> 'RefusalTemplate'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.failure_modes",
+    "name": "lookup_rule",
+    "signature": "(exc_type: 'type[BaseException]') -> 'tuple[FailureRule, FailureMode]'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.registry",
+    "name": "register_entity",
+    "signature": "(name: 'str', category: 'str', pattern: 're.Pattern[str] | None' = None, recognizer: 'Any | None' = None) -> 'None'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.placeholders",
+    "name": "register_placeholder",
+    "signature": "(entity_type: 'str', label: 'str') -> 'None'",
+    "stability": "stable"
+  },
+  {
+    "kind": "function",
+    "module": "arc_guard_core.refusal.templates",
+    "name": "register_refusal_template",
+    "signature": "(code: 'RefusalCode', template: 'RefusalTemplate') -> 'None'",
+    "stability": "stable"
+  }
+]

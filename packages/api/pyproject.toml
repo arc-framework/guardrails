@@ -1,0 +1,93 @@
+[project]
+name = "arc-guard-service"
+version = "0.6.0"
+description = "Thin deployment surface for arc-guardrails"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "arc-guardrails maintainers" }]
+license = { text = "Proprietary" }
+dependencies = [
+    "arc-guard",
+    "pydantic-settings>=2.0",
+]
+
+[project.optional-dependencies]
+fastapi = [
+    "fastapi>=0.110",
+    "uvicorn>=0.30",
+    "httpx>=0.27",
+]
+
+[project.scripts]
+arc-guard-service = "arc_guard_service.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/arc_guard_service"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/arc_guard_service/py.typed" = "arc_guard_service/py.typed"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "ASYNC"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B", "SIM", "E501"]
+# FastAPI dependency-injection idiom for body/depends parameters and
+# pydantic schema docstrings legitimately produce long lines.
+"src/arc_guard_service/schemas/*.py" = ["E501"]
+"src/arc_guard_service/transport/http.py" = ["E501"]
+"src/arc_guard_service/transport/openai.py" = ["E501", "B008"]
+"src/arc_guard_service/transport/requests.py" = ["E501", "B008"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+files = ["src", "tests"]
+
+# FastAPI's untyped-decorator pattern (`@app.get(...)`) can't be
+# typed strictly; the SSE transport's typing-narrowing branches and
+# request-handler signatures legitimately need a few escape hatches.
+[[tool.mypy.overrides]]
+module = [
+    "arc_guard_service.transport.http",
+    "arc_guard_service.transport.lifecycle",
+    "arc_guard_service.transport.openai",
+    "arc_guard_service.transport.events",
+    "arc_guard_service.transport.requests",
+]
+disable_error_code = [
+    "untyped-decorator",
+    "unused-ignore",
+    "no-any-return",
+    "arg-type",
+    "valid-type",
+    "type-arg",
+]
+
+# uvicorn does not ship type stubs; the cli.py launcher uses it to start the
+# ASGI server when the [fastapi] extra is installed. Suppress only the missing
+# stub error; runtime behavior is unchanged.
+[[tool.mypy.overrides]]
+module = ["uvicorn"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra -q --strict-markers -m 'not slow and not requires_docker'"
+markers = [
+    "slow: long-running benchmark; excluded from default CI, run via `pytest -m slow`",
+    "requires_docker: needs a running Docker daemon; excluded from default CI",
+]

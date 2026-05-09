@@ -1,0 +1,88 @@
+# Local end-to-end stack: arc-guard-service + Ollama (+ optional sqlite-web).
+#
+# Two Compose profiles:
+#   - dev (default): includes the sqlite-ui DB browser on port 8081
+#   - prod: api + ollama only; sqlite-ui suppressed
+#
+# Usage:
+#   make docker-up           # boots dev profile (sqlite-ui included)
+#   make docker-up-prod      # boots prod profile (sqlite-ui excluded)
+#
+#   curl http://127.0.0.1:8766/v1/chat/completions \
+#     -H 'Content-Type: application/json' \
+#     -d '{"model":"llama3.2","messages":[{"role":"user","content":"hello"}]}'
+#
+# Swagger UI:    http://127.0.0.1:8766/docs
+# OpenAPI:       http://127.0.0.1:8766/openapi.json
+# Live events:   http://127.0.0.1:8766/events
+# Replay lookup: http://127.0.0.1:8766/lifecycle/{rid}
+# DB browser:    http://127.0.0.1:8081 (dev profile only)
+
+services:
+  ollama:
+    profiles: ["dev", "prod"]
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  ollama-pull:
+    profiles: ["dev", "prod"]
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["OLLAMA_HOST=http://ollama:11434 ollama pull llama3.2"]
+    restart: "no"
+
+  api:
+    profiles: ["dev", "prod"]
+    build:
+      context: ../..
+      dockerfile: packages/api/Dockerfile
+    ports:
+      - "8766:8766"
+    environment:
+      ARC_GUARD_SERVICE_BIND: 0.0.0.0
+      ARC_GUARD_SERVICE_PORT: "8766"
+      ARC_GUARD_SERVICE_BACKEND: ollama
+      ARC_GUARD_SERVICE_OLLAMA_URL: http://ollama:11434/v1/chat/completions
+      ARC_GUARD_SERVICE_LOG_LEVEL: INFO
+      ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH: /data/arc_guardrail.db
+      ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS: "${ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS:-false}"
+      ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT: "${ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT:-false}"
+    volumes:
+      - lifecycle-data:/data
+    depends_on:
+      ollama:
+        condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
+
+  # Read-only SQLite browser for the lifecycle event store. Dev profile only;
+  # production deployments suppress this service via `--profile prod`.
+  # Mounts the lifecycle-data volume read-only so the UI cannot corrupt the
+  # data the api is actively writing.
+  sqlite-ui:
+    profiles: ["dev"]
+    image: coleifer/sqlite-web
+    ports:
+      - "8081:8080"
+    volumes:
+      - lifecycle-data:/data:ro
+    command: ["sqlite_web", "-H", "0.0.0.0", "/data/arc_guardrail.db"]
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  ollama-models:
+  lifecycle-data:

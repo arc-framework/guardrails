@@ -1,0 +1,17 @@
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.venv
+**/node_modules
+**/.git
+**/.DS_Store
+**/*.egg-info
+docs/
+specs/
+.specify/
+.claude/
+.idea/
+.todo
+arc-worktrees/

@@ -1,0 +1,142 @@
+[project]
+name = "arc-guard"
+version = "0.10.0"
+description = "Guardrails library — typed sanitization (presidio + injection regex), built on arc-guard-core"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "arc-guardrails maintainers" }]
+license = { text = "Proprietary" }
+dependencies = [
+    "arc-guard-core>=0.5.0",
+    "presidio-analyzer>=2.2",
+    "presidio-anonymizer>=2.2",
+]
+
+[project.optional-dependencies]
+otel = [
+    "opentelemetry-api>=1.20",
+    "opentelemetry-sdk>=1.20",
+    "opentelemetry-exporter-otlp>=1.20",
+]
+semantic = [
+    "sentence-transformers>=2.2",
+    "numpy>=1.24",
+]
+jailbreak-ml = [
+    "transformers>=4.30",
+    "torch>=2.0",
+]
+code-injection = [
+    "sqlparse>=0.4",
+]
+
+# Other adapters (NATS / Unleash / semantic / webhook) were trimmed
+# during the rewrite and will return as separate distributions; see
+# CHANGELOG.md for the per-version status.
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/arc_guard"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/arc_guard/py.typed" = "arc_guard/py.typed"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "ASYNC"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B", "SIM", "E501"]
+# Source files containing long-form regex pattern literals (deception
+# state machine, jailbreak detector pattern catalog, ML jailbreak
+# adapter docstrings, and the pipeline's stage-runner docstring) have
+# legitimate lines that cannot be re-flowed without harming readability.
+# Per-file E501 + SIM108 ignores avoid spreading `# noqa` comments
+# across the file.
+"src/arc_guard/deception/state.py" = ["E501"]
+"src/arc_guard/jailbreak/detector.py" = ["E501"]
+"src/arc_guard/middleware/jailbreak_ml/detector.py" = ["E501"]
+"src/arc_guard/pipeline.py" = ["E501", "SIM108"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = [
+    "presidio_analyzer.*",
+    "sentence_transformers.*",
+    "opentelemetry.*",
+    "transformers.*",
+    "torch.*",
+    "sqlparse.*",
+]
+ignore_missing_imports = true
+
+# Some migrated implementation modules do not yet match the current
+# Protocols (Reporter.close, FlagProvider context-only kwarg,
+# EntityProvider.entities renamed from get_entities, ActionStrategy.apply
+# returning PolicyDecision). The contract-mismatch error codes are
+# silenced on those modules until they are refactored; the contract
+# layer in arc-guard-core remains fully --strict.
+[[tool.mypy.overrides]]
+module = [
+    "arc_guard.inspectors.*",
+    "arc_guard.strategies.*",
+    "arc_guard.reporters.*",
+    "arc_guard.flags.*",
+    "arc_guard.pipeline",
+    "arc_guard.config_env",
+]
+disable_error_code = [
+    "arg-type",
+    "attr-defined",
+    "call-arg",
+    "dict-item",
+    "misc",
+    "union-attr",
+    "assignment",
+    "import-untyped",
+    "index",
+    "call-overload",
+    "unused-ignore",
+    "return-value",
+]
+
+# Optional-extra middleware modules import third-party libraries that
+# may not be installed in the dev environment ([semantic], [otel],
+# [jailbreak-ml] extras). The runtime guard is the lazy-import pattern
+# in each module; mypy disable is a developer-experience concession.
+[[tool.mypy.overrides]]
+module = [
+    "arc_guard.middleware.semantic.*",
+    "arc_guard.middleware.otel.*",
+    "arc_guard.middleware.jailbreak_ml.*",
+]
+disable_error_code = [
+    "import-not-found",
+    "import-untyped",
+    "attr-defined",
+    "misc",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra -q --strict-markers -m 'not slow'"
+markers = [
+    "slow: long-running benchmark; excluded from default CI, run via `pytest -m slow`",
+    "requires_semantic: needs the [semantic] extra installed; skipped otherwise",
+    "requires_code_injection: needs the [code-injection] extra installed; skipped otherwise",
+]

@@ -1,7 +1,9 @@
-.claude/*
-.specify/*
+.claude/
+.specify/
+.superpowers/
+specs/
 .venv/
-
+.idea/
 # Local environment
 .DS_Store
 .python-version
@@ -21,9 +23,25 @@ __pycache__/
 .coverage.*
 htmlcov/
 
+# Local runtime logs
+.api.log
+*.log
+
 # Packaging artifacts
 build/
 dist/
 *.egg-info/
 pip-wheel-metadata/
-python/arc-guardrails/analysis/*
+
+# Public docs live in docs/; working and thesis material stay local.
+docs/.obsidian/
+docs/archive/
+docs/canvases/
+docs/superpowers/
+docs/university/
+dev/prompts/
+CLAUDE.md
+arc-guard-agent-prompts.md
+.github/copilot-instructions.md
+.github/claude-instructions.md
+.gitnexus
