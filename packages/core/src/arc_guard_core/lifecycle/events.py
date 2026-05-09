@@ -131,6 +131,10 @@ class JailbreakDetected(LifecycleEventBase):
     detector_id: str = "rule-based:1"
     category: str = ""
     confidence: float = 0.0
+    # Stable id pointing into the jailbreak-evidence registry. NOT the raw
+    # matched payload — payload-safety policy keeps the matched string off
+    # this event by default.
+    evidence_reference: str | None = None
 
 
 @dataclass(frozen=True)
@@ -142,6 +146,10 @@ class DeceptionScored(LifecycleEventBase):
     turn_count: int = 1
     prior_score: float | None = None
     drift_delta: float | None = None
+    # Per-marker breakdown — keys are deception marker names, values are
+    # non-negative counts. Empty dict means "no markers fired"; None means
+    # "not computed for this event".
+    marker_counts: dict[str, int] | None = None
 
 
 @dataclass(frozen=True)
@@ -222,6 +230,12 @@ class BackendCalled(LifecycleEventBase):
     backend: Literal["echo", "ollama", "openai"] = "echo"
     url: str = ""
     payload_msg_count: int = 0
+    # Bounded snapshot of backend model config at call time. Permitted keys:
+    # provider, model, temperature, max_tokens. Forbidden keys (case-insensitive
+    # substrings: key/secret/token/auth/password) MUST be scrubbed before
+    # assignment. Field name avoids the pydantic-reserved 'model_config'
+    # attribute on BaseModel.
+    model_config_snapshot: dict[str, str | int | float] | None = None
 
 
 @dataclass(frozen=True)
@@ -236,6 +250,10 @@ class BackendResponded(LifecycleEventBase):
     # sanitized capture (off by default). Carries the assistant's reply
     # text — note this is the LLM output, not the inbound user text.
     response_text: str | None = None
+    # Token usage as reported by the backend. Permitted keys:
+    # prompt_tokens, completion_tokens, total_tokens. Counts only — token
+    # strings are never included.
+    token_usage: dict[str, int] | None = None
 
 
 @dataclass(frozen=True)

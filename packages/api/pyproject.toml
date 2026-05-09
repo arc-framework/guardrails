@@ -47,6 +47,7 @@ ignore = []
 "src/arc_guard_service/schemas/*.py" = ["E501"]
 "src/arc_guard_service/transport/http.py" = ["E501"]
 "src/arc_guard_service/transport/openai.py" = ["E501", "B008"]
+"src/arc_guard_service/transport/requests.py" = ["E501", "B008"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -64,6 +65,7 @@ module = [
     "arc_guard_service.transport.lifecycle",
     "arc_guard_service.transport.openai",
     "arc_guard_service.transport.events",
+    "arc_guard_service.transport.requests",
 ]
 disable_error_code = [
     "untyped-decorator",
@@ -71,7 +73,15 @@ disable_error_code = [
     "no-any-return",
     "arg-type",
     "valid-type",
+    "type-arg",
 ]
+
+# uvicorn does not ship type stubs; the cli.py launcher uses it to start the
+# ASGI server when the [fastapi] extra is installed. Suppress only the missing
+# stub error; runtime behavior is unchanged.
+[[tool.mypy.overrides]]
+module = ["uvicorn"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

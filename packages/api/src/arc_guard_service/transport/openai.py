@@ -146,6 +146,77 @@ def _phase_meta(result: Any) -> ArcGuardPhase:
     )
 
 
+# Forbidden substrings (case-insensitive) for the model-config scrubber.
+# Any payload key matching ANY of these is dropped before assignment to the
+# BackendCalled.model_config_snapshot field.
+_FORBIDDEN_KEY_SUBSTRINGS = ("key", "secret", "token", "auth", "password")
+
+
+def _scrub_forbidden_keys(d: dict) -> dict:
+    """Drop any dict entry whose key contains a forbidden substring.
+
+    Comparison is case-insensitive. Returns a new dict; the input is not
+    mutated. Used by the model-config snapshot to keep credentials off
+    lifecycle events.
+    """
+    out: dict = {}
+    for k, v in d.items():
+        kl = str(k).lower()
+        if any(s in kl for s in _FORBIDDEN_KEY_SUBSTRINGS):
+            continue
+        out[k] = v
+    return out
+
+
+def _build_model_config_snapshot(
+    *, provider: str, payload: dict
+) -> dict[str, str | int | float] | None:
+    """Build the bounded snapshot dict for BackendCalled.model_config_snapshot.
+
+    Returns the four documented keys (provider, model, temperature,
+    max_tokens) when at least one is available; returns None when no
+    field could be populated.
+
+    The whitelist approach is the primary safety mechanism: only the four
+    permitted keys are ever copied from the payload, so credentials in
+    other fields can never end up in the snapshot. The
+    ``_scrub_forbidden_keys`` helper exists as a separate utility for
+    ad-hoc dicts where the keys are not known statically.
+    """
+    snapshot: dict[str, str | int | float] = {"provider": provider}
+    model = payload.get("model") if isinstance(payload, dict) else None
+    if isinstance(model, str):
+        snapshot["model"] = model
+    temperature = payload.get("temperature") if isinstance(payload, dict) else None
+    if isinstance(temperature, (int, float)) and not isinstance(temperature, bool):
+        snapshot["temperature"] = float(temperature)
+    max_tokens = payload.get("max_tokens") if isinstance(payload, dict) else None
+    if isinstance(max_tokens, int) and not isinstance(max_tokens, bool):
+        snapshot["max_tokens"] = max_tokens
+    return snapshot if snapshot else None
+
+
+def _extract_token_usage(
+    response: dict,
+) -> dict[str, int] | None:
+    """Pull the OpenAI-shaped ``usage`` object out of a backend response.
+
+    Returns a dict containing the three documented keys when ``usage`` is
+    a dict in the response; returns None otherwise. Each key defaults to
+    0 if the backend reported it missing or non-integer.
+    """
+    if not isinstance(response, dict):
+        return None
+    usage = response.get("usage")
+    if not isinstance(usage, dict):
+        return None
+    out: dict[str, int] = {}
+    for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+        v = usage.get(key, 0)
+        out[key] = v if isinstance(v, int) and not isinstance(v, bool) else 0
+    return out
+
+
 def _refusal_response(
     *,
     model: str,
@@ -291,11 +362,9 @@ def build_router(
         request: ChatCompletionRequest = Body(openapi_examples=_REQUEST_EXAMPLES),
         http_request: Request = None,  # type: ignore[assignment]
     ) -> ChatCompletionResponse:
-        rid = (
-            http_request.headers.get("x-request-id")
-            if http_request is not None
-            else None
-        ) or uuid.uuid4().hex[:12]
+        from arc_guard_service.transport._rid import resolve_rid
+
+        rid = resolve_rid(http_request)
         started = time.perf_counter()
         emitter = _RidEmitter(sink, rid, policy=capture_policy)
 
@@ -441,6 +510,12 @@ def build_router(
             settings.backend,
             len(payload["messages"]),
         )
+        # Build a bounded model-config snapshot for the dashboard. Only the
+        # four documented keys ship; anything resembling a credential is
+        # scrubbed before assignment by _build_model_config_snapshot.
+        model_config_snapshot = _build_model_config_snapshot(
+            provider=settings.backend, payload=payload
+        )
         backend_called = await emitter.emit(
             BackendCalled,
             parent_id=root_id,
@@ -455,6 +530,7 @@ def build_router(
                 )
             ),
             payload_msg_count=len(payload["messages"]),
+            model_config_snapshot=model_config_snapshot,
         )
         backend_started_t0 = time.perf_counter()
         backend_response, backend_http_status = await _call_backend(payload)
@@ -477,6 +553,10 @@ def build_router(
                 502, f"backend returned malformed response: {exc}"
             ) from exc
 
+        # Token usage is reported by OpenAI-compatible backends in the
+        # ``usage`` response field. Echo backend emits no usage. We only
+        # ship the three documented keys; missing values default to 0.
+        token_usage = _extract_token_usage(backend_response)
         await emitter.emit(
             BackendResponded,
             parent_id=backend_called.id,
@@ -488,6 +568,7 @@ def build_router(
             response_text=(
                 assistant_text if emitter.policy.should_capture_sanitized() else None
             ),
+            token_usage=token_usage,
         )
 
         # === PostProcessStarted → post_process → PostProcessCompleted ===

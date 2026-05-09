@@ -176,16 +176,34 @@ def _build_default_lifecycle_sink(
         RingBufferLifecycleSink(capacity=settings.lifecycle_buffer_capacity),
     ]
     if settings.lifecycle_sqlite_path:
+        from arc_guard.observability.decision_record_recorder import (
+            DecisionRecordRecorder,
+        )
+        from arc_guard.observability.request_summary_projector import (
+            RequestSummaryProjector,
+        )
         from arc_guard.observability.sqlite_lifecycle_sink import (
             SqliteLifecycleSink,
         )
 
+        # Order matters: SqliteLifecycleSink runs first (creates schema v2
+        # via its migration helper); the dashboard sinks read/write tables
+        # that migration just created.
         children.append(
             SqliteLifecycleSink(
                 path=settings.lifecycle_sqlite_path,
                 max_rows=settings.lifecycle_sqlite_max_rows,
                 max_age_days=settings.lifecycle_sqlite_max_age_days,
                 cleanup_interval_seconds=settings.lifecycle_sqlite_cleanup_interval_seconds,
+            )
+        )
+        children.append(
+            RequestSummaryProjector(path=settings.lifecycle_sqlite_path)
+        )
+        children.append(
+            DecisionRecordRecorder(
+                path=settings.lifecycle_sqlite_path,
+                queue_capacity=settings.dashboard_decision_record_queue_capacity,
             )
         )
     if broadcaster is not None:
@@ -275,11 +293,39 @@ def create_app(
     # are pooled across requests instead of dialed per request.
     http_client_holder: dict[str, Any] = {}
 
+    # Dashboard log-tap holders. Populated inside lifespan when the SQLite
+    # tier is configured; cleaned up on shutdown.
+    debug_writer_holder: dict[str, Any] = {}
+    log_handler_holder: dict[str, Any] = {}
+
     @asynccontextmanager
     async def _lifespan(_app: Any) -> Any:
         # Start any per-sink background tasks (e.g., SqliteLifecycleSink's
         # retention cleanup loop) once the asyncio event loop is up.
         _start_sink_background_tasks(lifecycle_sink)
+        # Wire the structured-logging tap when the SQLite tier is configured.
+        if settings.lifecycle_sqlite_path:
+            from arc_guard.observability.debug_entry_writer import DebugEntryWriter
+            from arc_guard.observability.debug_log_handler import RidLogHandler
+
+            writer = DebugEntryWriter(
+                path=settings.lifecycle_sqlite_path,
+                queue_capacity=settings.dashboard_debug_entry_queue_capacity,
+            )
+            handler = RidLogHandler(writer)
+            logging.getLogger().addHandler(handler)
+            debug_writer_holder["writer"] = writer
+            log_handler_holder["handler"] = handler
+
+        async def _shutdown() -> None:
+            handler = log_handler_holder.get("handler")
+            if handler is not None:
+                logging.getLogger().removeHandler(handler)
+            writer = debug_writer_holder.get("writer")
+            if writer is not None:
+                await writer.close()
+            await lifecycle_sink.close()
+
         if settings.enable_chat_completions:
             httpx = _import_httpx()
             client = httpx.AsyncClient(timeout=settings.backend_timeout_seconds)
@@ -288,12 +334,12 @@ def create_app(
                 yield
             finally:
                 await client.aclose()
-                await lifecycle_sink.close()
+                await _shutdown()
         else:
             try:
                 yield
             finally:
-                await lifecycle_sink.close()
+                await _shutdown()
 
     app = fastapi.FastAPI(
         title="arc-guard-service",
@@ -421,13 +467,39 @@ def create_app(
     if settings.lifecycle_enabled and sse_registry is not None:
         from arc_guard_service.transport.events import build_events_router
         from arc_guard_service.transport.lifecycle import build_lifecycle_router
+        from arc_guard_service.transport.requests import build_requests_router
 
-        events_router = build_events_router(registry=sse_registry)
+        events_router = build_events_router(
+            registry=sse_registry,
+            lifecycle_sink=lifecycle_sink,
+        )
         app.include_router(events_router)
         lifecycle_router = build_lifecycle_router(
             settings=settings, lifecycle_sink=lifecycle_sink
         )
         app.include_router(lifecycle_router)
+        requests_router = build_requests_router(settings=settings)
+        app.include_router(requests_router)
+
+    # Request-scope rid middleware: sets the ``rid_context_var`` so the
+    # ``RidLogHandler`` (when wired to the root logger) can tag every log
+    # record emitted during the request with the active rid. Resets on exit.
+    @app.middleware("http")
+    async def _rid_scope_middleware(request: Any, call_next: Any) -> Any:
+        from arc_guard.observability.debug_log_handler import rid_context_var
+
+        from arc_guard_service.transport._rid import resolve_rid
+
+        rid = resolve_rid(request)
+        token = rid_context_var.set(rid)
+        try:
+            response = await call_next(request)
+        finally:
+            rid_context_var.reset(token)
+        # Echo the resolved rid in the response headers so clients can
+        # correlate without parsing the body.
+        response.headers["x-request-id"] = rid
+        return response
 
     app.add_middleware(
         RequestTimeoutMiddleware,
@@ -438,6 +510,26 @@ def create_app(
         RequestSizeLimitMiddleware,
         max_bytes=settings.max_request_bytes,
     )
+
+    # CORS for the dashboard data plane. Only installed when the operator
+    # configured an explicit allow-list — empty list (default) means no
+    # cross-origin requests are permitted at the browser layer. The
+    # ``ServiceSettings.dashboard_origins`` validator already rejects
+    # wildcards, non-http(s) schemes, and path/query/fragment components
+    # at startup; we just consume the validated list here.
+    if settings.dashboard_origins:
+        from fastapi.middleware.cors import CORSMiddleware
+
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=list(settings.dashboard_origins),
+            allow_origin_regex=None,
+            allow_credentials=False,
+            allow_methods=["GET", "OPTIONS"],
+            allow_headers=["Content-Type", "Cache-Control", "Last-Event-ID"],
+            expose_headers=["X-Lifecycle-Tier", "X-Request-Id"],
+            max_age=600,
+        )
 
     app.state.arc_guard_metrics = {
         "requests_total": request_counter,

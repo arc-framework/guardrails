@@ -19,7 +19,7 @@ import time
 from contextlib import suppress
 from dataclasses import asdict
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from arc_guard_core.lifecycle import LifecycleEvent
 
@@ -122,16 +122,52 @@ class BroadcastingLifecycleSink:
         self._registry.shutdown()
 
 
+_RID_PATTERN_STR = r"^[A-Za-z0-9._-]{1,64}$"
+
+
 def build_events_router(
     *,
     registry: SubscriberRegistry,
+    lifecycle_sink: Any | None = None,
     heartbeat_seconds: float = _HEARTBEAT_SECONDS,
 ) -> Any:
-    """Construct a FastAPI router exposing `GET /events` as SSE."""
+    """Construct a FastAPI router exposing ``GET /events`` as SSE.
+
+    When ``lifecycle_sink`` is supplied, the endpoint additionally accepts
+    an optional ``?rid=<rid>`` query parameter that filters the stream to
+    a single request's events and emits a ``terminated`` sentinel event
+    when the request completes (or immediately if the request has already
+    terminated at subscription time).
+    """
+    import json
+    import re
+
     fastapi = importlib.import_module("fastapi")
     StreamingResponse = fastapi.responses.StreamingResponse  # noqa: N806
+    Query = fastapi.Query  # noqa: N806
+    JSONResponse = fastapi.responses.JSONResponse  # noqa: N806
+    rid_re = re.compile(_RID_PATTERN_STR)
 
     router = fastapi.APIRouter()
+
+    def _terminal_sentinel(rid: str, reason: str) -> str:
+        body = json.dumps({"rid": rid, "reason": reason})
+        return f"event: terminated\ndata: {body}\n\n"
+
+    async def _is_already_terminated(rid: str) -> bool:
+        """Pre-subscription liveness check: return True iff the rid has a
+        ``RequestCompleted`` event in the configured lifecycle store."""
+        if lifecycle_sink is None:
+            return False
+        try:
+            events = await lifecycle_sink.query(rid)
+        except Exception:  # noqa: BLE001 — sink failure → treat as live
+            return False
+        if not events:
+            return False
+        return any(
+            type(ev).event_type == "RequestCompleted" for ev in events
+        )
 
     @router.get(
         "/events",
@@ -144,14 +180,39 @@ def build_events_router(
             }
         },
     )
-    async def events_stream() -> Any:
+    async def events_stream(
+        rid: Annotated[str | None, Query()] = None,
+    ) -> Any:
+        if rid is not None and not rid_re.match(rid):
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": "rid_malformed",
+                        "message": "rid must match [A-Za-z0-9._-]{1,64}",
+                    }
+                },
+            )
+
+        # Pre-subscription liveness check for the rid-filter case.
+        if rid is not None and await _is_already_terminated(rid):
+            async def already_done() -> Any:
+                yield ": connected\n\n"
+                yield _terminal_sentinel(rid, "already_completed")
+
+            return StreamingResponse(
+                already_done(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no",
+                },
+            )
+
         queue = await registry.register()
 
         async def generator() -> Any:
-            # Flush a connection-open comment immediately so the upstream
-            # consumer's response headers + first byte arrive without waiting
-            # for the first event. SSE clients ignore comment lines (per
-            # WHATWG spec), so this is purely a transport-level handshake.
             yield ": connected\n\n"
             last_heartbeat = time.monotonic()
             try:
@@ -162,18 +223,23 @@ def build_events_router(
                     try:
                         event = await asyncio.wait_for(queue.get(), timeout=timeout)
                     except TimeoutError:
-                        # Heartbeat to keep proxies from dropping the connection.
                         last_heartbeat = time.monotonic()
                         yield ": heartbeat\n\n"
                         continue
                     if event is None:  # shutdown sentinel
                         break
+                    # Per-subscriber filter: drop events for other rids.
+                    if rid is not None and event.rid != rid:
+                        continue
                     payload = _event_to_json_dict(event)
-                    import json
-
                     data = json.dumps(payload, default=str)
                     yield f"event: lifecycle\nid: {event.id}\ndata: {data}\n\n"
                     last_heartbeat = time.monotonic()
+                    # Terminal-event detection in filtered mode: emit the
+                    # sentinel and close cleanly when this rid completes.
+                    if rid is not None and type(event).event_type == "RequestCompleted":
+                        yield _terminal_sentinel(rid, "completed")
+                        break
             finally:
                 await registry.unregister(queue)
 

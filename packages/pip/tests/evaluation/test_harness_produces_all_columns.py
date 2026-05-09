@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import sys
+
+import pytest
 from arc_guard_core.evaluation import (
     Configuration,
     ConfigurationMetrics,
@@ -128,6 +131,12 @@ def test_numeric_columns_are_in_documented_ranges() -> None:
 
 def test_fourth_configuration_falls_back_when_semantic_extra_absent() -> None:
     """[semantic]-extra fallback: fidelity_score_median is None when extra is missing."""
+    if sys.modules.get("sentence_transformers") is not None:
+        pytest.skip(
+            "sentence_transformers is installed in this venv;"
+            " the absent-extra fallback path requires the [semantic] extra"
+            " not to be importable. Run in a no-extras venv to exercise this."
+        )
     harness = HarnessImpl()
     report = harness.evaluate(
         _synth_corpus(),

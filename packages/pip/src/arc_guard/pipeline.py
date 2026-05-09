@@ -740,11 +740,20 @@ class GuardPipeline:
                             },
                         )
                         # Lifecycle bridge — same hook point, typed event.
+                        # evidence_reference is a stable id derived from the
+                        # detector + category (not the matched payload). The
+                        # dashboard uses this to link to the jailbreak rule
+                        # that fired without exposing the matched text.
                         await self._emit_via_ctx(
                             guard_input, JailbreakDetected,
                             detector_id=signal.detector_id,
                             category=signal.category,
                             confidence=signal.confidence,
+                            evidence_reference=(
+                                f"{signal.detector_id}/{signal.category}"
+                                if signal.category
+                                else signal.detector_id
+                            ),
                         )
                     import dataclasses as _dc
 

@@ -2,6 +2,24 @@
 
 All notable changes to the `arc-guard-service` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.6.0] — 2026-05-09
+
+### Added
+- Four new HTTP routes for the dashboard data plane (all read-only, all GET):
+  - `GET /requests` — paginated request-summary list with filter parameters (`since`, `until`, `status`, `action`, `risk_band`, `rid_prefix`, `page`, `page_size`). Returns `RequestPage` JSON envelope.
+  - `GET /requests/{rid}` — workspace manifest combining the canonical summary with resource-availability flags and pre-built link strings for the four subordinate resources.
+  - `GET /requests/{rid}/decision` — recorded `DecisionRecord` retrieval with the documented 404 (`decision_not_captured` / `rid_not_found`) and 503 (`store_unavailable`) split.
+  - `GET /requests/{rid}/debug` — cursor-paginated debug entries with opaque base64-urlsafe cursor tokens.
+- Additive `?rid=<rid>` query parameter on the existing `GET /events` SSE endpoint. When supplied, the stream filters to events for the named request and emits a `terminated` sentinel event when the request completes (or immediately if it has already terminated). Unfiltered behavior unchanged.
+- Request-scope rid middleware in `transport/http.py` sets `rid_context_var` on entry and echoes the resolved rid in the `X-Request-Id` response header. Resolution is centralized in the new shared helper `transport/_rid.resolve_rid` which is also called by the chat-completions transport so the two paths cannot drift.
+- Strict-shape CORS middleware backed by the new `ServiceSettings.dashboard_origins` allow-list. Wildcards / non-http(s) schemes / trailing slashes / path / query / fragment components are rejected at startup by the field validator. Methods restricted to `GET` and `OPTIONS`; credentials never flow cross-origin; named header allow-list (`Content-Type`, `Cache-Control`, `Last-Event-ID`); `Access-Control-Max-Age: 600`. Default-deny — empty list installs no middleware.
+- Five new `ServiceSettings` fields: `dashboard_origins` (list of fully-qualified URLs), `dashboard_max_request_page_size` (int 1..1000, default 200), `dashboard_max_debug_page_size` (int 1..1000, default 200), `dashboard_decision_record_queue_capacity` (int 10..100_000, default 1000), `dashboard_debug_entry_queue_capacity` (int 10..100_000, default 5000).
+- `DecisionRecordRecorder` and the `RidLogHandler` + `DebugEntryWriter` pair are wired into the lifespan when `lifecycle_sqlite_path` is configured. The structured-logging handler installs on the root logger at startup and detaches on shutdown.
+
+### Migration notes
+- Additive only. No breaking changes. Non-dashboard deployments leave `dashboard_origins=[]` (default) and `lifecycle_sqlite_path=None` and see no behavioral change.
+- `BackendCalled` events now carry an optional `model_config_snapshot` field populated by `_build_model_config_snapshot` (whitelist of `provider`, `model`, `temperature`, `max_tokens`); credentials in other payload fields are never copied. `BackendResponded` events carry an optional `token_usage` field extracted from the OpenAI-shaped `usage` object.
+
 ## [0.5.0] — 2026-05-04
 
 ### Added

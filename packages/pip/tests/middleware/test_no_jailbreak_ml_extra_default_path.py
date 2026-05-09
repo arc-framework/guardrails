@@ -12,6 +12,14 @@ def test_top_level_factory_import_works_without_jailbreak_ml_extra(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Importing ``from_huggingface_jailbreak`` succeeds even with extra absent."""
+    if (
+        sys.modules.get("transformers") is not None
+        or sys.modules.get("torch") is not None
+    ):
+        pytest.skip(
+            "transformers/torch was imported earlier in this pytest session;"
+            " the absent-extra simulation requires subprocess isolation here."
+        )
     monkeypatch.setitem(sys.modules, "transformers", None)
     monkeypatch.setitem(sys.modules, "torch", None)
     if "arc_guard.middleware" in sys.modules:

@@ -2,6 +2,23 @@
 
 All notable changes to the `arc-guard` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.10.0] — 2026-05-09
+
+### Added
+- Four new `arc_guard.observability` modules supporting the dashboard data plane:
+  - `request_summary_projector.RequestSummaryProjector` — incremental writer-side projection from the `LifecycleEvent` stream into the `request_summaries` SQLite table. Implements the `LifecycleSink` Protocol; non-blocking on write failure with a dropped-write counter.
+  - `decision_record_recorder.DecisionRecordRecorder` — non-blocking writer for `decision_records` rows. Bounded `asyncio.Queue` + single background drain task. Subscribes to `DecisionEmitted` events; ignores other event types.
+  - `debug_log_handler.RidLogHandler` + `rid_context_var` — stdlib `logging.Handler` that captures records emitted while `rid_context_var` is set and forwards them to `DebugEntryWriter`.
+  - `debug_entry_writer.DebugEntryWriter` — non-blocking writer for the `debug_entries` SQLite table. Bounded queue + per-rid monotonic `seq` counter held in memory.
+
+### Changed
+- `arc_guard.observability.sqlite_lifecycle_sink.SqliteLifecycleSink` now applies a forward-only schema-v2 migration on construction. Pre-existing v1 databases are upgraded in place — three new tables (`request_summaries`, `decision_records`, `debug_entries`) plus six indexes are created without data loss; the `lifecycle_meta.schema_version` row is upserted from `'1'` to `'2'`. The retention task evicts the new tables in lockstep with `lifecycle_events` inside one transaction.
+- The four lifecycle event emit sites in `pipeline.py` (and `transport/openai.py` for the backend events) populate the new optional fields when data is available: `JailbreakDetected.evidence_reference`, `BackendCalled.model_config_snapshot`, `BackendResponded.token_usage`. Existing constructors continue to work; the new fields default to `None`.
+
+### Migration notes
+- Additive only. No breaking changes; no migration required for non-dashboard deployments.
+- The lifecycle JSON wire format gains four optional fields on existing event types — they appear as `null` when unset; consumers that strictly type-check the JSON envelope MUST treat unknown fields as forward-compatible (already the convention).
+
 ## [0.9.0] — 2026-05-08
 
 ### Added

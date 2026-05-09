@@ -17,6 +17,11 @@ def test_top_level_factory_import_works_without_semantic_extra(
 ) -> None:
     """Importing ``from_sentence_transformers`` from the middleware
     namespace succeeds even with the extra absent."""
+    if sys.modules.get("sentence_transformers") is not None:
+        pytest.skip(
+            "sentence_transformers was imported earlier in this pytest session;"
+            " the absent-extra simulation requires subprocess isolation here."
+        )
     monkeypatch.setitem(sys.modules, "sentence_transformers", None)
     monkeypatch.setitem(sys.modules, "numpy", None)
     # Force a fresh import of the middleware module.

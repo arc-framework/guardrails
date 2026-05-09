@@ -68,7 +68,7 @@ def safe_shutdown(processor: BatchSpanProcessor, *, timeout: float = 5.0) -> Non
     shutdown time does not bring down the host process.
     """
     try:
-        processor.shutdown()
+        processor.shutdown()  # type: ignore[no-untyped-call]
     except Exception as exc:  # pragma: no cover — defensive
         logger.warning("OTEL processor shutdown raised: %s", exc)
 

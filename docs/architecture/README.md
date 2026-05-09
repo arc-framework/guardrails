@@ -30,6 +30,10 @@ verifies that the documented supported imports still resolve at runtime.
 | [006](../../specs/006-jailbreak-deception-eval/spec.md)    | Jailbreak / deception / evaluation — stronger detectors, multi-turn deception, harness       | Implemented |
 | [007](../../specs/007-integration-api-delivery/spec.md)    | Integration, API, and documentation completion — API package, surface manifest, examples     | Implemented |
 | [008](../../specs/008-backlog.md)                          | Nice-to-have backlog — deferred roadmap §4 items for future planners                         | Backlog     |
+| [009](../../specs/009-retire-pre-rewrite-tree/spec.md)     | Retire the pre-rewrite Python tree — single-source workspace under `packages/`               | Implemented |
+| [010](../../specs/010-lifecycle-sink/spec.md)              | Per-request lifecycle sink — typed event substrate, SSE feed, replay, SQLite tier            | Implemented |
+| [011](../../specs/011-detection-extensibility/spec.md)     | Detection extensibility — semantic content policies, automatic masking, code injection       | Implemented |
+| [012](../../specs/012-dashboard-backend-data-plane/spec.md) | Dashboard backend data plane — paginated requests, workspace, filtered SSE, CORS allow-list  | Implemented |
 
 ## Constitution
 
