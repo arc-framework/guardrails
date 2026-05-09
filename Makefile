@@ -14,14 +14,17 @@ UV           := env -u VIRTUAL_ENV uv
         smoke \
         api-up api-down api-logs demo sse \
         docker-build docker-up docker-up-prod docker-down docker-logs docker-nuke dashboard-logs \
-        test test-core test-pip test-api \
+	test test-core test-pip test-api test-fast \
 	format format-core format-pip format-api \
-	lint lint-core lint-pip lint-api \
+	dashboard-fix \
+	lint lint-core lint-pip lint-api lint-fix \
         typecheck typecheck-core typecheck-pip typecheck-api \
         boundary docs-links \
-	all ci fix ci-fix clean clean-cache
+	all all-fix all-fast all-fast-fix ci ci-fast ci-fast-fix fix ci-fix clean clean-cache
 
 FIX ?= 0
+TEST_JOBS ?= 3
+ALL_JOBS ?= 5
 
 RUFF_CHECK_FLAGS :=
 DASHBOARD_LINT_SCRIPT := lint
@@ -69,9 +72,12 @@ help:
 	@echo
 	@echo "Per-package quality gates:"
 	@echo "  test               pytest for core + pip + api"
+	@echo "  test-fast          same tests, but runs core + pip + api in parallel"
 	@echo "  format             ruff format for core + pip + api"
 	@echo "  lint               ruff check for core + pip + api"
+	@echo "  lint-fix           ruff check --fix for core + pip + api"
 	@echo "  typecheck          mypy for core + pip + api"
+	@echo "  dashboard-fix      dashboard typecheck + eslint --fix + prettier --write + vitest"
 	@echo "  test-core / test-pip / test-api          single-package pytest"
 	@echo "  format-core / format-pip / format-api    single-package ruff format"
 	@echo "  lint-core / lint-pip / lint-api          single-package ruff"
@@ -83,10 +89,17 @@ help:
 	@echo
 	@echo "Aggregate:"
 	@echo "  all                lint + typecheck + test + boundary"
+	@echo "  all-fix            same as 'fix'"
+	@echo "  all-fast           same aggregate checks, but parallelized across top-level gates"
+	@echo "  all-fast-fix       format first, then run the aggregate checks in parallel with fixes enabled"
 	@echo "  ci                 alias for 'all'"
+	@echo "  ci-fast            alias for 'all-fast'"
+	@echo "  ci-fast-fix        alias for 'all-fast-fix'"
 	@echo "  fix                run 'all' with auto-fix enabled where supported"
 	@echo "  ci-fix             alias for 'fix'"
 	@echo "  all FIX=1          same as 'fix' (GNU make cannot accept 'make all --fix')"
+	@echo "  TEST_JOBS=4 make test-fast   override parallelism for tests"
+	@echo "  ALL_JOBS=6 make all-fast     override parallelism for the aggregate run"
 	@echo
 	@echo "Cleanup:"
 	@echo "  clean              remove __pycache__ / .pytest_cache / .ruff_cache / .mypy_cache / *.egg-info / api log"
@@ -302,6 +315,9 @@ docker-nuke:
 
 test: test-core test-pip test-api
 
+test-fast:
+	@$(MAKE) -j$(TEST_JOBS) test-core test-pip test-api
+
 test-core:
 	cd $(PACKAGES_DIR)/core && $(UV) run pytest tests/
 
@@ -309,7 +325,7 @@ test-pip:
 	cd $(PACKAGES_DIR)/pip && $(UV) run pytest tests/
 
 test-api:
-	cd $(PACKAGES_DIR)/api && $(UV) run pytest tests/
+	cd $(PACKAGES_DIR)/api && $(UV) run --extra fastapi pytest tests/
 
 # ---------- Lint ----------
 
@@ -325,6 +341,9 @@ format-api:
 	cd $(PACKAGES_DIR)/api && $(UV) run ruff format src tests
 
 lint: lint-core lint-pip lint-api
+
+lint-fix:
+	@$(MAKE) lint FIX=1
 
 lint-core:
 	cd $(PACKAGES_DIR)/core && $(UV) run ruff check $(RUFF_CHECK_FLAGS) src tests
@@ -378,11 +397,27 @@ dashboard-build:
 dashboard-check:
 	cd $(DASHBOARD_DIR) && pnpm typecheck && pnpm $(DASHBOARD_LINT_SCRIPT) && pnpm $(DASHBOARD_FORMAT_SCRIPT) && pnpm test
 
+dashboard-fix:
+	@$(MAKE) dashboard-check FIX=1
+
 # ---------- Aggregate ----------
 
 all: $(AUTO_FIX_TARGETS) lint typecheck test boundary dashboard-check
 
+all-fix: fix
+
+all-fast:
+	@if [ "$(FIX)" = "1" ]; then $(MAKE) format; fi
+	@$(MAKE) -j$(ALL_JOBS) lint typecheck test boundary dashboard-check
+
+all-fast-fix:
+	@$(MAKE) all-fast FIX=1
+
 ci: all
+
+ci-fast: all-fast
+
+ci-fast-fix: all-fast-fix
 
 fix:
 	@$(MAKE) all FIX=1

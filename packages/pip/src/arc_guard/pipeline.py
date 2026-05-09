@@ -1103,7 +1103,11 @@ class GuardPipeline:
                     strategy=type(self._resolve_strategy()).__name__,
                     finding_id=_first_finding_id_pr,
                     text_after_size=len(result.text or ""),
-                    text_before=effective_input.text if _capture_text_pr else None,
+                    text_before=(
+                        (effective_input.text if _capture_raw_pr else result.text)
+                        if _capture_text_pr
+                        else None
+                    ),
                     text_after=result.text if _capture_text_pr else None,
                 )
                 _placeholder_map_pr: dict[str, str] = {}
@@ -1117,7 +1121,11 @@ class GuardPipeline:
                         placeholder=placeholder,
                         span=(f.start, f.end),
                         finding_id=_finding_event_ids.get((f.start, f.end), ""),
-                        text_before=effective_input.text if _capture_text_pr else None,
+                        text_before=(
+                            (effective_input.text if _capture_raw_pr else result.text)
+                            if _capture_text_pr
+                            else None
+                        ),
                         text_after=result.text if _capture_text_pr else None,
                     )
                     if _capture_raw_pr:
@@ -1260,6 +1268,10 @@ class GuardPipeline:
                     _emitter_for_strategy is not None
                     and _emitter_for_strategy.policy.should_capture_sanitized()
                 )
+                _capture_raw = (
+                    _emitter_for_strategy is not None
+                    and _emitter_for_strategy.policy.should_capture_raw_input()
+                )
                 await self._emit_via_ctx(
                     guard_input,
                     StrategyExecuted,
@@ -1267,7 +1279,11 @@ class GuardPipeline:
                     strategy=_strategy_name,
                     finding_id=_first_finding_id,
                     text_after_size=len(result.text or ""),
-                    text_before=effective_input.text if _capture_strategy else None,
+                    text_before=(
+                        (effective_input.text if _capture_raw else result.text)
+                        if _capture_strategy
+                        else None
+                    ),
                     text_after=result.text if _capture_strategy else None,
                 )
                 # SanitizationApplied per-finding (only when the action
@@ -1293,7 +1309,11 @@ class GuardPipeline:
                             placeholder=placeholder,
                             span=(f.start, f.end),
                             finding_id=_finding_event_ids.get((f.start, f.end), ""),
-                            text_before=effective_input.text if _capture_text else None,
+                            text_before=(
+                                (effective_input.text if _capture_raw else result.text)
+                                if _capture_text
+                                else None
+                            ),
                             text_after=result.text if _capture_text else None,
                         )
                         if _capture_raw:

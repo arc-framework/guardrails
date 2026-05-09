@@ -429,7 +429,13 @@ def build_router(
                     before_size=before_size,
                     after_size=len(pre_result.text or ""),
                     text_before=(
-                        before_text if emitter.policy.should_capture_sanitized() else None
+                        (
+                            before_text
+                            if emitter.policy.should_capture_raw_input()
+                            else pre_result.text
+                        )
+                        if emitter.policy.should_capture_sanitized()
+                        else None
                     ),
                     text_after=(
                         pre_result.text if emitter.policy.should_capture_sanitized() else None
