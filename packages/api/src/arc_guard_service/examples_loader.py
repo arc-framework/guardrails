@@ -61,3 +61,43 @@ class CorpusPrompt(BaseModel):
         except Exception as exc:
             raise ValueError(f"request does not validate as ChatCompletionRequest: {exc}") from exc
         return self
+
+
+from pathlib import Path
+
+import yaml
+
+
+class CorpusError(Exception):
+    """Raised when the corpus is malformed. Carries file path in message."""
+
+
+def load_corpus(corpus_dir: Path) -> list[CorpusPrompt]:
+    """Load and validate all YAML prompts under ``corpus_dir/prompts/``.
+
+    Fail-fast: a single malformed file raises ``CorpusError`` and the
+    whole corpus fails to load. The error message always includes the
+    offending file path so authors can find it without grepping.
+    """
+    prompts_dir = corpus_dir / "prompts"
+    if not prompts_dir.is_dir():
+        raise CorpusError(f"corpus prompts directory missing: {prompts_dir}")
+    prompts: list[CorpusPrompt] = []
+    for path in sorted(prompts_dir.glob("*.yaml")):
+        if path.is_symlink():
+            raise CorpusError(f"symlinks not allowed in corpus: {path}")
+        try:
+            data = yaml.safe_load(path.read_text())
+        except yaml.YAMLError as exc:
+            raise CorpusError(f"{path.name}: invalid YAML: {exc}") from exc
+        try:
+            prompt = CorpusPrompt.model_validate(data)
+        except Exception as exc:
+            raise CorpusError(f"{path.name}: schema validation failed: {exc}") from exc
+        if path.stem != prompt.id:
+            raise CorpusError(
+                f"{path.name}: id ({prompt.id!r}) must equal filename stem ({path.stem!r})"
+            )
+        prompts.append(prompt)
+    prompts.sort(key=lambda p: p.id)
+    return prompts
