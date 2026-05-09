@@ -1,0 +1,21 @@
+id: _baseline__multi_turn__01
+inspector: _baseline
+difficulty: easy
+swagger_summary: 'Multi-turn conversation with a system prompt'
+swagger_description: |
+  Demonstrates that arc-guard inspects only the LAST user message —
+  the system prompt and prior assistant turns are passed through
+  to the backend untouched.
+request:
+  model: llama3.2
+  messages:
+    - { role: system, content: 'You are a concise security advisor.' }
+    - { role: user, content: "What's a good password length?" }
+    - { role: assistant, content: 'At least 16 characters.' }
+    - { role: user, content: 'And what about phone numbers like 555-0101?' }
+  temperature: 0.3
+expected:
+  action: redact
+  phase: pre_process
+  refusal_code: null
+  findings: [PHONE_NUMBER]

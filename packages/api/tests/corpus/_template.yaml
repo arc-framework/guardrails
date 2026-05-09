@@ -1,0 +1,28 @@
+# Corpus prompt template — copy to prompts/<id>.yaml and fill in.
+# The filename stem must equal the `id` field exactly.
+# Cross-rules enforced by the loader are documented in
+# packages/api/src/arc_guard_service/examples_loader.py.
+
+id: pii_presidio__easy__01            # <inspector>__<difficulty>__<nn>; equals filename stem
+inspector: pii_presidio               # one of the 9 inspectors, or `_baseline` for inspector-agnostic prompts
+difficulty: easy                      # easy | medium | super_hard
+swagger_summary: 'short one-liner'    # rendered as the dropdown label in the swagger UI
+swagger_description: |                # multi-line markdown; an Expected block is appended automatically
+  Plain prose describing what the prompt demonstrates.
+  Reference the fictional ARC company where useful.
+request:                              # must round-trip through ChatCompletionRequest.model_validate
+  model: llama3.2
+  messages:
+    - role: user
+      content: 'the prompt body'
+expected:
+  action: redact                      # pass | redact | tokenize | hash | block
+  phase: pre_process                  # pre_process | post_process
+  refusal_code: null                  # non-null iff action == block; e.g. jailbreak_strong
+  findings: [EMAIL_ADDRESS]           # entity-type strings produced by the inspector
+  tolerance: strict                   # strict (default for pre_process) | subset (default for post_process)
+  false_positive: false               # true marks a precision-test prompt; super_hard buckets need exactly 2
+requires_extra: null                  # null | "jailbreak-ml" | "semantic"; pytest skips when extra is missing
+tags: []                              # free-form labels for `pytest -k` filtering
+notes: null                           # author-only; never rendered to swagger
+references: []                        # URLs/links rendered into the swagger description block
