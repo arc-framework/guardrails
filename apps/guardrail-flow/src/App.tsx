@@ -14,11 +14,11 @@ const SSE_LABELS: Record<string, string> = {
 
 const SSE_STYLES: Record<string, string> = {
   idle: "bg-muted text-muted-foreground",
-  connecting: "bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100",
-  live: "bg-green-200 text-green-900 dark:bg-green-800 dark:text-green-100 animate-pulse",
-  throttled: "bg-yellow-200 text-yellow-900 dark:bg-yellow-800 dark:text-yellow-100",
+  connecting: "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100",
+  live: "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100 animate-pulse",
+  throttled: "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100",
   terminated: "bg-muted text-muted-foreground",
-  error: "bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
+  error: "bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-100",
 };
 
 export default function App() {
@@ -33,57 +33,79 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between border-b px-4 py-2">
-        <div className="flex items-center gap-4">
-          <Link to="/requests" className="text-base font-semibold">
-            GuardRailFlow
-          </Link>
-          <nav className="flex items-center gap-3 text-xs">
-            <NavLink
+      <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-14 items-center justify-between px-4">
+          <div className="flex items-center gap-6">
+            <Link
               to="/requests"
-              className={({ isActive }) =>
-                cn(
-                  "text-muted-foreground hover:text-foreground",
-                  isActive && "font-medium text-foreground",
-                )
-              }
+              className="flex items-center gap-2 text-base font-semibold tracking-tight"
             >
-              Requests
-            </NavLink>
-            <NavLink
-              to="/architecture"
-              className={({ isActive }) =>
-                cn(
-                  "text-muted-foreground hover:text-foreground",
-                  isActive && "font-medium text-foreground",
-                )
-              }
+              <span
+                aria-hidden
+                className="grid h-6 w-6 place-items-center rounded bg-primary text-[11px] font-bold text-primary-foreground"
+              >
+                GR
+              </span>
+              <span>GuardRailFlow</span>
+            </Link>
+            <nav className="flex items-center gap-1 text-sm">
+              <NavLink
+                to="/requests"
+                className={({ isActive }) =>
+                  cn(
+                    "rounded-md px-2.5 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                    isActive && "bg-muted text-foreground",
+                  )
+                }
+              >
+                Requests
+              </NavLink>
+              <NavLink
+                to="/architecture"
+                className={({ isActive }) =>
+                  cn(
+                    "rounded-md px-2.5 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                    isActive && "bg-muted text-foreground",
+                  )
+                }
+              >
+                Architecture
+              </NavLink>
+            </nav>
+          </div>
+          <div className="flex items-center gap-2">
+            {env.mode === "fixture" ? (
+              <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
+                <span aria-hidden>🧪</span> FIXTURE
+              </span>
+            ) : (
+              <span className="rounded-md bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100">
+                <span aria-hidden>●</span> LIVE
+              </span>
+            )}
+            {showLiveBadge ? (
+              <span
+                className={cn(
+                  "rounded-md px-2 py-1 text-xs font-medium",
+                  SSE_STYLES[liveSseStatus],
+                )}
+                aria-label={`live stream ${liveSseStatus} for ${liveSseRid}`}
+                title={`SSE: ${liveSseStatus} (rid ${liveSseRid})`}
+              >
+                SSE · {SSE_LABELS[liveSseStatus]}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="grid h-8 w-8 place-items-center rounded-md border text-base transition-colors hover:bg-muted"
+              aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+              title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
             >
-              Architecture
-            </NavLink>
-          </nav>
-          {env.mode === "fixture" ? (
-            <span className="rounded bg-yellow-200 px-2 py-0.5 text-xs font-medium text-yellow-900 dark:bg-yellow-800 dark:text-yellow-100">
-              FIXTURE MODE
-            </span>
-          ) : null}
-          {showLiveBadge ? (
-            <span
-              className={`rounded px-2 py-0.5 text-xs font-medium ${SSE_STYLES[liveSseStatus]}`}
-              aria-label={`live stream ${liveSseStatus} for ${liveSseRid}`}
-            >
-              SSE · {SSE_LABELS[liveSseStatus]}
-            </span>
-          ) : null}
+              <span aria-hidden>{theme === "dark" ? "🌞" : "🌙"}</span>
+            </button>
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="rounded border px-2 py-1 text-xs hover:bg-accent"
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? "Light" : "Dark"}
-        </button>
       </header>
       <main className="flex flex-1 flex-col">
         <Outlet />

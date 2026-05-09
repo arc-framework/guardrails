@@ -2,6 +2,7 @@ import { useExplorerFilters } from "@/hooks/useExplorerFilters";
 import { useRequestsQuery } from "@/hooks/useRequestsQuery";
 import { ExplorerFilters } from "@/components/explorer/ExplorerFilters";
 import { ExplorerTable } from "@/components/explorer/ExplorerTable";
+import { MetricsStrip } from "@/components/explorer/MetricsStrip";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { LoadingState } from "@/components/shared/LoadingState";
@@ -26,6 +27,8 @@ export function ExplorerRoute() {
       <header className="flex items-baseline justify-between">
         <h1 className="text-xl font-semibold">Requests</h1>
       </header>
+
+      {query.data && query.data.items.length > 0 ? <MetricsStrip rows={query.data.items} /> : null}
 
       <ExplorerFilters
         filters={filters.filters}

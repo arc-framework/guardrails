@@ -46,7 +46,7 @@ export interface WorkflowNodeState {
 // Inspector pane
 // ---------------------------------------------------------------------------
 
-export type InspectorTab = "stage" | "decision" | "policy" | "json";
+export type InspectorTab = "stage" | "decision" | "policy" | "json" | "payload";
 
 export interface InspectorPaneModel {
   activeTab: InspectorTab;

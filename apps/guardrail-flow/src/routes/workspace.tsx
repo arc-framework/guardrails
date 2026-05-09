@@ -21,7 +21,7 @@ import type { StageName } from "@/types/api";
 import type { DebugTab, InspectorTab } from "@/types/workflow";
 
 const RID_REGEX = /^[A-Za-z0-9._-]{1,64}$/;
-const INSPECTOR_TABS: readonly InspectorTab[] = ["stage", "decision", "policy", "json"];
+const INSPECTOR_TABS: readonly InspectorTab[] = ["stage", "decision", "policy", "payload", "json"];
 const DEBUG_TABS: readonly DebugTab[] = ["lifecycle", "logs", "backend", "diff_replay"];
 
 function isInspectorTab(v: string | null): v is InspectorTab {
@@ -192,8 +192,8 @@ export function WorkspaceRoute() {
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(280px,1fr)]">
-        <div className="min-h-0 rounded-md border bg-card">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
+        <div className="min-h-0 min-w-0 flex-1 rounded-md border bg-card lg:flex-[9_1_0%]">
           {lifecycle.isError ? (
             <div className="p-4">
               <ErrorState error={lifecycle.error} onRetry={() => lifecycle.refetch()} />

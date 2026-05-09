@@ -12,6 +12,7 @@ import { StageTab } from "./inspector/StageTab";
 import { DecisionTab } from "./inspector/DecisionTab";
 import { PolicyTab } from "./inspector/PolicyTab";
 import { JsonTab } from "./inspector/JsonTab";
+import { PayloadTab } from "./inspector/PayloadTab";
 
 export interface InspectorProps {
   manifest: RequestWorkspaceManifest;
@@ -28,6 +29,7 @@ const TAB_LABELS: Record<InspectorTab, string> = {
   stage: "Stage",
   decision: "Decision",
   policy: "Policy",
+  payload: "Payload",
   json: "JSON",
 };
 
@@ -46,21 +48,34 @@ export function Inspector({
 
   if (collapsed) {
     return (
-      <aside className="flex flex-col items-center justify-start rounded-md border bg-card p-2">
+      <aside
+        className="flex w-9 shrink-0 flex-col items-center justify-start rounded-md border bg-card p-1"
+        style={{ width: 36 }}
+      >
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setCollapsed(false)}
           aria-label="Expand inspector"
+          title="Expand inspector"
         >
           ←
         </Button>
+        <div
+          className="mt-2 select-none whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+          style={{ writingMode: "vertical-rl" }}
+        >
+          Inspector
+        </div>
       </aside>
     );
   }
 
   return (
-    <aside className="flex min-h-0 flex-col gap-2 rounded-md border bg-card p-3">
+    <aside
+      className="flex min-h-0 min-w-[280px] flex-col gap-2 rounded-md border bg-card p-3"
+      style={{ flex: "3 1 0%" }}
+    >
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Inspector</h2>
         <Button
@@ -68,6 +83,7 @@ export function Inspector({
           size="sm"
           onClick={() => setCollapsed(true)}
           aria-label="Collapse inspector"
+          title="Collapse inspector"
         >
           →
         </Button>
@@ -78,7 +94,7 @@ export function Inspector({
         onValueChange={(v) => onTabChange(v as InspectorTab)}
         className="flex min-h-0 flex-1 flex-col"
       >
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           {(Object.keys(TAB_LABELS) as InspectorTab[]).map((tab) => (
             <TabsTrigger key={tab} value={tab} className="text-xs">
               {TAB_LABELS[tab]}
@@ -98,6 +114,9 @@ export function Inspector({
         </TabsContent>
         <TabsContent value="policy" className="mt-2 min-h-0 flex-1 overflow-auto">
           <PolicyTab decision={decision} available={manifest.resources.decision} />
+        </TabsContent>
+        <TabsContent value="payload" className="mt-2 min-h-0 flex-1 overflow-auto">
+          <PayloadTab events={events} />
         </TabsContent>
         <TabsContent value="json" className="mt-2 min-h-0 flex-1 overflow-auto">
           <JsonTab manifest={manifest} events={events} decision={decision} />
