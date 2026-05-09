@@ -40,6 +40,7 @@ export interface CanvasEdge {
   toSide?: CanvasSide;
   color?: CanvasColor;
   label?: string;
+  animated?: boolean;
 }
 
 export interface CanvasFile {

@@ -86,6 +86,7 @@ export function parseCanvas(file: CanvasFile): ParsedCanvas {
     targetHandle: e.toSide ? `in-${e.toSide}` : undefined,
     type: "canvasEdge",
     label: e.label,
+    animated: e.animated,
     data: { label: e.label, color: e.color, active: false },
     sourcePosition: e.fromSide ? SIDE_TO_POSITION[e.fromSide] : undefined,
     targetPosition: e.toSide ? SIDE_TO_POSITION[e.toSide] : undefined,
