@@ -15,7 +15,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="$REPO_ROOT/docs/canvases"
 DST="$REPO_ROOT/apps/guardrail-flow/canvases"
 
-CANVASES=(new-flow request-flow request-dag-sample request-dag-story request-dag-journey request-dag-brain pipeline-clock pipeline-metro pipeline-swimlane request-flow-matrix request-flow-cards request-flow-tree)
+CANVASES=(new-flow request-flow request-dag-journey request-dag-brain pipeline-metro pipeline-swimlane request-flow-tree)
 
 echo "Syncing canvases: $SRC → $DST"
 
