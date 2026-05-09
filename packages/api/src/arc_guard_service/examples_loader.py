@@ -7,8 +7,12 @@ the ``OPENAPI_EXAMPLES`` dict consumed by ``transport/openai.py``.
 
 from __future__ import annotations
 
+import os
+from collections import Counter, defaultdict
+from pathlib import Path
 from typing import Any, Literal
 
+import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, model_validator
 
 from arc_guard_service.schemas.openai import ChatCompletionRequest
@@ -23,7 +27,7 @@ class ExpectedOutcome(BaseModel):
     false_positive: bool = False
 
     @model_validator(mode="after")
-    def _refusal_code_iff_block(self) -> "ExpectedOutcome":
+    def _refusal_code_iff_block(self) -> ExpectedOutcome:
         if self.action == "block" and self.refusal_code is None:
             raise ValueError("refusal_code must be set when action == 'block'")
         if self.action != "block" and self.refusal_code is not None:
@@ -31,7 +35,7 @@ class ExpectedOutcome(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _default_tolerance(self) -> "ExpectedOutcome":
+    def _default_tolerance(self) -> ExpectedOutcome:
         if self.tolerance is None:
             object.__setattr__(
                 self,
@@ -55,17 +59,14 @@ class CorpusPrompt(BaseModel):
     references: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def _request_round_trips(self) -> "CorpusPrompt":
+    def _request_round_trips(self) -> CorpusPrompt:
         try:
             ChatCompletionRequest.model_validate(self.request)
         except Exception as exc:
-            raise ValueError(f"request does not validate as ChatCompletionRequest: {exc}") from exc
+            raise ValueError(
+                f"request does not validate as ChatCompletionRequest: {exc}"
+            ) from exc
         return self
-
-
-from pathlib import Path
-
-import yaml
 
 
 class CorpusError(Exception):
@@ -93,7 +94,9 @@ def load_corpus(corpus_dir: Path) -> list[CorpusPrompt]:
         try:
             prompt = CorpusPrompt.model_validate(data)
         except Exception as exc:
-            raise CorpusError(f"{path.name}: schema validation failed: {exc}") from exc
+            raise CorpusError(
+                f"{path.name}: schema validation failed: {exc}"
+            ) from exc
         if path.stem != prompt.id:
             raise CorpusError(
                 f"{path.name}: id ({prompt.id!r}) must equal filename stem ({path.stem!r})"
@@ -105,7 +108,6 @@ def load_corpus(corpus_dir: Path) -> list[CorpusPrompt]:
 
 
 def _enforce_cross_rules(prompts: list[CorpusPrompt]) -> None:
-    from collections import defaultdict
     buckets: dict[tuple[str, str], list[CorpusPrompt]] = defaultdict(list)
     for p in prompts:
         buckets[(p.inspector, p.difficulty)].append(p)
@@ -121,7 +123,8 @@ def _enforce_cross_rules(prompts: list[CorpusPrompt]) -> None:
             fp_count = sum(1 for p in bucket if p.expected.false_positive)
             if fp_count != 2:
                 raise CorpusError(
-                    f"{inspector}/super_hard: exactly two false_positive prompts required, got {fp_count}"
+                    f"{inspector}/super_hard: exactly two false_positive "
+                    f"prompts required, got {fp_count}"
                 )
 
 
@@ -137,9 +140,14 @@ def _render_expected_block(p: CorpusPrompt) -> str:
     if p.expected.refusal_code:
         lines.append(f"- refusal_code: `{p.expected.refusal_code}`")
     if p.expected.false_positive:
-        lines.append("- ⚠️ `false_positive: true` — this is a precision-test prompt; SDK must NOT block it.")
+        lines.append(
+            "- ⚠️ `false_positive: true` — this is a precision-test prompt; SDK must NOT block it."
+        )
     if p.requires_extra:
-        lines.append(f"- ⚠️ Requires the `[{p.requires_extra}]` extra; without it the SDK will not detect this and the request passes through.")
+        lines.append(
+            f"- ⚠️ Requires the `[{p.requires_extra}]` extra; "
+            "without it the SDK will not detect this and the request passes through."
+        )
     if p.references:
         lines.append("- references: " + ", ".join(p.references))
     return "\n".join(lines)
@@ -160,7 +168,7 @@ def to_openapi_examples(prompts: list[CorpusPrompt]) -> dict[str, dict[str, Any]
 # In production, an empty corpus would be a developer error — but we still
 # avoid raising at import to support the `python -m ... --validate` workflow,
 # which needs to load the module before the corpus is fully populated.
-_PACKAGE_ROOT = Path(__file__).resolve().parents[3]  # packages/api
+_PACKAGE_ROOT = Path(__file__).resolve().parents[3]
 CORPUS_DIR = _PACKAGE_ROOT / "tests" / "corpus"
 
 
@@ -172,3 +180,52 @@ def _load_openapi_examples() -> dict[str, dict[str, Any]]:
 
 
 OPENAPI_EXAMPLES: dict[str, dict[str, Any]] = _load_openapi_examples()
+
+
+def _resolve_corpus_dir() -> Path:
+    override = os.environ.get("ARC_GUARD_CORPUS_DIR")
+    return Path(override) if override else CORPUS_DIR
+
+
+def _cli_validate() -> int:
+    try:
+        prompts = load_corpus(_resolve_corpus_dir())
+    except CorpusError as exc:
+        print(f"FAIL: {exc}", flush=True)
+        return 1
+    print(f"OK: {len(prompts)} prompts", flush=True)
+    return 0
+
+
+def _cli_stats() -> int:
+    try:
+        prompts = load_corpus(_resolve_corpus_dir())
+    except CorpusError as exc:
+        print(f"FAIL: {exc}", flush=True)
+        return 1
+    counts: Counter[tuple[str, str]] = Counter(
+        (p.inspector, p.difficulty) for p in prompts
+    )
+    inspectors = sorted({p.inspector for p in prompts})
+    difficulties = ["easy", "medium", "super_hard"]
+    width = max((len(i) for i in inspectors), default=10)
+    header = f"{'inspector':<{width}}  " + "  ".join(f"{d:>10}" for d in difficulties)
+    print(header)
+    for ins in inspectors:
+        row = f"{ins:<{width}}  " + "  ".join(
+            f"{counts.get((ins, d), 0):>10}" for d in difficulties
+        )
+        print(row)
+    print(f"\nTotal: {len(prompts)} prompts")
+    return 0
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="python -m arc_guard_service.examples_loader")
+    sub = parser.add_mutually_exclusive_group(required=True)
+    sub.add_argument("--validate", action="store_true")
+    sub.add_argument("--stats", action="store_true")
+    args = parser.parse_args()
+    raise SystemExit(_cli_validate() if args.validate else _cli_stats())

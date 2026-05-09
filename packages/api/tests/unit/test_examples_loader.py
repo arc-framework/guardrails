@@ -1,7 +1,17 @@
+import subprocess
+import sys
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
-from arc_guard_service.examples_loader import ExpectedOutcome
+from arc_guard_service.examples_loader import (
+    CorpusError,
+    CorpusPrompt,
+    ExpectedOutcome,
+    load_corpus,
+    to_openapi_examples,
+)
 
 
 def test_expected_outcome_block_requires_refusal_code():
@@ -36,9 +46,6 @@ def test_expected_outcome_post_process_default_tolerance_is_subset():
         action="redact", phase="post_process", refusal_code=None, findings=[]
     )
     assert eo.tolerance == "subset"
-
-
-from arc_guard_service.examples_loader import CorpusPrompt
 
 
 def _valid_prompt_dict() -> dict:
@@ -81,11 +88,6 @@ def test_corpus_prompt_request_must_be_valid_chat_completion_request():
     bad["request"] = {"model": "llama3.2"}  # no messages
     with pytest.raises(ValidationError, match="messages"):
         CorpusPrompt.model_validate(bad)
-
-
-from pathlib import Path
-
-from arc_guard_service.examples_loader import CorpusError, load_corpus
 
 
 def _write_yaml(tmp_path: Path, name: str, body: str) -> Path:
@@ -173,9 +175,6 @@ def test_load_corpus_super_hard_requires_exactly_two_false_positive(tmp_path):
         load_corpus(tmp_path)
 
 
-from arc_guard_service.examples_loader import to_openapi_examples
-
-
 def test_to_openapi_examples_shape_and_description_appends_expected_block():
     p = CorpusPrompt.model_validate(_valid_prompt_dict())
     out = to_openapi_examples([p])
@@ -192,3 +191,28 @@ def test_module_level_constants_resolve():
     from arc_guard_service import examples_loader
     assert examples_loader.CORPUS_DIR.name == "corpus"
     assert callable(examples_loader._load_openapi_examples)
+
+
+def test_cli_validate_succeeds_on_empty_corpus(tmp_path, monkeypatch):
+    (tmp_path / "prompts").mkdir()
+    monkeypatch.setenv("ARC_GUARD_CORPUS_DIR", str(tmp_path))
+    result = subprocess.run(
+        [sys.executable, "-m", "arc_guard_service.examples_loader", "--validate"],
+        capture_output=True, text=True,
+        env={**__import__("os").environ, "ARC_GUARD_CORPUS_DIR": str(tmp_path)},
+    )
+    assert result.returncode == 0, result.stderr
+    assert "OK: 0 prompts" in result.stdout
+
+
+def test_cli_stats_prints_matrix(tmp_path, monkeypatch):
+    _write_yaml(tmp_path, "pii_presidio__easy__01.yaml", _yaml_for("pii_presidio__easy__01"))
+    monkeypatch.setenv("ARC_GUARD_CORPUS_DIR", str(tmp_path))
+    result = subprocess.run(
+        [sys.executable, "-m", "arc_guard_service.examples_loader", "--stats"],
+        capture_output=True, text=True,
+        env={**__import__("os").environ, "ARC_GUARD_CORPUS_DIR": str(tmp_path)},
+    )
+    assert result.returncode == 0, result.stderr
+    assert "pii_presidio" in result.stdout
+    assert "easy" in result.stdout
