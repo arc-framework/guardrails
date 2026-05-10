@@ -1,7 +1,6 @@
 import { ChatPane } from "@/components/chat/ChatPane";
 import { CorsErrorBanner } from "@/components/shared/CorsErrorBanner";
 import { ErrorState } from "@/components/shared/ErrorState";
-import { LoadingState } from "@/components/shared/LoadingState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -75,7 +74,7 @@ function SignalCard({
   detail: string;
 }) {
   return (
-    <section className="rounded-[24px] border border-slate-200/80 bg-white/75 p-4 shadow-sm dark:border-slate-800/80 dark:bg-slate-950/55">
+    <section className="rounded-[24px] border border-border/70 bg-card/85 p-4 shadow-sm">
       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
         {eyebrow}
       </p>
@@ -153,6 +152,40 @@ export function ChatWorkspaceRoute() {
     return nodeStates[selectedNodeId as keyof typeof nodeStates] ?? null;
   }, [nodeStates, selectedNodeId]);
 
+  const canvasNotice = useMemo(() => {
+    if (!activeTurn) {
+      return null;
+    }
+
+    if (activeTurn.status === "sending") {
+      return {
+        className:
+          "border-sky-300/80 bg-sky-50/60 text-sky-950 dark:border-sky-900/80 dark:bg-sky-950/30 dark:text-sky-100",
+        message:
+          "Request is in flight. The canvas stays active now, but every stage remains inactive until replay data lands.",
+      };
+    }
+
+    if (activeTurn.status === "error") {
+      return {
+        className:
+          "border-red-300/80 bg-red-50/60 text-red-900 dark:border-red-900/80 dark:bg-red-950/30 dark:text-red-100",
+        message:
+          "This request failed before replay data became available. The canvas remains visible so you can keep the same request context selected.",
+      };
+    }
+
+    if (detail.isLoading || !detail.data || lifecycle.isLoading || !lifecycle.data) {
+      return {
+        className: "border-border/70 bg-muted/25 text-muted-foreground",
+        message:
+          "Replay data is still hydrating. The canvas is already mounted and will light up stage-by-stage as backend artifacts arrive.",
+      };
+    }
+
+    return null;
+  }, [activeTurn, detail.data, detail.isLoading, lifecycle.data, lifecycle.isLoading]);
+
   const onSelectExample = useCallback((example: NonNullable<typeof examplesQuery.data>[number]) => {
     setSelectedExampleId(example.id);
     setDraftModel(example.model);
@@ -224,6 +257,7 @@ export function ChatWorkspaceRoute() {
             : turn,
         ),
       );
+      setDraftSystemPrompt("");
       void queryClient.invalidateQueries({ queryKey: ["request", result.rid] });
       void queryClient.invalidateQueries({ queryKey: ["lifecycle", result.rid] });
       void queryClient.invalidateQueries({ queryKey: ["decision", result.rid] });
@@ -258,7 +292,7 @@ export function ChatWorkspaceRoute() {
   const summary = detail.data?.summary;
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col gap-3 p-4">
+    <div className="flex h-[calc(100vh-3.5rem)] flex-col gap-3 bg-background p-4 text-foreground">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link to="/requests" className="text-sm text-muted-foreground hover:underline">
@@ -292,12 +326,12 @@ export function ChatWorkspaceRoute() {
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 xl:flex-[8_1_0%]">
           <div className="grid gap-3 md:grid-cols-4">
             <SignalCard
-              eyebrow="Active turn"
+              eyebrow="Active request"
               value={activeTurn?.status ?? "idle"}
               detail={
                 activeTurn?.presetSummary
                   ? `Preset seeded from ${activeTurn.presetSummary}`
-                  : "The selected turn drives the replay and dock surfaces."
+                  : "The selected request drives the replay and dock surfaces."
               }
             />
             <SignalCard
@@ -336,40 +370,34 @@ export function ChatWorkspaceRoute() {
                             : "pending"
                         : "off"
                     } · Debug ${detail.data?.resources.debug ? "on" : "off"}`
-                  : "Lifecycle, decision, and debug artifacts appear once a turn completes."
+                  : activeTurn
+                    ? "The canvas is mounted now. Lifecycle, decision, and debug artifacts light up as backend replay data arrives."
+                    : "Lifecycle, decision, and debug artifacts appear after you send a turn."
               }
             />
           </div>
 
-          <section className="flex min-h-0 flex-1 flex-col rounded-[28px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,rgba(191,219,254,0.18),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.92),rgba(248,250,252,0.88))] p-4 shadow-sm dark:border-slate-800/80 dark:bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.14),transparent_28%),linear-gradient(180deg,rgba(2,6,23,0.94),rgba(15,23,42,0.88))]">
+          <section className="flex min-h-0 flex-1 flex-col rounded-[28px] border border-border/70 bg-card/95 p-4 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                   Lifecycle replay
                 </p>
-                <h2 className="mt-1 text-lg font-semibold">Turn observability canvas</h2>
+                <h2 className="mt-1 text-lg font-semibold">Request observability canvas</h2>
               </div>
               {selectedNode ? (
                 <Badge variant="outline">{selectedNode.stage}</Badge>
               ) : summary?.status ? (
                 <Badge variant={summary.live ? "default" : "outline"}>{summary.status}</Badge>
+              ) : activeTurn ? (
+                <Badge variant="outline">{activeTurn.status}</Badge>
               ) : null}
             </div>
 
             {!activeTurn ? (
-              <div className="flex flex-1 items-center justify-center rounded-[24px] border border-dashed border-slate-300/80 bg-white/55 px-6 text-center text-sm leading-6 text-muted-foreground dark:border-slate-700/80 dark:bg-slate-950/35">
-                Send a turn from the chat pane to bind a request id, hydrate the canvas, and replay
-                the guardrail stages here.
-              </div>
-            ) : activeTurn.status === "sending" ? (
-              <div className="flex flex-1 items-center justify-center rounded-[24px] border border-dashed border-sky-300/80 bg-sky-50/60 px-6 text-center text-sm leading-6 text-sky-950 dark:border-sky-900/80 dark:bg-sky-950/30 dark:text-sky-100">
-                Turn is in flight. The chat pane is already tracking it; replay surfaces will
-                hydrate as soon as the backend records the request.
-              </div>
-            ) : activeTurn.status === "error" ? (
-              <div className="flex flex-1 items-center justify-center rounded-[24px] border border-dashed border-red-300/80 bg-red-50/60 px-6 text-center text-sm leading-6 text-red-900 dark:border-red-900/80 dark:bg-red-950/30 dark:text-red-100">
-                This turn failed before replay data became available. Adjust the draft and send
-                again.
+              <div className="flex flex-1 items-center justify-center rounded-[24px] border border-dashed border-border/70 bg-muted/25 px-6 text-center text-sm leading-6 text-muted-foreground">
+                Send a request from the chat pane, then click any request in the conversation to
+                hydrate this canvas and replay its guardrail stages here.
               </div>
             ) : detail.isError ? (
               <div className="flex-1 overflow-auto">
@@ -379,22 +407,27 @@ export function ChatWorkspaceRoute() {
                   <ErrorState error={detail.error} onRetry={() => detail.refetch()} />
                 )}
               </div>
-            ) : detail.isLoading || !detail.data || lifecycle.isLoading || !lifecycle.data ? (
-              <div className="flex-1 overflow-auto">
-                <LoadingState rows={5} rowHeight="h-12" />
-              </div>
             ) : lifecycle.isError ? (
               <div className="flex-1 overflow-auto">
                 <ErrorState error={lifecycle.error} onRetry={() => lifecycle.refetch()} />
               </div>
             ) : (
-              <div className="min-h-0 flex-1 rounded-[24px] border border-slate-200/80 bg-card dark:border-slate-800/80">
-                <LifecycleCanvas
-                  events={events}
-                  activeStage={activeStage}
-                  selectedNodeId={selectedNodeId}
-                  onNodeSelect={setSelectedNodeId}
-                />
+              <div className="flex min-h-0 flex-1 flex-col gap-3">
+                {canvasNotice ? (
+                  <div
+                    className={`rounded-[20px] border px-4 py-3 text-sm leading-6 ${canvasNotice.className}`}
+                  >
+                    {canvasNotice.message}
+                  </div>
+                ) : null}
+                <div className="min-h-0 flex-1 rounded-[24px] border border-border/70 bg-background/70">
+                  <LifecycleCanvas
+                    events={events}
+                    activeStage={activeStage}
+                    selectedNodeId={selectedNodeId}
+                    onNodeSelect={setSelectedNodeId}
+                  />
+                </div>
               </div>
             )}
           </section>
@@ -408,15 +441,16 @@ export function ChatWorkspaceRoute() {
             examplesLoading={examplesQuery.isLoading}
             draftModel={draftModel}
             draftPrompt={draftPrompt}
-            draftSystemPrompt={draftSystemPrompt}
             selectedExampleId={selectedExampleId}
             sending={sendTurn.isPending}
             onSelectTurn={setActiveTurnId}
             onDraftModelChange={setDraftModel}
             onDraftPromptChange={setDraftPrompt}
-            onDraftSystemPromptChange={setDraftSystemPrompt}
             onSelectExample={onSelectExample}
-            onClearExample={() => setSelectedExampleId(null)}
+            onClearExample={() => {
+              setSelectedExampleId(null);
+              setDraftSystemPrompt("");
+            }}
             onSend={onSend}
           />
         </div>
@@ -431,7 +465,7 @@ export function ChatWorkspaceRoute() {
           onTabChange={setDockTab}
         />
       ) : (
-        <section className="rounded-[24px] border border-dashed border-slate-300/80 bg-white/55 px-4 py-3 text-sm text-muted-foreground dark:border-slate-700/80 dark:bg-slate-950/35">
+        <section className="rounded-[24px] border border-dashed border-border/70 bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
           Debug dock stays dormant until a completed turn has an RID to inspect. Choose a turn from
           the chat pane to reactivate lifecycle, backend, and log views.
         </section>

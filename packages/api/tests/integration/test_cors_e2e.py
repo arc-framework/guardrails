@@ -24,7 +24,7 @@ async def client(tmp_path: Path):
     db = tmp_path / "arc_guardrail.db"
     SqliteLifecycleSink(str(db))
     settings = ServiceSettings(
-        enable_chat_completions=False,
+        enable_chat_completions=True,
         lifecycle_sqlite_path=str(db),
         dashboard_origins=[
             "http://127.0.0.1:5173",
@@ -78,12 +78,31 @@ async def test_cross_origin_keeps_payload_safety(client) -> None:
 @pytest.mark.asyncio
 async def test_preflight_options_succeeds_for_allowed_origin(client) -> None:
     resp = await client.options(
-        "/requests",
+        "/v1/chat/completions",
         headers={
             "Origin": "http://127.0.0.1:5173",
-            "Access-Control-Request-Method": "GET",
-            "Access-Control-Request-Headers": "Cache-Control",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type, X-Request-Id",
         },
     )
     assert resp.status_code == 200
     assert resp.headers.get("access-control-allow-origin") == "http://127.0.0.1:5173"
+
+
+@pytest.mark.asyncio
+async def test_cross_origin_chat_post_succeeds_with_cors_headers(client) -> None:
+    resp = await client.post(
+        "/v1/chat/completions",
+        headers={
+            "Origin": "http://127.0.0.1:5173",
+            "Content-Type": "application/json",
+            "X-Request-Id": "cors-e2e-rid",
+        },
+        json={
+            "model": "llama3.2",
+            "messages": [{"role": "user", "content": "Hello from the dashboard"}],
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.headers.get("access-control-allow-origin") == "http://127.0.0.1:5173"
+    assert resp.headers.get("x-request-id") == "cors-e2e-rid"

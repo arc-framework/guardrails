@@ -477,12 +477,14 @@ def create_app(
         max_bytes=settings.max_request_bytes,
     )
 
-    # CORS for the dashboard data plane. Only installed when the operator
+    # CORS for the operator surfaces. Only installed when the operator
     # configured an explicit allow-list — empty list (default) means no
     # cross-origin requests are permitted at the browser layer. The
     # ``ServiceSettings.dashboard_origins`` validator already rejects
     # wildcards, non-http(s) schemes, and path/query/fragment components
-    # at startup; we just consume the validated list here.
+    # at startup; we just consume the validated list here. The dashboard
+    # needs GET for the read-only data plane plus POST to drive the chat
+    # workspace through ``/v1/chat/completions`` with a client-supplied rid.
     if settings.dashboard_origins:
         try:
             cors_module = importlib.import_module("starlette.middleware.cors")
@@ -495,8 +497,8 @@ def create_app(
             allow_origins=list(settings.dashboard_origins),
             allow_origin_regex=None,
             allow_credentials=False,
-            allow_methods=["GET", "OPTIONS"],
-            allow_headers=["Content-Type", "Cache-Control", "Last-Event-ID"],
+            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_headers=["Content-Type", "Cache-Control", "Last-Event-ID", "X-Request-Id"],
             expose_headers=["X-Lifecycle-Tier", "X-Request-Id"],
             max_age=600,
         )
