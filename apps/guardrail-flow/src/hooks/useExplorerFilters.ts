@@ -1,11 +1,12 @@
-import { useCallback, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
 import type { ListRequestsParams } from "@/lib/api";
 import type { FinalAction, RequestStatus, RiskBand } from "@/types/api";
+import { useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 
 const VALID_STATUS: RequestStatus[] = ["live", "completed", "errored"];
 const VALID_ACTION: FinalAction[] = ["pass", "block", "redact", "clarify", "refuse"];
 const VALID_RISK: RiskBand[] = ["low", "med", "high"];
+const DEFAULT_EXPLORER_PAGE_SIZE = 10;
 
 function parseEnumList<T extends string>(raw: string[] | null, valid: T[]): T[] {
   if (!raw) return [];
@@ -36,10 +37,13 @@ export function useExplorerFilters(): UseExplorerFiltersReturn {
 
   const filters = useMemo<ExplorerFiltersValue>(() => {
     const page = Number.parseInt(params.get("page") ?? "1", 10);
-    const pageSize = Number.parseInt(params.get("page_size") ?? "50", 10);
+    const pageSize = Number.parseInt(
+      params.get("page_size") ?? String(DEFAULT_EXPLORER_PAGE_SIZE),
+      10,
+    );
     return {
       page: Number.isNaN(page) || page < 1 ? 1 : page,
-      page_size: Number.isNaN(pageSize) || pageSize < 1 ? 50 : pageSize,
+      page_size: Number.isNaN(pageSize) || pageSize < 1 ? DEFAULT_EXPLORER_PAGE_SIZE : pageSize,
       since: params.get("since"),
       until: params.get("until"),
       status: parseEnumList(params.getAll("status"), VALID_STATUS),

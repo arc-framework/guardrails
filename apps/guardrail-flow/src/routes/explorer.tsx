@@ -1,18 +1,28 @@
-import { useExplorerFilters } from "@/hooks/useExplorerFilters";
-import { useRequestsQuery } from "@/hooks/useRequestsQuery";
 import { ExplorerFilters } from "@/components/explorer/ExplorerFilters";
 import { ExplorerTable } from "@/components/explorer/ExplorerTable";
 import { MetricsStrip } from "@/components/explorer/MetricsStrip";
+import { CorsErrorBanner } from "@/components/shared/CorsErrorBanner";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { LoadingState } from "@/components/shared/LoadingState";
-import { CorsErrorBanner } from "@/components/shared/CorsErrorBanner";
+import { useExplorerFilters } from "@/hooks/useExplorerFilters";
+import { useRequestsQuery } from "@/hooks/useRequestsQuery";
 import { CorsLikelyError } from "@/lib/api";
+import { useMemo } from "react";
 
 export function ExplorerRoute() {
   const filters = useExplorerFilters();
   const params = filters.toListRequestsParams();
   const query = useRequestsQuery(params);
+  const matrixParams = useMemo(
+    () => ({
+      ...params,
+      action: undefined,
+      risk_band: undefined,
+    }),
+    [params],
+  );
+  const matrixQuery = useRequestsQuery(matrixParams);
 
   const hasActiveFilters =
     filters.filters.rid_prefix !== "" ||
@@ -31,6 +41,10 @@ export function ExplorerRoute() {
       {query.data && query.data.items.length > 0 ? (
         <MetricsStrip
           rows={query.data.items}
+          matrixRows={matrixQuery.data?.items}
+          totalMatching={query.data.total}
+          activeActionFilters={filters.filters.action}
+          activeRiskFilters={filters.filters.risk_band}
           onActionFilter={(action) => filters.setFilter("action", [action])}
           onRiskFilter={(band) => filters.setFilter("risk_band", [band])}
         />
@@ -59,7 +73,13 @@ export function ExplorerRoute() {
             : {})}
         />
       ) : (
-        <ExplorerTable page={query.data} onPage={filters.setPage} />
+        <ExplorerTable
+          page={query.data}
+          onPage={filters.setPage}
+          onPageSizeChange={(size) => filters.setFilter("page_size", size)}
+          onActionFilter={(action) => filters.setFilter("action", [action])}
+          onRiskFilter={(band) => filters.setFilter("risk_band", [band])}
+        />
       )}
     </div>
   );

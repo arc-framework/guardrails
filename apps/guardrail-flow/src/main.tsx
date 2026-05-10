@@ -1,17 +1,18 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import App from "./App";
-import { ExplorerRoute } from "./routes/explorer";
-import { WorkspaceRoute } from "./routes/workspace";
-import { ArchitectureIndexRoute } from "./routes/architecture-index";
-import { ArchitectureCanvasRoute } from "./routes/architecture-canvas";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { createQueryClient } from "@/lib/state/query-client";
 import { useUiStore } from "@/lib/state/ui-store";
-import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { useLocation } from "react-router-dom";
+import App from "./App";
+import { ArchitectureCanvasRoute } from "./routes/architecture-canvas";
+import { ArchitectureIndexRoute } from "./routes/architecture-index";
+import { ChatWorkspaceRoute } from "./routes/chat-workspace";
+import { ExplorerRoute } from "./routes/explorer";
+import { WorkspaceRoute } from "./routes/workspace";
 import "./styles/globals.css";
 
 const queryClient = createQueryClient();
@@ -38,6 +39,14 @@ ReactDOM.createRoot(root).render(
             <Routes>
               <Route element={<App />}>
                 <Route index element={<Navigate to="/requests" replace />} />
+                <Route
+                  path="/chat"
+                  element={
+                    <RouteBoundary>
+                      <ChatWorkspaceRoute />
+                    </RouteBoundary>
+                  }
+                />
                 <Route
                   path="/requests"
                   element={

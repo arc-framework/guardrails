@@ -361,6 +361,7 @@ def create_app(
         endpoints: list[str] = []
         if settings.enable_chat_completions:
             endpoints.append("POST /v1/chat/completions")
+            endpoints.append("GET /chat/examples")
         if settings.enable_docs:
             endpoints.append("GET /docs")
             endpoints.append("GET /openapi.json")
@@ -403,6 +404,7 @@ def create_app(
         from arc_guard_service.observability import (
             SettingsBackedPayloadCapturePolicy,
         )
+        from arc_guard_service.transport.chat_examples import build_chat_examples_router
         from arc_guard_service.transport.openai import build_router
 
         # The OpenAI router needs the shared httpx client; we wrap it in a
@@ -427,6 +429,8 @@ def create_app(
             payload_capture_policy=capture_policy,
         )
         app.include_router(openai_router)
+        chat_examples_router = build_chat_examples_router()
+        app.include_router(chat_examples_router)
 
     if settings.lifecycle_enabled and sse_registry is not None:
         from arc_guard_service.transport.events import build_events_router

@@ -1,11 +1,11 @@
-import { Outlet, Link, NavLink } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
-import { env } from "@/lib/env";
-import { useUiStore } from "@/lib/state/ui-store";
-import { cn } from "@/lib/utils";
 import { CurtainThemeToggle } from "@/components/visuals/CurtainThemeToggle";
 import { DottedSurface } from "@/components/visuals/DottedSurface";
 import { BrandLogo } from "@/components/visuals/brand";
+import { env } from "@/lib/env";
+import { useUiStore } from "@/lib/state/ui-store";
+import { cn } from "@/lib/utils";
+import { Eye, EyeOff } from "lucide-react";
+import { Link, NavLink, Outlet } from "react-router-dom";
 
 const SSE_LABELS: Record<string, string> = {
   idle: "idle",
@@ -52,6 +52,17 @@ export default function App() {
               <span>GuardRailFlow</span>
             </Link>
             <nav className="flex items-center gap-1 text-sm">
+              <NavLink
+                to="/chat"
+                className={({ isActive }) =>
+                  cn(
+                    "rounded-md px-2.5 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                    isActive && "bg-muted text-foreground",
+                  )
+                }
+              >
+                Chat
+              </NavLink>
               <NavLink
                 to="/requests"
                 className={({ isActive }) =>

@@ -1,0 +1,22 @@
+========================================================================
+Corpus replay summary
+========================================================================
+Total prompts        : 5
+Matched expected     : 2  (40%)
+Mismatched           : 3
+Errored (HTTP/raise) : 0
+Skipped (extra dep)  : 0
+Elapsed              : 1.45 s
+Records written      : /Users/dgtalbug/Workspace/arc/sdk/tools/.corpus-replay/20260510T122348Z.jsonl
+
+By inspector:
+  jailbreak_heuristic         5
+
+Mismatches:
+  - jailbreak_heuristic__easy__01
+      findings: extra (strict mode) actual has ['INJECTION', 'PERSON'] beyond expected ['JAILBREAK_HEURISTIC_MATCH']
+  - jailbreak_heuristic__easy__02
+      findings: extra (strict mode) actual has ['INJECTION'] beyond expected ['JAILBREAK_HEURISTIC_MATCH']
+  - jailbreak_heuristic__easy__04
+      findings: extra (strict mode) actual has ['INJECTION'] beyond expected ['JAILBREAK_HEURISTIC_MATCH']
+========================================================================

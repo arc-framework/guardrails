@@ -14,6 +14,11 @@ import type {
   RequestWorkspaceManifest,
   RiskBand,
 } from "@/types/api";
+import type {
+  ChatCompletionRequestPayload,
+  ChatCompletionResult,
+  ChatExamplePreset,
+} from "@/types/chat";
 
 export interface ListRequestsParams {
   page?: number;
@@ -31,12 +36,19 @@ export interface ListDebugParams {
   cursor?: string;
 }
 
+export interface SendChatCompletionInput {
+  requestId: string;
+  body: ChatCompletionRequestPayload;
+}
+
 export interface DashboardApi {
   listRequests(params: ListRequestsParams): Promise<RequestPage>;
   getRequestDetail(rid: string): Promise<RequestWorkspaceManifest>;
   getRequestDecision(rid: string): Promise<RequestDecisionEnvelope>;
   getRequestDebug(rid: string, params: ListDebugParams): Promise<RequestDebugPage>;
   getLifecycleReplay(rid: string): Promise<LifecycleReplay>;
+  listChatExamples(): Promise<ChatExamplePreset[]>;
+  sendChatCompletion(input: SendChatCompletionInput): Promise<ChatCompletionResult>;
 }
 
 /**
