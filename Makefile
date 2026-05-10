@@ -176,7 +176,7 @@ api-up:
 	@until lsof -ti:$(API_PORT) >/dev/null 2>&1; do sleep 1; done
 	@echo "api up at http://$(API_HOST):$(API_PORT) (pid $$(lsof -ti:$(API_PORT))). log: $(API_LOG_FILE)"
 	@echo
-	@echo "  Guard endpoint:  POST http://$(API_HOST):$(API_PORT)/v1/guard"
+	@echo "  Legacy guard:    POST http://$(API_HOST):$(API_PORT)/v1/guard  (410 tombstone)"
 	@echo "  Chat endpoint:   POST http://$(API_HOST):$(API_PORT)/v1/chat/completions"
 	@echo "  Live events:     GET  http://$(API_HOST):$(API_PORT)/events"
 	@echo "  Lifecycle replay:GET  http://$(API_HOST):$(API_PORT)/lifecycle/{rid}"
@@ -255,7 +255,7 @@ docker-up:
 	@echo "  sqlite-ui   http://127.0.0.1:8081  (DB browser; dev profile only)"
 	@echo "  dashboard   http://127.0.0.1:5173  (GuardRailFlow; dev profile only)"
 	@echo
-	@echo "  Guard endpoint:    POST http://127.0.0.1:8766/v1/guard"
+	@echo "  Legacy guard:      POST http://127.0.0.1:8766/v1/guard  (410 tombstone)"
 	@echo "  Chat endpoint:     POST http://127.0.0.1:8766/v1/chat/completions"
 	@echo "  Live events:       GET  http://127.0.0.1:8766/events"
 	@echo "  Lifecycle replay:  GET  http://127.0.0.1:8766/lifecycle/{rid}"
@@ -276,7 +276,7 @@ docker-up-prod:
 	@echo "  api      http://127.0.0.1:8766"
 	@echo "  ollama   http://127.0.0.1:11434"
 	@echo
-	@echo "  Guard endpoint:    POST http://127.0.0.1:8766/v1/guard"
+	@echo "  Legacy guard:      POST http://127.0.0.1:8766/v1/guard  (410 tombstone)"
 	@echo "  Chat endpoint:     POST http://127.0.0.1:8766/v1/chat/completions"
 	@echo "  Live events:       GET  http://127.0.0.1:8766/events"
 	@echo "  Lifecycle replay:  GET  http://127.0.0.1:8766/lifecycle/{rid}"

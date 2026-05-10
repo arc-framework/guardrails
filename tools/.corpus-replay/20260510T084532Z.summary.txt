@@ -1,0 +1,14 @@
+========================================================================
+Corpus replay summary
+========================================================================
+Total prompts        : 1
+Matched expected     : 1  (100%)
+Mismatched           : 0
+Errored (HTTP/raise) : 0
+Skipped (extra dep)  : 0
+Elapsed              : 3.37 s
+Records written      : /Users/dgtalbug/Workspace/arc/sdk/tools/.corpus-replay/20260510T084532Z.jsonl
+
+By inspector:
+  _baseline                   1
+========================================================================

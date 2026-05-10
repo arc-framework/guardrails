@@ -27,10 +27,13 @@ const NODE_TYPES = { stage: StageNode };
 
 // Per FR-031e: level 1 default ("Spread"), level 2 comfortable ("Wide"),
 // level 3 wide ("Reset"). Cycling repeats from level 1.
+// Level 1 matches the architecture canvas default (spreadLayout's built-in
+// 1.4 factor) so entering a request canvas feels consistent with the rest
+// of the dashboard. Higher levels expand outward from there.
 const SPREAD_FACTOR_BY_LEVEL: Record<CanvasSpreadLevel, number> = {
-  1: 1.05,
-  2: 1.5,
-  3: 2.2,
+  1: 1.4,
+  2: 1.9,
+  3: 2.5,
 };
 
 const SPREAD_LABEL_BY_LEVEL: Record<CanvasSpreadLevel, string> = {

@@ -68,6 +68,38 @@ The multi-level Spread control on the workspace canvas cycles through three layo
 
 `POST /events/close-all` signals every open SSE subscriber to terminate. Useful when long-lived dashboards have left zombie streams open after a backend restart.
 
+The dockerized dev stack now pins `ARC_GUARD_SERVICE_PIPELINE_FACTORY=arc_guard_service.pipeline_factories:guardrailflow_dev_pipeline_factory` so GuardRailFlow exercises the routed policy path by default and the Decision / Policy / Diff tabs populate on a fresh `make docker-up`.
+
+## Smoke screenshots
+
+Captured during the live quickstart against the dockerized dev stack.
+
+### Curtain theme toggle
+
+![Curtain toggle light](./014-screenshots/curtain-toggle-light.png)
+![Curtain toggle dark](./014-screenshots/curtain-toggle-dark.png)
+
+### Dotted surface backdrop
+
+![Dotted surface light](./014-screenshots/dotted-surface-light.png)
+![Dotted surface dark](./014-screenshots/dotted-surface-dark.png)
+
+### Animated gradient border
+
+![Gradient border light](./014-screenshots/gradient-border-light.png)
+![Gradient border dark](./014-screenshots/gradient-border-dark.png)
+
+### Brand variants
+
+![Pipeline brand light](./014-screenshots/brand-pipeline-light.png)
+![Pipeline brand dark](./014-screenshots/brand-pipeline-dark.png)
+
+![Wordmark brand light](./014-screenshots/brand-wordmark-light.png)
+![Wordmark brand dark](./014-screenshots/brand-wordmark-dark.png)
+
+![Guardrail brand light](./014-screenshots/brand-guardrail-light.png)
+![Guardrail brand dark](./014-screenshots/brand-guardrail-dark.png)
+
 ## References
 
 - [Spec 014](../../specs/014-pipeline-instrumentation-completion/spec.md) — full requirements + scope.

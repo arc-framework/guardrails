@@ -56,6 +56,7 @@ services:
       ARC_GUARD_SERVICE_BIND: 0.0.0.0
       ARC_GUARD_SERVICE_PORT: "8766"
       ARC_GUARD_SERVICE_BACKEND: ollama
+      ARC_GUARD_SERVICE_PIPELINE_FACTORY: arc_guard_service.pipeline_factories:guardrailflow_dev_pipeline_factory
       ARC_GUARD_SERVICE_OLLAMA_URL: http://ollama:11434/v1/chat/completions
       ARC_GUARD_SERVICE_LOG_LEVEL: INFO
       ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH: /data/arc_guardrail.db

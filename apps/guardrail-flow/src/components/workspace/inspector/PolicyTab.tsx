@@ -12,6 +12,7 @@ export interface PolicyTabProps {
 }
 
 interface PolicyRule {
+  key: string;
   id: string;
   matched: boolean;
   /** Set when the rule matched AND drove the resolved action — distinguishes
@@ -71,7 +72,7 @@ export function PolicyTab({ decision, available, events = [] }: PolicyTabProps) 
         <ul className="space-y-1">
           {rules.map((rule) => (
             <li
-              key={rule.id}
+              key={rule.key}
               className="flex items-center justify-between rounded border bg-background px-2 py-1 text-xs"
             >
               <span className="font-mono">{rule.id}</span>
@@ -97,14 +98,21 @@ function extractRules(
 ): PolicyRule[] {
   const ruleEvents = events.filter((e) => e.event_type === "PolicyRuleEvaluated");
   if (ruleEvents.length > 0) {
-    return ruleEvents.map((e) => {
+    return ruleEvents.map((e, index) => {
       const r = e as unknown as {
+        id?: string;
+        seq?: number;
         rule_id?: string;
         outcome?: string;
         contributed_to_action?: boolean;
       };
       const matched = r.outcome === "matched";
       return {
+        key:
+          (typeof r.id === "string" && r.id.length > 0 && r.id) ||
+          (typeof r.seq === "number"
+            ? `${r.rule_id ?? "(unnamed)"}-${r.seq}`
+            : `${r.rule_id ?? "(unnamed)"}-${index}`),
         id: r.rule_id ?? "(unnamed)",
         matched,
         contributedToAction: matched && r.contributed_to_action === true,
@@ -119,9 +127,10 @@ function extractRules(
   if (!Array.isArray(rules)) return [];
   return rules
     .filter((r): r is Record<string, unknown> => !!r && typeof r === "object")
-    .map((r) => {
+    .map((r, index) => {
       const matched = r.matched === true || r.outcome === "matched";
       return {
+        key: `${typeof r.id === "string" ? r.id : "(unnamed)"}-${index}`,
         id: typeof r.id === "string" ? r.id : "(unnamed)",
         matched,
         contributedToAction: matched && r.contributed_to_action === true,

@@ -41,7 +41,7 @@ VOLUME /data
 EXPOSE 8766
 
 # Healthcheck — root endpoint returns a service descriptor JSON
-HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=3 \
+HEALTHCHECK --interval=10s --timeout=3s --start-period=120s --retries=3 \
   CMD curl -fsS http://127.0.0.1:${ARC_GUARD_SERVICE_PORT}/ > /dev/null || exit 1
 
 # python -m arc_guard_service routes through the CLI which configures
