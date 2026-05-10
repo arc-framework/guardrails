@@ -68,9 +68,8 @@ const fixture = vi.hoisted(() => ({
 }));
 
 vi.mock("@tanstack/react-query", async () => {
-  const actual = await vi.importActual<typeof import("@tanstack/react-query")>(
-    "@tanstack/react-query",
-  );
+  const actual =
+    await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
   return {
     ...actual,
     useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
@@ -84,11 +83,7 @@ vi.mock("react-router-dom", () => ({
 }));
 
 vi.mock("@/lib/state/ui-store", () => ({
-  useUiStore: (
-    selector: (
-      state: Record<string, unknown>,
-    ) => unknown,
-  ) =>
+  useUiStore: (selector: (state: Record<string, unknown>) => unknown) =>
     selector({
       selectedNodeId: "route",
       setSelectedNodeId: mocks.setSelectedNodeId,

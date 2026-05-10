@@ -107,7 +107,7 @@ async def test_non_null_verifier_emits_rehydration_verified_with_capture_fields(
         lifecycle_hook=sink,
     )
 
-    await pipeline.pre_process(
+    result = await pipeline.pre_process(
         GuardInput(
             text="my email is alice@example.com please",
             context=GuardContext(
@@ -116,6 +116,8 @@ async def test_non_null_verifier_emits_rehydration_verified_with_capture_fields(
         )
     )
     await asyncio.sleep(0.05)
+
+    assert "alice@example.com" in result.text
 
     events = await sink.query(rid)
     assert events is not None
@@ -126,4 +128,4 @@ async def test_non_null_verifier_emits_rehydration_verified_with_capture_fields(
     assert rv[0].text_before is not None
     assert rv[0].text_after is not None
     assert "[EMAIL_ADDRESS" in rv[0].text_before
-    assert "alice@example.com" in rv[0].text_after
+    assert "[EMAIL_ADDRESS" in rv[0].text_after
