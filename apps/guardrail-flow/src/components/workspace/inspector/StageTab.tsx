@@ -18,6 +18,32 @@ interface TextDelta {
   after: string;
 }
 
+const EVENT_TO_STAGE: Record<string, StageName> = {
+  RequestStarted: "validate",
+  PreProcessStarted: "validate",
+  PreProcessCompleted: "validate",
+  IntentCaptured: "defend",
+  InspectorRan: "classify",
+  InspectorFailed: "classify",
+  InspectorMatchExplain: "classify",
+  FindingProduced: "classify",
+  JailbreakDetected: "classify",
+  DeceptionScored: "deception_inspect",
+  FidelityScored: "verify",
+  SanitizationApplied: "sanitize",
+  PolicyResolved: "route",
+  PolicyRuleEvaluated: "route",
+  StrategyExecuted: "execute",
+  PayloadRewritten: "execute",
+  BackendCalled: "execute",
+  BackendResponded: "execute",
+  ResponseAssembled: "execute",
+  RefusalProduced: "refusal",
+  RehydrationVerified: "rehydrate",
+  DecisionEmitted: "decision_emit",
+  ReportFlushed: "report",
+};
+
 /** Maps a text-bearing event type to the canvas stage it belongs to in the
  *  operator's mental model. Used to scope the "Text deltas" panel to the
  *  currently-selected stage. */
@@ -128,10 +154,7 @@ export function StageTab({ selectedNode, events }: StageTabProps) {
 }
 
 function filterToStage(events: LifecycleEventBase[], stage: StageName): LifecycleEventBase[] {
-  return events.filter((e) => {
-    const evStage = (e as Record<string, unknown>).stage;
-    return typeof evStage === "string" && evStage === stage;
-  });
+  return events.filter((event) => resolveStage(event) === stage);
 }
 
 function extractTextDeltasForStage(events: LifecycleEventBase[], stage: StageName): TextDelta[] {
@@ -166,4 +189,12 @@ function badgeVariantFor(
     default:
       return "outline";
   }
+}
+
+function resolveStage(event: LifecycleEventBase): StageName | null {
+  const explicitStage = (event as Record<string, unknown>).stage;
+  if (typeof explicitStage === "string") {
+    return explicitStage as StageName;
+  }
+  return EVENT_TO_STAGE[event.event_type] ?? null;
 }

@@ -53,9 +53,9 @@ Spec 014 closes all six gaps in one release. The supporting visual chrome was bu
 ## Operator knobs
 
 ```bash
-# Capture flags (default OFF in code, ON in docker-compose dev profile)
-ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS=true
-ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT=true
+# Sanitized payload capture is ON by default; raw input stays opt-in.
+ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS=true   # optional explicit override
+ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT=true  # security-sensitive
 
 # Sweeper
 ARC_GUARD_SERVICE_REQUEST_SUMMARY_STALE_THRESHOLD_SECONDS=600

@@ -61,3 +61,15 @@ async def test_root_descriptor_omits_v1_guard() -> None:
     assert response.status_code == 200
     endpoints = response.json()["endpoints"]
     assert all("/v1/guard" not in ep for ep in endpoints), endpoints
+
+
+@pytest.mark.asyncio
+async def test_openapi_omits_v1_guard() -> None:
+    """Swagger/OpenAPI should not advertise the retired tombstone route."""
+    app = create_app(ServiceSettings())
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/openapi.json")
+    assert response.status_code == 200
+    schema = response.json()
+    assert "/v1/guard" not in schema.get("paths", {}), schema.get("paths", {})

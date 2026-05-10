@@ -376,7 +376,7 @@ def create_app(
         tags=["guard"],
         summary="Removed — use /v1/chat/completions",
         deprecated=True,
-        include_in_schema=True,
+        include_in_schema=False,
     )  # type: ignore[untyped-decorator]
     async def guard_endpoint_removed() -> Any:  # type: ignore[valid-type]
         """Tombstone for the retired ``/v1/guard`` endpoint.

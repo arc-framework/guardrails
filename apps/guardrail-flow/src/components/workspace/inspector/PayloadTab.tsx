@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useUiStore } from "@/lib/state/ui-store";
 import { maskPayload } from "@/lib/privacy/mask";
+import { useUiStore } from "@/lib/state/ui-store";
 import type { LifecycleEventBase } from "@/types/api";
 
 export interface PayloadTabProps {
@@ -25,14 +25,11 @@ export function PayloadTab({ events }: PayloadTabProps) {
     <div className="flex flex-col gap-3 px-1">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          Captured user-facing payloads. Off by default — backend operator opts in via{" "}
+          Captured user-facing payloads. Sanitized lifecycle payload capture is on by default; raw
+          input remains opt-in via{" "}
           <code className="rounded bg-muted px-1 text-[10px]">
             ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT
           </code>{" "}
-          and{" "}
-          <code className="rounded bg-muted px-1 text-[10px]">
-            ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS
-          </code>
           .
         </p>
         <div className="flex items-center gap-2">

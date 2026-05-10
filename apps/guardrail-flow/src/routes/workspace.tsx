@@ -113,7 +113,8 @@ export function WorkspaceRoute() {
   }, [rid, sse.status, setLiveSse]);
 
   const events = useMemo(() => lifecycle.data?.events ?? [], [lifecycle.data?.events]);
-  const nodeStates = useMemo(() => deriveNodeStates(events), [events]);
+  const activeStage = detail.data?.summary.live ? detail.data.summary.stage : null;
+  const nodeStates = useMemo(() => deriveNodeStates(events, activeStage), [events, activeStage]);
   const selectedNode = useMemo(() => {
     if (!selectedNodeId) return null;
     const stage = selectedNodeId as StageName;
@@ -205,6 +206,7 @@ export function WorkspaceRoute() {
           ) : (
             <LifecycleCanvas
               events={events}
+              activeStage={activeStage}
               selectedNodeId={selectedNodeId}
               onNodeSelect={setSelectedNodeId}
             />

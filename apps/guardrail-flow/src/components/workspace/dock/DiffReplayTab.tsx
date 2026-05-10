@@ -1,12 +1,12 @@
-import { useMemo } from "react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { tokenDiff, type DiffOp } from "@/lib/diff/token-diff";
-import { useUiStore } from "@/lib/state/ui-store";
 import { maskPayload } from "@/lib/privacy/mask";
+import { useUiStore } from "@/lib/state/ui-store";
 import { cn } from "@/lib/utils";
 import type { LifecycleEventBase } from "@/types/api";
+import { useMemo } from "react";
 
 export interface DiffReplayTabProps {
   events: LifecycleEventBase[];
@@ -37,7 +37,7 @@ export function DiffReplayTab({ events }: DiffReplayTabProps) {
     return (
       <EmptyState
         title="No diffs to render"
-        description="Diff/Replay needs both text_before and text_after on a transformative stage. Capture flags are off by default — set ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS=true on the api side to populate them."
+        description="Diff/Replay needs both text_before and text_after on a transformative stage. Sanitized payload capture is enabled by default; raw input capture remains opt-in via ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT=true."
       />
     );
   }

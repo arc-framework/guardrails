@@ -16,6 +16,7 @@ api transport can import it without crossing the layered-import boundary.
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -26,6 +27,38 @@ from arc_guard_core.lifecycle.config import (
 )
 from arc_guard_core.lifecycle.events import LifecycleEventBase
 from arc_guard_core.lifecycle.sink import LifecycleSink
+from arc_guard_core.placeholders import DEFAULT_PLACEHOLDERS
+
+_SCRUBBED_TEXT_FIELDS = ("text_before", "text_after", "response_text")
+_SCRUB_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (
+        re.compile(r"\b(?:\d[ -]*?){13,19}\b"),
+        DEFAULT_PLACEHOLDERS["CREDIT_CARD"],
+    ),
+    (
+        re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
+        DEFAULT_PLACEHOLDERS["US_SSN"],
+    ),
+    (
+        re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}\b"),
+        DEFAULT_PLACEHOLDERS["EMAIL_ADDRESS"],
+    ),
+    (
+        re.compile(r"\b(?:\+?\d[\d(). -]{7,}\d)\b"),
+        DEFAULT_PLACEHOLDERS["PHONE_NUMBER"],
+    ),
+    (
+        re.compile(r"\bpassport-[A-Za-z0-9]+\b", re.IGNORECASE),
+        "passport-[US_PASSPORT]",
+    ),
+)
+
+
+def _scrub_captured_text(value: str) -> str:
+    scrubbed = value
+    for pattern, replacement in _SCRUB_PATTERNS:
+        scrubbed = pattern.sub(replacement, scrubbed)
+    return scrubbed
 
 
 class LifecycleEmitter:
@@ -78,6 +111,13 @@ class LifecycleEmitter:
         parent_id: str | None,
         **fields: Any,
     ) -> LifecycleEventBase:
+        if self._policy.should_capture_sanitized() and not self._policy.should_capture_raw_input():
+            fields = {
+                key: _scrub_captured_text(value)
+                if key in _SCRUBBED_TEXT_FIELDS and isinstance(value, str)
+                else value
+                for key, value in fields.items()
+            }
         seq = self._seq
         self._seq += 1
         event = event_class(

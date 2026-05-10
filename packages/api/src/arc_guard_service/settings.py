@@ -105,11 +105,11 @@ class ServiceSettings(BaseSettings):
     lifecycle_sqlite_cleanup_interval_seconds: float = Field(default=60.0, gt=0.0, le=3600.0)
     lifecycle_sse_subscriber_queue_capacity: int = Field(default=1000, ge=10, le=100_000)
     lifecycle_lookup_timeout_seconds: float = Field(default=5.0, gt=0.0, le=60.0)
-    # Payload capture is OFF by default — events carry sizes/lengths only.
-    # Enable `lifecycle_capture_payloads` to capture POST-sanitization text.
-    # Enable `lifecycle_capture_raw_input` (separately, security-sensitive) to
-    # capture the raw inbound text on RequestStarted.
-    lifecycle_capture_payloads: bool = False
+    # Sanitized payload capture is ON by default so the dashboard can render
+    # stage diffs and backend responses without extra operator setup.
+    # `lifecycle_capture_raw_input` remains separate and security-sensitive:
+    # enable it explicitly to capture raw inbound text on RequestStarted.
+    lifecycle_capture_payloads: bool = True
     lifecycle_capture_raw_input: bool = False
 
     # Dashboard data plane (additive HTTP routes + filtered SSE).

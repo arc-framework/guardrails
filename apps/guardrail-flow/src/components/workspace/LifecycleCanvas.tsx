@@ -131,11 +131,17 @@ function eventsUpTo(
 
 export interface LifecycleCanvasProps {
   events: LifecycleEventBase[];
+  activeStage?: StageName | null;
   selectedNodeId?: string | null;
   onNodeSelect?: (nodeId: string | null) => void;
 }
 
-export function LifecycleCanvas({ events, selectedNodeId, onNodeSelect }: LifecycleCanvasProps) {
+export function LifecycleCanvas({
+  events,
+  activeStage = null,
+  selectedNodeId,
+  onNodeSelect,
+}: LifecycleCanvasProps) {
   const spreadLevel = useUiStore((s) => s.canvasSpreadLevel);
   const cycleSpread = useUiStore((s) => s.cycleCanvasSpreadLevel);
 
@@ -156,15 +162,17 @@ export function LifecycleCanvas({ events, selectedNodeId, onNodeSelect }: Lifecy
     return (playback.currentId as StageName | null) ?? null;
   }, [playback.status, playback.currentId]);
 
+  const effectiveActiveStage = replayActive ?? activeStage;
+
   const baseNodes = useMemo(() => {
-    const projected = projectNodes(effectiveEvents, replayActive);
+    const projected = projectNodes(effectiveEvents, effectiveActiveStage);
     if (!selectedNodeId) return projected;
     return projected.map((n) => (n.id === selectedNodeId ? { ...n, selected: true } : n));
-  }, [effectiveEvents, replayActive, selectedNodeId]);
+  }, [effectiveEvents, effectiveActiveStage, selectedNodeId]);
 
   const baseEdges = useMemo(
-    () => styleEdges(effectiveEvents, replayActive),
-    [effectiveEvents, replayActive],
+    () => styleEdges(effectiveEvents, effectiveActiveStage),
+    [effectiveEvents, effectiveActiveStage],
   );
 
   const spread = useMemo(

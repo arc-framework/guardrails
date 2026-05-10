@@ -14,12 +14,9 @@
  *     - DeceptionScored     → deception_inspect.deceptionScore
  *     - FindingProduced     → classify.findingCount++
  *     - RefusalProduced     → refusal stage flips to `blocked` (terminal)
- * - The "currently executing" stage (only meaningful in live mode) is
- *   the one whose `*Started` event has fired but whose `StageRan` has
- *   not — represented as `active`. During replay of a *completed*
- *   request, callers can pass `activeOverride` to mark whichever stage
- *   the replay cursor currently sits on as `active` so the leading-
- *   dashed-edge animation triggers the same way it does in live mode.
+ * - The caller may provide `activeOverride` to mark the live request's
+ *   current `summary.stage` or the replay cursor's current stage as
+ *   `active`, which drives the leading-dashed-edge animation.
  */
 
 import type { LifecycleEventBase, StageName } from "@/types/api";
@@ -99,11 +96,9 @@ export function deriveNodeStates(
     }
   }
 
-  // Replay-cursor override: paint whichever stage the cursor currently
-  // sits on as ``active`` so the canvas's leading-dashed-edge animation
-  // fires the same way it does in true-live mode. We only override when
-  // the override targets a stage that already terminated — leaving live
-  // requests' active state alone.
+  // Caller-provided override: paint the current live stage (from the
+  // request summary) or the playback cursor's stage as ``active`` so the
+  // canvas can animate the leading edge in both modes.
   if (activeOverride && activeOverride in out) {
     out[activeOverride].state = "active";
   }

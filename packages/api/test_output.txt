@@ -1,0 +1,483 @@
+....FF.                                                                  [100%]
+=================================== FAILURES ===================================
+_______________ test_capture_flags_can_be_enabled_independently ________________
+
+    def test_capture_flags_can_be_enabled_independently() -> None:
+        """Sanitized capture without raw, and raw capture without sanitized,
+        are both valid. Verify the matrix."""
+        # raw=on, sanitized=off → raw_input populated, text_after/response_text None
+        with _build_client(lifecycle_capture_raw_input=True) as client:
+            body = _send_pii(client, "capture-matrix-raw-only")
+        rs = next(e for e in body["events"] if e["event_type"] == "RequestStarted")
+        assert rs["raw_input"] is not None
+        sa = next((e for e in body["events"] if e["event_type"] == "SanitizationApplied"), None)
+        if sa is not None:
+>           assert sa["text_after"] is None
+E           AssertionError: assert 'my email is [EMAIL_ADDRESS] please advise' is None
+
+tests/integration/test_lifecycle_payload_capture.py:133: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - CreditCardRecognizer supported languages: es, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - CreditCardRecognizer supported languages: it, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - CreditCardRecognizer supported languages: pl, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - EsNifRecognizer supported languages: es, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - EsNieRecognizer supported languages: es, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - ItDriverLicenseRecognizer supported languages: it, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - ItFiscalCodeRecognizer supported languages: it, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - ItVatCodeRecognizer supported languages: it, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - ItIdentityCardRecognizer supported languages: it, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - ItPassportRecognizer supported languages: it, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - PlPeselRecognizer supported languages: pl, registry supported languages: en
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='d79c381be9a143769947015caa82f1cd' decision_id='7e928e539c6d4647a11b98ea207e962a' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=HIGH bypass_reason=None
+______________ test_smoke_200_pii_requests_under_default_settings ______________
+
+client = <starlette.testclient.TestClient object at 0x382a7e690>
+
+    def test_smoke_200_pii_requests_under_default_settings(client: TestClient) -> None:
+        """Default-settings smoke variant — 200 distinct PII requests, asserting
+        none leak. Runs in the default test suite to catch regressions fast."""
+        rids = [(i, _send_pii_request(client, i)) for i in range(200)]
+        for i, rid in rids:
+>           _no_raw_pii_in_lifecycle(client, rid, i)
+
+tests/security/test_no_raw_payload_in_sink_default.py:71: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x382a7e690>
+rid = 'sec-test-00000', i = 0
+
+    def _no_raw_pii_in_lifecycle(client: TestClient, rid: str, i: int) -> None:
+        """Fetch the rid's events and assert no raw PII string appears."""
+        r = client.get(f"/lifecycle/{rid}")
+        assert r.status_code == 200
+        body_text = json.dumps(r.json())
+        email = _EMAIL_FMT.format(i=i)
+        phone = _PHONE_FMT.format(i=i)
+>       assert email not in body_text, f"raw email leaked into rid={rid} envelope (request {i})"
+E       AssertionError: raw email leaked into rid=sec-test-00000 envelope (request 0)
+E       assert 'alice.test0...ture.invalid' not in '{"rid": "se...tFlushed"}]}'
+E         
+E         'alice.test00000@fixture.invalid' is contained here:
+E         ?           ^^^^
+E            email is alice.test00000@fixture.invalid and my phone is [PHONE_NUMBER]", "text_after": "my email is alice.test00000@fixture.invalid and my phone is [PHONE_NUMBER]", "event_type": "StrategyExecuted"}, {"id": "01KR78EQ7RE5B82JE276SFADEB", "parent_id": "01KR78EQ7RDZSN542ATPE63N5A", "seq": 15, "ts": "2026-05-09T20:56:52.728311+00:00", "rid": "sec-test-00000", "entity_type": "PHONE_NUMBER", "placeholder": "[PHONE_NUMBER]", "span": [60, 72], "finding_id": "01KR78EQ7RT0MRG5B00W9G9SGH", "text_before": "my e...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/security/test_no_raw_payload_in_sink_default.py:62: AssertionError
+------------------------------ Captured log setup ------------------------------
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - CreditCardRecognizer supported languages: es, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - CreditCardRecognizer supported languages: it, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - CreditCardRecognizer supported languages: pl, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - EsNifRecognizer supported languages: es, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - EsNieRecognizer supported languages: es, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - ItDriverLicenseRecognizer supported languages: it, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - ItFiscalCodeRecognizer supported languages: it, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - ItVatCodeRecognizer supported languages: it, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - ItIdentityCardRecognizer supported languages: it, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - ItPassportRecognizer supported languages: it, registry supported languages: en
+WARNING  presidio-analyzer:recognizers_loader_utils.py:168 Recognizer not added to registry because language is not supported by registry - PlPeselRecognizer supported languages: pl, registry supported languages: en
+------------------------------ Captured log call -------------------------------
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='a66ac0f8bad947a0b5207578d9cd62e7' decision_id='2751a333d1be481da6a8685dc95af462' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='fb5bf8b09a31441db6ef907bf5771734' decision_id='b3b74be1056c4a96afdba8cb8ddb6cf9' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='10efdd19201f4275a45ad4e1b26bb2c9' decision_id='79547389ebec469ea28b9eb3a5c232a8' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='ec733777190f43dd8b5fd1cd51a545f3' decision_id='e385eae59cd1462f86a29ecc60475f69' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='d39f7e69fe9e4343b989bbcc6d6dec4b' decision_id='d60790b4451640dcb0fecac68c9f477d' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='2f0e2fef57484114b66ab41570db4847' decision_id='ce38f0ede7af43c891ba9ee2542d9dec' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='cda8c1e95b404ee5a8350d5bc0d2623b' decision_id='39eeb5d6b33b477da31bf0fafb126a4e' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='a915057a193f489e99307a0e3750b0df' decision_id='a1820074554d4aada071c9a78cbcc3d3' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='780210c31a9d4226b4649cda189b3094' decision_id='517258cbdea849239173fb5127fdf530' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='76f5fca67c2e4d96818d41b7bb76aafa' decision_id='628cbd2e189c4c4ba9d7af5067c543b7' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='59aeafb6c9bd442584625ee379bdc869' decision_id='8d374135a00a4bb1a6b2bc80499f71e8' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='b79be9f4f8774beca30d1e6805c67f3e' decision_id='15086d51865443e9b21b11bb6abb2584' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='9746b5b0c91d48b3b2babad89f0a42b1' decision_id='c1c6b0e063c0423588d5500b228fa5dc' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='d9d9751559494c49b0eab852103ac73a' decision_id='6f865d5c779c4c4c9eeffb58f2752d26' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='50602bc1eb7c413eb82700a8e617fc3b' decision_id='f5d8050c94d84aa7ba359c78be459e61' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='afac67d1be5346d9addac26c85055278' decision_id='5d473675ea4b490d864b76996844525d' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='4d67aa80023841abb6cf38a9a7e8fa2d' decision_id='60cd40feed404b7ea54efce6b2c1a9af' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='912480fe26a04bcfab386b376cd7189d' decision_id='e34b1f72d2d54d2a827590dd38e0c2ea' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='6a0e075a1dfc4fa3bb19fd2ab71a0535' decision_id='4b3e03e5a14c4f03ac5c75dd52b8f400' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='c98e8a45d7c648f9acaf8fa6f0eedd6f' decision_id='994e482e8adb4d7485fa225e4284754f' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='78c51435c9eb43e4a905ab45e5a5807d' decision_id='7824540e8c0c412d9feb7987b778acbf' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='1386c487f4f942b1b99e77716dbf55b4' decision_id='daf0ff46efe7451e8f1a559fd46db8d7' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='fa5f2973e11648d98112116a9e1c9db2' decision_id='d1db169a04bb4574a4439bc590de57d7' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='39c47bb08e464970a27a844305f56908' decision_id='c3d7f22526cc45199dd83d5615ebc67e' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='696aec68bf9741198502742d5347a63e' decision_id='a47b1243c8df4a11aaf6d45be9c5c2a6' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='a42038c8d5b144408a1d71546191de9f' decision_id='ec68217bbf9042c686a8fda336426e2c' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='4f76eecc5f464adf92dc763e49fb6d81' decision_id='59570c97a1d24303b9ecd1d603cf8172' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='8d6d5a20147f4825b93d09c6bdbc44a4' decision_id='0d0d59572fac45b3bcedae890f3f15d4' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='7f4ac237e89a49359df1cf4cd57369c0' decision_id='1512505f997a4dfd9a2c57da85ec41d0' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='4efa399c8960472a858c85c2d364e460' decision_id='44390719295f4835b5be36611cd7668a' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='ab54e44f52d14121891d3d674798f219' decision_id='6cf94abf047e461bbbb70b5ecaf99248' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='9771fa556f8e499fbdb3f75b79c6f255' decision_id='5eb95adeaf8d419dabff6575463b5c6b' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='b28017aea2a7471ca4c927a260391e4d' decision_id='c8c84f91c67944c9ba47198d65494ac6' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='a338a81ead594db5803f702b29d8197e' decision_id='54bb3f2c99514e62bbc6bd9da981c01e' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='0eec405ba766418db14fef613610a46a' decision_id='52c079253a5f486388af86ec11eebbcf' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='c98a8eb9b7684468afeafdc6c3a9f9c3' decision_id='c7db4430910f4d0496c6304df244dd37' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='2b290b1c0f984f879a741e4209685bf4' decision_id='1ea00e810c69454eba056ee604b6fd1f' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='11189e551f2c4528ada7bc6e88f21f01' decision_id='afbcdc34158348178ebc6b4bcf676d44' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='80c8b929562d45d3bf1c216b63c09b99' decision_id='8945ded3f1074e749491aae53fb3756b' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='daa7abbfe7d84850a755f23c023a32bc' decision_id='6149042d2847415f998258a016e76e28' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='a8343fedb51a42f1a06266d79b282928' decision_id='c4f487e16f93450c937ba5424ee8d233' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='57f573549ab74599acb26453d960d497' decision_id='26629406420f4fd8816de9394aa8b797' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='567e366c947d4540a3adc590917bea94' decision_id='4f6d6572e90540b79e1551d38f8bc484' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='0a4c98042b1d46f8bce6c777b85ca131' decision_id='01901c61fb434470b4b023833c3ef46f' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='cccd662106e549e396d1d86715744d5d' decision_id='82af26f7f419467c9c98305843bd3d68' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='bcbab75db9ec4b00947c5edbe418d675' decision_id='00e443aed610412786e3297ac16d3f8b' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='276387d039a74cedb091895ccdf41314' decision_id='b40114aaa72046b8900712cf5b6b4740' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='f9548ed86d3c47abbba23fd95a99ecfb' decision_id='541cb3de57e84699900278060b39748e' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='04fdc3f57db74bfdb3e7348e4a57f3ed' decision_id='d1bf6983343041ff87e979263ef1df4b' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='06c30964911141e784f67a91352f239e' decision_id='e00e81f48afa4c86810ced287b0afc34' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='f9688aa2b3eb42afa898ee9877092a73' decision_id='301628614a6f409db067296c1664cd76' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='a5255a5000c1489e94c81ab58abd9387' decision_id='e5d34db1e085440185f1564220ddec7f' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='e5deca408e4e4349a2257496445172d5' decision_id='45c730d1871544e9afb8c2cc9e1360c2' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='5cf14c8747a546cdba9a49bc2cbc06d6' decision_id='f2aaedb87ba44ef2a994fb45313748c0' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='8f9bddf93e854d229cf4d349ee3cec6d' decision_id='2f5d38dd06ea4165a2a0869f156b028d' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='c6dd2064c213463690282235c27b2a02' decision_id='1f0480f55c714996890fc634bad61589' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='a6f445df39af4b0cb4c70f20c11577da' decision_id='6a2c81b76dc84bf0a62509c8fa4198e1' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='cb5272d61ead49909e1f96471d993d14' decision_id='46da8887e93c470c9bcb08b9827cdbe5' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='7342fe0e5c1e4e78becdc5bec89c5022' decision_id='8ac6918ecd76461ea2da87cd57f5f721' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='6bede8384b4e4e8fa33dcb9a104d03ae' decision_id='c9a179e6df3849b083b846afa3b35515' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='f44a17aa659a4a0b8e28e539632f098a' decision_id='869e620daf644072b11021fb16794eb9' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='3dc20ebee3a6448c8f460b2bdf5a1f31' decision_id='6254be7ce93e45c1ba5c0859300fe677' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='663840c6aaa44af296b01634a8c23f48' decision_id='e5587065ef6749ed858525e80f0101ff' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='7cd61b9b8301460b9897ab636126e1ae' decision_id='35b0175c29874bd1a29075375b3c7a58' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='aed17064367044b5bc6deb58c5eb52d2' decision_id='621f777747334254bbf431215d6908d1' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='d5b190a0b97c497ba488464e37a76540' decision_id='8c117b748919417e93aad15f0713a20d' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='e38a85369199476bbae76d57dd8cbbb9' decision_id='f938e55cd32640408d1a3a6a4020cb98' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='17b98e52eb204bd4a5ce94af0d6f5cdd' decision_id='162192d2e13e43b9afd1386b993adc6e' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='28a648fbc39d420cabec0cd5f8e23c28' decision_id='ed1173c7bc864f049e051da067663cd4' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='e301ab2830e445529f49e8817b277e11' decision_id='ecca7aca012f4dae8a962ca0182e8ec9' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='22a6d9ae9a6343ef8e931f86af973f46' decision_id='b88f46228da24e919862baafaed46c7d' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='8fbca7a4f75c43dab3cf4e957b538819' decision_id='2e61965a82c24cb6bafef1e118678cec' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='1fc4f09f28304a0289f220f95afcfe65' decision_id='f57de80d8e5b4cc69a2766547e61a0ef' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='93a8148bdb0b4ca7afbd16b6bf88f87b' decision_id='a878acbdf65e4b6ba019ced3f5789a94' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='d26939ee4ff34357b3d50cf74f427ec2' decision_id='505a1f3964bb455f91cb7c33e5832ccf' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='d21ce05bc5c14fafa95e6a0c3f323280' decision_id='79618e5814474f449db3470e96eae60a' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='0d98036504be4888abb66009b16ddacf' decision_id='3ccca510ae7648ceae85dfcac3c9b4bf' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='1bc9839e961d4f5e896bc83f689adeb7' decision_id='2da9730838d7470a8ed2e111da8535a8' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='86996f28b7b448beb2e2e692f6765d89' decision_id='515b68aee9914f31aa4739b4eb163788' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='cbb7fe1577854c9895019776b6a78c9a' decision_id='6f4b2a5e16c8465896cf984742d58cbd' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='abfbc915e8ed4f91908642aa7e364aa4' decision_id='fa344e9ef5784c2b88fbfd2a3d54a514' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='878e184b0ce54096ae22fa3251f945c0' decision_id='27bcf69de6c54899a2097e4ef3a21c59' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='b5bce5892e45494da271f140948bd24d' decision_id='8dda028b8f6d45eca1d0c511d691d86e' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='edb741f12e5642ec9ad5478ab0f211ac' decision_id='917ee00c95454aeca249f161db66e418' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='95e4e6cb4e8c4d5e864c6199a7db1cc4' decision_id='4046ed337c214aa1987ceba4b4eb5dce' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='3d803cd0b3c04752a9e75d0565138d83' decision_id='ac5226b5ddb14b55b8b591117005414a' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='4aed93b2661144f186ca57c3314bef74' decision_id='3cbe9897f8d04506a07406ea774eb6ad' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='b8c50defdc984abdba374e35e2a9cfa8' decision_id='0999299b900c475e85859bcd65cafab0' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='b19fd94318f1481591163601223c920f' decision_id='b75706117c8c4d5c9979fc5e98ef2ef3' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='ca7165749e3f4d3a98475e5bb247d5d4' decision_id='1f8f39db2b81467093f47898e1b08066' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='c2719d10e7fb4b43b3e52eec4c59ef9e' decision_id='6fbc948b14e143aeb6ae99774d151d9d' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='427a321245854f1299b86ee1c311af93' decision_id='0b90fba90a104e188d8b2e98d31298d7' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='5a251cbd882847d28f6950f82c2fec45' decision_id='92889ff1cc3944c6b0214e902fd05375' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='9b3fb437ca974c1a91b5fa8003ba71b3' decision_id='87b17704037249c0b6dc1f232ebcf205' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='0a1d7ac1e7d04f9988490451d99e4710' decision_id='a83e4964c68a427c8c5a77459ae9cf99' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='9d3344a6fd0d4014be0f7e69a968d928' decision_id='c1da20aed1ec40c291f9586e83107fe2' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='d9fc7c3658594d85827230811b77f1fa' decision_id='9033f3fde6ea4955be8714e816516d6b' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='3e845c454c9d4b0a9cc4e6413c49634d' decision_id='faef5ca0c7734d9d9cfaeb2f2722890d' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='9fb88d0acb3340a29a0b2f506a5a6932' decision_id='f26210389f8045e08331a84d06a7a82c' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='f6ab4c5b92ca4dfea2595696c0718c7d' decision_id='b038870bf45b4ff49604f8ddbbb36779' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='a291d4d6f77e4e2d99c3791d2c804914' decision_id='404dfff4146e41489e2c3762ec43c3c3' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='2c97bf034a81477994632ac153a83226' decision_id='3b9a666f62d84ec88758459ddfce9643' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='09b20b1651b249fcbaea511ba17aaac2' decision_id='313fcdea6b14456880bd16c68ae0052c' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='aed51f3e2cae42869768490f5e59cfc0' decision_id='15a26b2e29e3482ba12c1c47fd7ac6af' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='c9e51128b017401b9a61c239d5161c40' decision_id='01b6aef28dc94cdab7f5cd55f83ed353' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='be0b3be88d6e4ebbae145185165ebeb2' decision_id='a5c8e55e9d07452abc696eaf14d42d40' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='769c6acdc0ee416da208f6b926aaa0ac' decision_id='5ee1970fff604ebeb7ba164f692c4bcb' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='457a93bd25d14bcfab53a6aaaee0cacd' decision_id='b96ae78dda35452fae7fa799ee78441a' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='bd12041bb186420a98cb8729a327edf2' decision_id='0600169bae034c25b305005375376e81' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='fd43341910ae4382ae12397becb47599' decision_id='d9a2bf0f793e4f1a841218ba59956440' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='d27a6856e0454317a76a3774b25f1166' decision_id='e1d913722f6041ea8626e612c996b2f3' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='dffb8bcf314a497f81b970c53295817b' decision_id='9f4be71da8834ca090096f9a695a6ce7' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='f628385cd2604866a7cdb2380501303f' decision_id='b3726bf966e94595926617007f2d5457' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='b67c8bf879674aef86d04b808d76d664' decision_id='c0137a2bb291437c93476fa200f7314f' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='8c09214a4e5e4d5e93dd9e5d8b2c470e' decision_id='f8860f6c3f9a4823bf288a8c4f074f61' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='4ee2bee63b5b49e0970bd9ec965a179e' decision_id='fda5ce073ede4960a1a0f33a9a5ca7a6' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='1a7ee91b451e4e98902a439741015f98' decision_id='05b91b11e59f4fd899991f6f19581490' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='61ece75b724f4d7da0158be9f46d34eb' decision_id='587ff066d03548fbbe306cf951a76409' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='06b2afb8b63c47fda965502b1c78f82f' decision_id='1ad95b4051834ffd800bb141c7a0a9cc' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='12ed8b63fd994fe3af993b7f8aa1c1ed' decision_id='044928ba8f2441febbeb1cdbb9493d46' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='237884d24f30457bafd0971182ed1f55' decision_id='947da9bb5ea54755a393b4ea243bc566' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='3543b615341944f2a21d45f381ac4814' decision_id='b5ce789a84e64b12a0b6efde1b554baa' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='f1d852be9b644795a9d6d6520ae47b4a' decision_id='938fed6cb13044f2b78b80b4b5b0c5b1' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='4df1e0b373b94fd79f7a40a4d8a2a8b5' decision_id='ba83326c0fe842b5b4a95ecba002386d' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='c32d5afb7bef463d8a711b401c40f8b5' decision_id='8908916003124043bedd57140e1f01c2' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='9c74fcb1cc70400c97bc36122ecb51d0' decision_id='4c4079c9fd69422a87301e10dbe71427' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='610cf297ee28451b81fa470c7daa04ff' decision_id='67a7bcaadd094de290c274facc1ea216' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='7bd82b8bba4847049557f15e3550108f' decision_id='0c0a079f357b4011b12f59c458f6ac84' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='0a751f05dbd64c7e8a267de07050a461' decision_id='3d071e2cc0334fa19a5bcb02c7dc0892' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='efa83efa2aca4721898b2ac267f73dff' decision_id='6cdd6ade0bbb4fcd90d5381a1db2e024' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='5be8ecc33b2f4c04a635dceabe1d49ff' decision_id='8fb9cfeca7aa4f8c8cd3bc6069f86d67' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='e098c1fc8c5342b1847f506717194a2a' decision_id='65d933eb14574e8f935eba505c68548e' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='f203ae18df26488098b95fb44bf3addf' decision_id='07c2f2a6d72d40f1a6f36790183d9e25' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='83d0440f26f04f58ba43aaac09ce8a78' decision_id='5939509e87c24f8095401138ca65bf7e' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='a9e873854c8e40bd94d219250d65a284' decision_id='d9d40946466847b483cd066f90abe653' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='0133d4c58891403191ff4aa99c46a8bd' decision_id='36e24042581f4f89b13dfdc97e8d6d39' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='1ce2236677854ecaa6f2ab61553575cc' decision_id='19c23bc05f1f491caf9f32601d2a4fcc' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='b9c7ce72fe2e47bea9dc39f2f7605fc7' decision_id='b626e5dd0c4849eebde50c8b299f4fb4' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='ec33923fd5864813a1243d84c46e14bd' decision_id='04ed3e2df8e14e209a1c005142193a01' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='037117c8137b496aa6c9e1230b58b00f' decision_id='31712d456f5b42f5a8dab80091cecfa0' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='9a51f083fa124d3d95b6fecf41a7f2b6' decision_id='e67088742c5a49a9972d211f0a04513f' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='6c51c84060ec4fcb8dc157021f4f3de1' decision_id='efff98c57b6b4498be650e8cbadc295d' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='4d725fe0492741bf977872212e502ba9' decision_id='7ac8cde2dbfe4c149a9c78bdd4a2966a' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='ae1d4762e0ba447297fc111960d2beed' decision_id='33b838352b2e4834b3ce591fcef46eb9' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='6dfa2840bdcd4c1e8f1b9b4cb1cebf47' decision_id='e604de4d4de44acdaa714fbdaf4d6e83' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='b8d0ba7a1af1443587251b504c22f3d3' decision_id='d6f6a703fdbe449d943f04d373d49bb8' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='86486647ec2440febd1abf868c8e3aa1' decision_id='aa0d5a8615854223aa6bbceadc877a8e' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='c122199809e84410a01eb41f5ec7cdf8' decision_id='d56f72ee2c5a43eba1ed8784f49376b7' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='c4ca2d1f318740dbb77f2e12ce6b975a' decision_id='bf00a1c35bb94677acf4f4f7fbc2d40d' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='b52420924d8a496687e1b95a1429adfd' decision_id='a3adf3172ceb4e1da7a27474356e2625' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='85b6d9a73aa542f9ba15245fe60ac4a7' decision_id='321c74021c6c411c9bc74fb1fb86c7e0' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='e35a30362bbe4a5cb87566ee84a879f6' decision_id='b8480401e6434fb6ab103512f1cfc859' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='e54075f907984a4f8b7e238ed8a42bbe' decision_id='543bacf9e49d4893bf5ec318284ea915' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='3d550aba2bbd4a3b998c043d3668a388' decision_id='28dd2debdf244c3c98be7b75837d4a9b' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='ae3449407098439196d61021dad3e951' decision_id='93280bf1074b450aa9554356b2ce94b5' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='b45cfa7349884ce5a455ff07b8ccf5af' decision_id='13a8705088864509ac3766037028e098' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='5fce74577257471f9fa095cb852a8dce' decision_id='da9c5c2ad1c04424af64ccbfbf87c900' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='79c0f2fc00b348bb9e9a8183fcb9359d' decision_id='42769080a49f4e9bb9718a5e8b5d5390' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='7f3e6314aa9f4b2da71533dc525676a1' decision_id='db67e95a44884696848d1777299ed1e0' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='9856946c278546aaa93083e1d347a55b' decision_id='c784f139fe164c1684efd91665eb443d' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='fbf9d4b6e8bd436a9a568d7b7fb22954' decision_id='1b97973f17a34df4a7847f14196f589f' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='c982718143a641e3a9a520b299de4bd5' decision_id='d163f8023e7947938564ea1cc0a4fb66' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='513afdd28bb446a5b2883541646db6d2' decision_id='5cf3a6c5f9df4e4eaaf4774869d655e8' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='8db675ea575a459785100595f8dfa3d4' decision_id='5b8011d7896e414fbe369324290a0779' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='4ac1e00cc2d44470b4dea77ca380fa16' decision_id='4282954856034384a47abde372d5d12c' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='a1032641f17e4ea2bfadc1288e4cf21c' decision_id='3b14e900dcec43f3be85fa261cfdef4e' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='7d9d7481aaff490eb04a4a2968a23a16' decision_id='31b27850a7a54bae83e791bdbf5e1c2e' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='1ad39304c17d40baa4b64cb878c6b039' decision_id='d1766475d3ed471099faf6a9879a8d50' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='bfea008f0fa14f888a47c70f18c53927' decision_id='5ba39d5f925e4d0db121e500b0dcc023' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='ddc44344fef04dc292470287c5e69f55' decision_id='65d2b17d97b14883b20eeba98d8ad59d' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='53bdf12ab8f04e67b87cd9b5a444a827' decision_id='2b347ee920c440489d982caf5eedab8b' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='e93883737f2243158e37df3d3bc98d3a' decision_id='afbcb26c86f243218141b3e8ed6ea968' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='14af1a1603fa4c8c8856d3ef28b98e88' decision_id='4dd561b033964f33afbe3ce7038aee65' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='e8bfce2a91d44ec28d7c4e69ee3870c0' decision_id='29a4259dade44e75b9c7cee5a175f437' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='6e7495afb84c4471b59930f6776360a5' decision_id='a7b15291515c4bfeb9c3dd3427ad0af0' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='e1f5a1e815774d5db3fbc6cc9ce8df07' decision_id='8eeca48792834e5da07a64878c5b9e4a' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='35e3baba3a494c8fa0bcf1a128905245' decision_id='921d01b57ee84e7d995f8be54b2f57b5' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='9e66d34a1e4a483ead7c90997af8beab' decision_id='52e9a75401c3456286da642952c2bcf6' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='4d61657f87794a5ea5b215599995ea2e' decision_id='dd8aea17cf3645e8bf0cc5bd6a235043' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='82d7c5ef62de4830a861f9ff45726a59' decision_id='5b6c775b894a43e6b48d88ba2a0bffea' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='a07db08e67eb4297aea219f2465f1e12' decision_id='ae64d0fd3f3e42eda7faac3723a5f3a1' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='aca67d5d67854e029ff4effe46f7e127' decision_id='c5fcd91660e7446783416a2cc75cef70' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='eeef6eb5be564da391d45360c8aee964' decision_id='675c4aa0d9ab43cd8ac744607d373c05' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='cdc3b87ba34b49078431180a2d3e27aa' decision_id='cfa105e6503d4851b91c542a914273cd' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='823511a278bd4724a5ae50c35c0da1e2' decision_id='12f47cf9f9a64dbaa410be583ec38f0e' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='20a3ff2719b9448cad052cb5f934d77c' decision_id='dd9698858c4b4705bf5eb5900e1e6a59' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='c239ab9e83584cda9eda9e6b827132d8' decision_id='4ad100855db4421792e94aaa2260cec6' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='7ef9d24cbcd94410af3851cdcad4cb31' decision_id='45d8cbedc887477eaa76619fd94f58c3' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='bddafd65e8a44d6a837cc44106317370' decision_id='c864dc00972c471eb87cf420d07da858' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='929af6ab28e14df9bfe1b6c6f9cbebe9' decision_id='532dae1cb7ec4705bc919c860688cc56' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='6fb26ede10cb4faa8c41194bba6ee34d' decision_id='45e7b9b19f4541da8ce4d9b07132f3cb' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='bf0c09ea628848d3847ec991c01d074b' decision_id='51b82845d39a40edae457b22511e7279' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='c5d25c32eca5417db26b6b6118354bc3' decision_id='002070688f0f4514b9493d80a6e76094' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='ba0c6ae0268a44a3aaac3f54e4c0ecee' decision_id='e5df50f3865a4ef59c9eb026960f6884' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='f59b9d4f06324889a9c281d5295a44d8' decision_id='fb22b796f8224726a593cd500ca69b0c' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='ba3f71af64114e269a22c1d3581928d4' decision_id='a3a926bcd43e45c1b04112e64ba38358' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='03a22dde1d6145379e86741366a41323' decision_id='b94ec13b4b0c4f7b9d37fa52c7966c3a' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='715814fe0c2a4ec19a41c752f348484b' decision_id='2d5c71e0f5b046bd93c965478d80aae5' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='97f5ff72dcf54aa9a19bf2a90caa086e' decision_id='38c83aa822564ce1a0f8233060386b94' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+WARNING  arc-guard.sdk:observability.py:38 event=guard.rehydration.rejected correlation_id='d417989a681f4d268b1967699daaed9b' decision_id='7ba38e5494d34fbcb30254b329f885df' reason='invented_placeholder' placeholders_total=1 placeholders_accepted=0
+WARNING  arc_guard:log_reporter.py:16 arc_guard: action=redact findings=1 max_risk=MEDIUM bypass_reason=None
+=========================== short test summary info ============================
+FAILED tests/integration/test_lifecycle_payload_capture.py::test_capture_flags_can_be_enabled_independently
+FAILED tests/security/test_no_raw_payload_in_sink_default.py::test_smoke_200_pii_requests_under_default_settings
