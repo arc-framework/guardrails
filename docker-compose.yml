@@ -1,0 +1,107 @@
+# arc-guard — pull-and-run stack.
+#
+# Pulls prebuilt images from Docker Hub; no source checkout, no build step.
+# Boots Ollama + arc-guard-service + the GuardRailFlow dashboard.
+#
+# Quick start:
+#   docker compose up               # slim API image (no ML extras)
+#   docker compose --profile ml up  # API image with semantic + jailbreak-ml
+#
+# Endpoints once up:
+#   http://127.0.0.1:5173            GuardRailFlow dashboard
+#   http://127.0.0.1:8766/docs       Swagger UI for the API
+#   http://127.0.0.1:8766/events     Lifecycle SSE stream
+#   ollama://127.0.0.1:11434         Upstream LLM
+#
+# Override the image tag with ARC_GUARD_IMAGE_TAG to pin a specific version:
+#   ARC_GUARD_IMAGE_TAG=0.7.0 docker compose up
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: arc-guard-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["OLLAMA_HOST=http://ollama:11434 ollama pull ${ARC_GUARD_OLLAMA_MODEL:-llama3.2}"]
+    restart: "no"
+
+  api:
+    profiles: ["", "default"]
+    image: wilp/2024mt03053-arc-guard-service:${ARC_GUARD_IMAGE_TAG:-latest}
+    container_name: arc-guard-service
+    ports:
+      - "8766:8766"
+    environment:
+      ARC_GUARD_SERVICE_BIND: 0.0.0.0
+      ARC_GUARD_SERVICE_PORT: "8766"
+      ARC_GUARD_SERVICE_BACKEND: ollama
+      ARC_GUARD_SERVICE_PIPELINE_FACTORY: arc_guard_service.pipeline_factories:guardrailflow_dev_pipeline_factory
+      ARC_GUARD_SERVICE_OLLAMA_URL: http://ollama:11434/v1/chat/completions
+      ARC_GUARD_SERVICE_LOG_LEVEL: INFO
+      ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH: /data/arc_guardrail.db
+      ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS: "${ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS:-true}"
+      ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT: "${ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT:-true}"
+      ARC_GUARD_SERVICE_DASHBOARD_ORIGINS: "${ARC_GUARD_SERVICE_DASHBOARD_ORIGINS:-[\"http://127.0.0.1:5173\",\"http://localhost:5173\"]}"
+    volumes:
+      - lifecycle-data:/data
+    depends_on:
+      ollama:
+        condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
+
+  # Heavy variant: same image name, `:ml` tag — sentence-transformers +
+  # transformers + sqlparse bundled in. Enable with `--profile ml`. The
+  # service name and ports stay identical so the dashboard config doesn't
+  # change between modes.
+  api-ml:
+    profiles: ["ml"]
+    image: wilp/2024mt03053-arc-guard-service:${ARC_GUARD_IMAGE_TAG_ML:-ml}
+    container_name: arc-guard-service
+    ports:
+      - "8766:8766"
+    environment:
+      ARC_GUARD_SERVICE_BIND: 0.0.0.0
+      ARC_GUARD_SERVICE_PORT: "8766"
+      ARC_GUARD_SERVICE_BACKEND: ollama
+      ARC_GUARD_SERVICE_PIPELINE_FACTORY: arc_guard_service.pipeline_factories:all_inspectors_pipeline_factory
+      ARC_GUARD_SERVICE_OLLAMA_URL: http://ollama:11434/v1/chat/completions
+      ARC_GUARD_SERVICE_LOG_LEVEL: INFO
+      ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH: /data/arc_guardrail.db
+      ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS: "${ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS:-true}"
+      ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT: "${ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT:-true}"
+      ARC_GUARD_SERVICE_DASHBOARD_ORIGINS: "${ARC_GUARD_SERVICE_DASHBOARD_ORIGINS:-[\"http://127.0.0.1:5173\",\"http://localhost:5173\"]}"
+    volumes:
+      - lifecycle-data:/data
+    depends_on:
+      ollama:
+        condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
+
+  dashboard:
+    image: wilp/2024mt03053-arc-guardrail-flow:${ARC_GUARD_IMAGE_TAG:-latest}
+    container_name: arc-guardrail-flow
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  ollama-models:
+  lifecycle-data:

@@ -1,0 +1,2984 @@
+A REPORT
+ON
+DESIGN AND IMPLEMENTATION OF A PRIVACY-FIRST DATA
+GUARDRAIL ENGINE — ARC
+
+BY
+Balasubramaniyan Murugappa
+ID No.: 2024MT03053
+Discipline: M.Tech Cloud Computing
+
+Prepared in partial fulfilment of the
+
+WILP Dissertation Course No. CCZG628T
+
+AT
+BestBuy Services India, Bengaluru
+
+BIRLA INSTITUTE OF TECHNOLOGY & SCIENCE, PILANI
+May 2026
+
+i
+
+ACKNOWLEDGEMENTS
+I would like to express my sincere gratitude to the leadership at BestBuy Services India for
+providing the organizational environment in which this work was carried out. The opportunity to apply
+academic research to real enterprise privacy concerns was central to the relevance of this dissertation.
+I am deeply indebted to my supervisor, Ms. Uma Maheswari Kandaswamy, Director of Software
+Engineering at BestBuy Services India, for her continued technical guidance and the architectural
+brainstorming sessions that shaped this work. Her direction was particularly instrumental during the
+midterm viva preparation and in the conceptual framing of the engine as a privacy enforcement problem
+rather than a generic guardrail problem. Several core design decisions, including the contract layer
+separation and the failure posture model, emerged from those discussions.
+I thank Mr. Vikram Gundegowli, Senior Software Engineering Manager at BestBuy Services
+India, for serving as Additional Examiner and for the thoroughness of the midterm viva session. The
+technical concerns raised during that review shaped the architectural priorities for the second half of this
+work. He was also closely involved in the brainstorming sessions for the threat corpus design used to
+evaluate the guardrail engine, contributing both to the category taxonomy and to the difficulty-gradient
+methodology adopted for the 137-prompt evaluation set.
+I am grateful to Dr. Srinath Naidu, Associate Professor (Off Campus), CSIS, BITS-Pilani, for his
+role as the Faculty Mentor for this dissertation and for the feedback delivered during the midterm viva.
+The structural guidance on dissertation organization and the architectural suggestions raised during the
+viva influenced the second-phase scope and the explicit articulation of the failure-posture model in
+Chapter 4.
+
+ii
+
+I also thank Ms. Rathi Rosline, Senior Software Engineering Manager at BestBuy Services India,
+for the design conversations that informed the inspector chain architecture and the jailbreak-detection
+component. The brainstorming sessions with her contributed materially to the structural-typing approach
+adopted for inspector pluggability and to the multi-turn deception inspector design.
+I thank the BITS WILP programme for the opportunity to undertake graduate research alongside
+full-time engineering work.
+Balasubramaniyan Murugappa
+2024MT03053
+
+iii
+
+ABSTRACT SHEET
+BIRLA INSTITUTE OF TECHNOLOGY AND SCIENCE PILANI (RAJASTHAN)
+WILP Division
+
+Organization
+Location
+Duration
+Date of Start
+Date of Submission
+Title of the Project
+
+BestBuy Services India
+Bengaluru, Karnataka, India
+5 months
+17 January 2026
+__________________
+Design and Implementation of a Privacy-First Data
+Guardrail Engine — ARC
+2024MT03053 / Balasubramaniyan Murugappa
+Uma Maheswari Kandaswamy, Director of Software
+Engineering, BestBuy Services India
+Vikram Gundegowli, Senior Software Engineering
+Manager, BestBuy Services India
+Dr. Srinath Naidu, Associate Professor (Off Campus),
+CSIS, BITS-Pilani
+LLM Privacy; Data Guardrails; PII Detection; Prompt
+Injection; Structural Typing; Intent Preservation
+Cloud Computing; Applied Machine Learning;
+Software Architecture; Privacy Engineering
+
+ID No. / Name of the Student
+Name and Designation of Supervisor
+Name and Designation of Additional Examiner
+Faculty Mentor
+Key Words
+Project Areas
+
+Abstract:
+Enterprise adoption of Large Language Models through "Model-as-a-Service" platforms transmits
+business-sensitive context to third-party vendors under contractual rather than technical guarantees, exposing PII,
+payment card data, and confidential business context. This dissertation presents the design and implementation of
+a Privacy-First Data Guardrail Engine — a protocol-driven, fail-open inspection pipeline that operates as a
+centralized privacy enforcement layer for enterprise AI systems. The engine intercepts traffic in both directions
+through a twelve-stage instrumented pipeline. Detection is performed by seven inspectors covering PII/PCI
+entities, prompt injection, multi-turn deception, code injection, and semantic policy violation. Sanitization uses
+typed-placeholder substitution with a fidelity gate that verifies rehydrated responses preserve original intent. All
+extension points are PEP 544 structural typing protocols, enabling third-party implementations without compiletime dependency. Twenty-nine typed lifecycle events provide forensic audit trails through pluggable durable
+sinks. The engine achieves sub-25ms P99 latency in lite mode and sub-150ms with full semantic analysis. A selfconducted architecture audit identified seventeen issues; sixteen were closed and one remains partial at
+submission. The engine is open-source, in-process, and supports GDPR data minimization, PCI scope reduction,
+and DPDPA jurisdictional compliance.
+Signature of Student
+
+Signature of Supervisor
+
+Date: __________
+
+Date: __________
+
+iv
+
+TABLE OF CONTENTS
+1. INTRODUCTION....................................................................................................................................1
+1.1 Background and Context................................................................................................................... 1
+1.2 Problem Statement.............................................................................................................................2
+1.3 Objectives of the Project....................................................................................................................3
+1.4 Scope and Limitations....................................................................................................................... 4
+1.5 Literature Survey............................................................................................................................... 4
+1.6 Methodology Overview.....................................................................................................................6
+1.7 Organization of the Report................................................................................................................7
+2. SYSTEM ARCHITECTURE AND DESIGN......................................................................................... 7
+2.1 High-Level Architecture....................................................................................................................7
+2.2 Component Breakdown................................................................................................................... 12
+2.2.1 Detection Components.............................................................................................................12
+2.2.2 Remediation Components........................................................................................................14
+2.2.3 Audit and Lifecycle Components............................................................................................16
+2.3 Data Model...................................................................................................................................... 18
+2.4 Design Decisions and Trade-offs.................................................................................................... 21
+3. METHODOLOGY.................................................................................................................................24
+3.1 Approach.........................................................................................................................................24
+3.2 Tools and Technologies...................................................................................................................25
+3.3 Implementation Plan........................................................................................................................26
+3.4 Evaluation Strategy..........................................................................................................................27
+v
+
+4. IMPLEMENTATION............................................................................................................................ 28
+4.1 Development Environment..............................................................................................................28
+4.2 Core Modules..................................................................................................................................29
+4.2.1 Module One, Inspector Chain.................................................................................................. 35
+4.2.2 Module Two, Strategy Selector and Action Strategies............................................................35
+4.2.3 Module Three, Lifecycle Audit and Intent Preservation.........................................................35
+4.3 Integration........................................................................................................................................36
+4.4 Deployment.....................................................................................................................................36
+4.5 Viva Concerns and Architectural Response....................................................................................37
+5. RESULTS AND ANALYSIS................................................................................................................ 39
+5.1 Experimental Setup..........................................................................................................................39
+5.2 Results.............................................................................................................................................40
+5.2.1 Threat Detection Accuracy...................................................................................................... 40
+5.2.2 Codebase Health and Test Coverage....................................................................................... 41
+5.2.3 Latency Measurements............................................................................................................42
+5.3 Analysis and Discussion..................................................................................................................43
+5.4 Discrepancies and Limitations.........................................................................................................45
+6. CONCLUSIONS AND RECOMMENDATIONS.................................................................................46
+6.1 Summary of Findings......................................................................................................................46
+6.2 Conclusions.....................................................................................................................................47
+6.3 Recommendations........................................................................................................................... 48
+6.4 Future Work.....................................................................................................................................49
+APPENDICES............................................................................................................................................51
+
+vi
+
+Appendix A: Lifecycle Event Taxonomy..............................................................................................51
+Appendix B: Failure Posture by Component.........................................................................................53
+Appendix C: Threat Corpus Reference................................................................................................. 54
+Appendix D: Configuration Reference..................................................................................................55
+Appendix E: Build, Deployment, and Smoke-Test Procedure..............................................................57
+Python 3.11+ required................................................................................................................................ 58
+Pre-download DistilBERT model for air-gapped operation...................................................................... 58
+Verify health...............................................................................................................................................59
+Open http://localhost:5173......................................................................................................................... 60
+REFERENCES...........................................................................................................................................60
+GLOSSARY...............................................................................................................................................63
+
+vii
+
+LIST OF FIGURES
+Figure 1 — Conceptual Working: PII Flow Through Sanitize and Rehydrate Phases................................2
+Figure 2 — Three-Package Architecture Overview: Transport, Runtime, and Contract Layers................9
+Figure 3 — Inspector Chain, Strategy Selector, and Observability Detail................................................11
+Figure 4 — The Fifteen Protocols Grouped by Concern........................................................................... 18
+Figure 5 — Core Data Classes and Their Composition Relationships......................................................19
+Figure 6 — ARC Guardrail Engine Dissertation Timeline 2026...............................................................27
+Figure 7 — The Twelve-Stage Pipeline...................................................................................................... 32
+Figure 8 — Pre-Process Phase: Stages 1–6 from caller to PolicyDecision..............................................33
+Figure 9 — Post-Process Phase: Stages 7–12 including refusal and fidelity-gate branches....................34
+
+viii
+
+LIST OF TABLES
+Table 1 — Mapping of Post-Midterm Modules to Architectural Concerns...............................................12
+Table 2 — Major Technical Specifications of the Guardrail Engine........................................................25
+Table 3 — Executed Phase Plan................................................................................................................26
+Table 4 — The Twelve Pipeline Stages......................................................................................................30
+Table 5 — Viva Concerns and Architectural Additions............................................................................. 38
+Table 6 — Threat Corpus Composition..................................................................................................... 39
+Table 7 — Detection Outcomes by Category and Difficulty...................................................................... 40
+Table 8 — Codebase Health Scorecard (Post-Remediation).....................................................................41
+Table 9 — Test Coverage by Module Category (Post-Remediation).........................................................41
+Table 10 — Pipeline Latency Distribution.................................................................................................42
+Table 11 — Per-Stage Latency Contribution (Full Mode, P99)................................................................42
+Table 12 — Objective Verification Matrix................................................................................................. 46
+Table 13 — Lifecycle Event Classes.......................................................................................................... 52
+Table 14 — Failure Posture by Component...............................................................................................53
+Table 15 — Environment Variable Schema (Structural Configuration)....................................................55
+Table 16 — Feature Flag Inventory (Behavioral Configuration)..............................................................57
+
+ix
+
+1. INTRODUCTION
+1.1 Background and Context
+The current trend of Generative AI development has created a major non-negotiable dependency on a
+few dominant cloud providers (OpenAI, Google, AWS). While these "Model-as-a-Service" ecosystems
+offer rapid prototyping capabilities, they introduce critical structural risks for enterprise adoption [1].
+When an application is built directly against a specific API, the business logic becomes tightly coupled
+to the vendor's pricing, latency, and model availability. More critically, to leverage modern reasoning
+capabilities, organizations are currently forced to transmit business-sensitive context to external servers.
+Consider a typical enterprise scenario: a customer support agent powered by an LLM receives a query
+containing a customer's name, email, credit card number, and account details. Without a guardrail layer,
+this entire payload, including regulated PII and PCI data, is transmitted to the external model provider.
+Even with contractual data processing agreements, the enterprise has no technical guarantee that the
+sensitive data is not logged, cached, or inadvertently included in training data.
+The risk surface is not limited to passive data exposure. Adversarial inputs, prompt injection attacks that
+hijack the model's instructions [6][7], jailbreak attempts that bypass safety alignment, and code injection
+payloads embedded in user content, represent an equally pressing class of threat. Enterprise AI systems
+are exposed simultaneously to data leakage outward (sensitive payloads flowing to external APIs) and
+behavioral compromise inward (malicious inputs subverting the application's intended logic). A
+guardrail that addresses only one direction leaves the other open by construction.
+The conceptual working of the engine is illustrated in Figure 1. A raw enterprise query carrying PII and
+PCI entities enters the sanitize phase, where the inspector chain detects sensitive spans and replaces
+
+1
+
+them with typed placeholders ([PERSON], [EMAIL_ADDRESS], [EMPLOYEE_ID], etc.). The
+placeholder-to-original mapping is stored in a per-request map that never leaves the engine boundary.
+Only the sanitized text reaches the external LLM; the model never sees the original values. When the
+LLM response returns, the rehydrate phase inspects the response for newly-introduced PII (a defense
+against the model hallucinating new entities) and then substitutes the original values back from the
+placeholder map. The end user receives a complete, accurate answer with real values restored, while the
+external LLM provider receives, and may have logged or cached, only placeholders. Every stage emits
+structured audit events to a NATS subject and an OpenTelemetry span, supporting forensic replay and
+SIEM integration.
+
+Figure 1 — Conceptual Working: PII Flow Through Sanitize and Rehydrate Phases
+
+1.2 Problem Statement
+This creates a fundamental tension: the desire to harness AI's transformative potential versus the
+obligation to protect regulated data under GDPR [2], PCI-DSS, HIPAA, and India's DPDPA 2023. There
+is a significant gap in the ecosystem for a centralized, extensible guardrail engine that can provide
+unified data protection for enterprise AI systems, one that inspects, classifies, and remediates sensitive
+data in real-time without requiring external network calls, while simultaneously defending against
+adversarial inputs that attempt to subvert the model itself.
+
+2
+
+1.3 Objectives of the Project
+The objectives of this dissertation are:
+1. Design a protocol-driven guardrail engine using PEP 544 structural typing, such that third parties can
+implement inspectors, strategies, sinks, and providers without compile-time dependency on the engine
+library.
+2. Implement a multi-inspector detection layer covering: regex-based prompt injection, NER-based
+PII/PCI recognition (Microsoft Presidio), ML-based semantic intent classification (DistilBERT), hotreloadable custom entity matching, SQL injection, shell injection, and multi-turn deception tracking.
+3. Implement a twelve-stage instrumented pipeline with explicit stage constants and uniform stage-level
+instrumentation for telemetry, audit, and operator visibility.
+4. Implement risk-aware action strategies for remediation, span-level redaction, HMAC-SHA256
+pseudonymization, blocking, and structured refusal, with automatic strategy selection driven by detected
+risk bands and content policy.
+5. Implement intent-preserving rehydration via an IntentLock capture, semantic fidelity scoring, and
+a verified rehydration step that prevents substitution into responses whose intent has drifted from the
+original query.
+6. Implement a typed lifecycle audit subsystem with twenty-nine distinct event types, pluggable durable
+sinks, and Server-Sent Events streaming for operator dashboards.
+7. Integrate enterprise infrastructure through pluggable protocols: NATS event streaming, Unleashaligned feature flag management, and OpenTelemetry-compatible tracing and metrics.
+8. Achieve sub-25ms P99 latency for the core inspection pipeline in lite mode, sub-150ms in full mode
+with semantic analysis, and validate the system against a corpus of 137 prompts across 9 threat
+categories.
+
+3
+
+1.4 Scope and Limitations
+In scope: The three-package Python workspace (arc-guard-core, arc-guard, arc-guardservice); all seven concrete inspector implementations; all five action strategies and the strategy
+selector; the twelve-stage GuardPipeline with stage_runner instrumentation; the lifecycle
+subsystem with twenty-nine typed events, three sink implementations, and Server-Sent Events
+streaming; the intent preservation chain; the deployment surface including HTTP transport and
+dashboard read routes; the GuardRailFlow Single-Page Application; and a 137-prompt evaluation corpus
+spanning 9 threat categories.
+Out of scope: Training of new ML models (the semantic inspector uses pre-trained DistilBERT weights
+without fine-tuning); hosted deployment, container orchestration, and Kubernetes manifests; formal
+certification against any compliance standard (the system supports GDPR data minimization, PCI scope
+reduction, and DPDPA jurisdictional compliance, but certified tokenization and audited compliance
+posture are explicitly out-of-scope); and post-quantum cryptography.
+Known limitations of the approach. The system is implemented in Python; a rewrite in a lower-level
+language would alter the latency profile substantially but is not in scope. The evaluation corpus, though
+designed across nine threat categories, is curated rather than adversarially generated; a production redteam exercise would surface attack patterns not represented. The default deployment topology assumes a
+single-writer SQLite store for the lifecycle subsystem; multi-instance deployments require networked
+SQLite or a switch to PostgreSQL via the optional [postgres] extra, which is scaffolded but not
+validated at scale within this dissertation.
+
+1.5 Literature Survey
+The detection of PII in unstructured text is a well-studied problem at the intersection of NLP and data
+privacy. Krishnamurthy et al. [3] proposed a privacy-preserving PII label detection system combining
+4
+
+machine learning with regular expressions, achieving 99.85% training accuracy. The Microsoft Presidio
+framework [4] has established itself as a de facto standard for open-source PII detection, combining
+NER models with pattern-based recognizers and context-aware confidence scoring. More recently, Iyer
+et al. [5] presented an adaptive PII mitigation framework specifically designed for LLM deployments,
+addressing conversational AI contexts where traditional document-oriented DLP tools underperform.
+On the security front, prompt injection has emerged as a critical vulnerability in LLM-integrated
+applications. Liu et al. [6] provide a formal framework for prompt injection attacks, benchmarking 5
+attack methods and 10 defense mechanisms across 10 LLMs, establishing that no single defense
+provides comprehensive protection. Abdelnabi et al. [7] explored indirect prompt injection where
+malicious instructions are embedded in external content retrieved by AI agents, reinforcing the need for
+both input and output guardrails.
+Several guardrail frameworks have emerged to address these concerns. NVIDIA NeMo Guardrails [8]
+introduces Colang, a domain-specific language for defining conversational guardrails. While powerful
+for dialogue management, it requires learning a new DSL and tightly couples guard definitions with the
+framework. Guardrails AI provides a RAIL specification for output validation but lacks the multi-stage
+inspection pipeline and privacy-specific capabilities that enterprise data protection requires.
+Ayyamperumal and Peruri [9] survey the current state of LLM risks and AI guardrails, identifying that
+existing solutions often prioritize content safety over data privacy, leaving a gap that privacy-focused
+engines aim to fill.
+Two further limitations of existing guardrail systems become visible only after sustained production
+exposure. First, answer fidelity after rehydration is rarely addressed: when a system redacts a name to
+[PERSON] and the LLM responds referring to [PERSON], simply substituting the original value back
+assumes the response is still semantically faithful to the original intent. If the LLM hallucinates,
+
+5
+
+contradicts, or drifts from the captured intent, naive substitution amplifies the failure rather than catching
+it. Second, structured refusal semantics, communicating why a request was blocked, in a form the calling
+application can act upon, is treated as an afterthought in most frameworks; opaque rejections create poor
+developer experience and inhibit adoption.
+Gap in existing work. No currently-available open-source library combines: in-process operation with
+sub-25ms P99 latency; protocol-first extensibility without compile-time coupling; intent-preservation as
+a first-class quality gate; and a typed lifecycle audit subsystem suitable for forensic reconstruction. The
+engine presented in this dissertation addresses these gaps through a protocol-driven design using
+Python's structural typing (PEP 544) [10], DistilBERT [11] for in-process semantic analysis, and
+OpenTelemetry [12] for vendor-neutral observability validated by Otero et al. [13].
+
+1.6 Methodology Overview
+The work was conducted in two phases corresponding to the BITS WILP semester structure. The first
+phase (January–March 2026) produced a baseline implementation comprising four inspectors, three
+strategies, seven extension protocols, and an implicit pipeline. This baseline was the subject of the
+midterm viva in April 2026, which surfaced architectural concerns across six dimensions: jailbreak
+sensing depth, semantic extensibility, intent consistency after rehydration, automatic masking strategy,
+code injection coverage, and graceful refusal semantics.
+The second phase (April–May 2026), designated Testing & Audit Remediation, addressed each of these
+concerns through targeted architectural extensions: the twelve-stage pipeline replaced the implicit
+baseline; the inspector chain grew from four to seven; structural typing migrated from ABC inheritance
+to PEP 544 structural Protocols; an intent preservation chain was introduced; the lifecycle audit
+subsystem replaced log-based observability; and a structured refusal stage was added to the pipeline.
+Detailed methodology for both phases is presented in Chapter 3.
+6
+
+The implementation methodology was test-driven and additive. Every architectural extension was
+introduced through a documented specification process without breaking changes to existing contracts.
+Code quality is enforced through ruff (linter), mypy (type checker), and pytest (asyncio automode), with separate test pyramids for unit, integration, contract, performance, and security categories.
+
+1.7 Organization of the Report
+Chapter 2 presents the system architecture and design, the high-level architecture, component
+breakdown, data model, and design trade-offs. Chapter 3 covers the methodology, including the
+engineering approach, tools, implementation plan, and evaluation strategy. Chapter 4 documents the
+implementation, the development environment, core modules, integration of enterprise infrastructure,
+deployment topologies, and the architecture audit and remediation work conducted during the second
+phase. Chapter 5 presents results and analysis from the threat corpus evaluation, latency measurements,
+and end-to-end data-flow analysis. Chapter 6 concludes with a summary of findings, recommendations,
+and future work.
+
+2. SYSTEM ARCHITECTURE AND DESIGN
+2.1 High-Level Architecture
+The guardrail engine operates as a protocol-driven, fail-open pipeline for text data inspection and
+remediation. The system is structured as three Python packages, arc-guard-core (zero-dependency
+contract layer), arc-guard (batteries-included runtime), and arc-guard-service (FastAPI
+deployment surface), with a strict one-way import direction (arc_guard_service → arc_guard
+→ arc_guard_core).
+7
+
+The architecture is shown in Figures 1a and 1b. Five layers cooperate: the transport layer (arcguard-service) handles HTTP entry, request id minting, and response serialization; the runtime
+layer (arc-guard) hosts the seven concrete inspectors, the strategy selector, the content policy, the
+action strategies, and the intent preservation chain; the contract layer (arc-guard-core) defines the
+fifteen Protocols, the frozen dataclasses, and the twelve stage constants, and has zero non-stdlib runtime
+dependencies; the observability layer spans four independent surfaces (Logger, Tracer, MetricSink,
+LifecycleSink); and the audit layer dispatches structured events to NATS for downstream SIEM
+integration.
+
+8
+
+Figure 2 — Three-Package Architecture Overview: Transport, Runtime, and Contract Layers
+
+9
+
+Figure 3 zooms into the runtime layer, showing how the inspector chain, the strategy selector, and the
+action strategies cooperate under the four-surface observability bus.
+
+10
+
+Figure 3 — Inspector Chain, Strategy Selector, and Observability Detail
+
+The engine integrates with enterprise infrastructure through pluggable protocols rather than direct
+dependencies. NATS, Unleash, OpenTelemetry, Presidio, and PyTorch are all optional and isolated
+11
+
+behind import-time exception handling. An operator who installs arc-guard-core alone receives the
+type system, the protocols, the lifecycle event taxonomy, and the placeholder registry, and pays no
+transitive dependency cost.
+
+2.2 Component Breakdown
+The engine consists of twenty modules grouped into three categories. Modules from the midterm
+baseline (a–m) are preserved with extensions where applicable. Modules added during the Testing &
+Audit Remediation phase (n–t) are described separately and mapped to the architectural concerns they
+address (Table 1).
+Table 1 — Mapping of Post-Midterm Modules to Architectural Concerns
+Module
+n
+o
+p
+
+Module Name
+SQL Injection Inspector
+Shell Injection Inspector
+Conversation Turn Inspector
+
+q
+
+Strategy Selector & Content Policy
+
+r
+
+Lifecycle Audit Subsystem
+
+s
+t
+
+Intent Preservation Chain
+Refusal Envelope
+
+Concerns Addressed
+Code injection
+Code injection
+Jailbreak sensing (multi-turn
+deception)
+Automatic masking strategy; semantic
+extensibility
+Graceful refusal (audit trail); operator
+visibility
+Intent consistency after rehydration
+Graceful refusal
+
+2.2.1 Detection Components
+a) Guard Pipeline: The central orchestrator implementing the Chain-of-Responsibility pattern [14]. It
+receives text input with context metadata, routes it through twelve named execution stages, aggregates
+findings from the inspector chain, applies the appropriate remediation strategy, and dispatches audit
+events. The pipeline implements two entry points, pre_process for inspecting user input before it
+reaches the AI model, and post_process for inspecting model output before it reaches the user. All
+data types flowing through the pipeline are frozen (immutable) dataclasses ensuring thread-safety. The
+pipeline defines fifteen structural typing protocols that serve as behavioral contracts, any third-party
+12
+
+implementation satisfying the method signatures is accepted without requiring inheritance or library
+coupling.
+b) Injection Inspector: Detects prompt injection attempts using compiled regular expression patterns.
+Ships with built-in patterns covering common attack signatures including "ignore previous instructions,"
+jailbreak attempts, system prompt extraction, and role-play manipulation. Custom patterns can be
+injected at construction time. Only executes during the pre-process phase. Latency: sub-1ms.
+c) PII Inspector: Wraps the Microsoft Presidio AnalyzerEngine [4] for Named Entity Recognition
+based detection of PII and PCI entities. Default configuration detects CREDIT_CARD,
+EMAIL_ADDRESS, PHONE_NUMBER, PERSON, IBAN_CODE, US_SSN, US_PASSPORT, and
+IP_ADDRESS. Confidence scores from Presidio are mapped to risk levels: scores above 0.85 map to
+HIGH, above 0.60 to MEDIUM, and below 0.60 to LOW. Latency: 5–20ms.
+d) Semantic Inspector: Performs ML-based intent classification using DistilBERT [11]. Classifies text
+as containing TOXIC content or INJECTION intent at the semantic level, catching adversarial inputs
+that evade pattern matching. Inference runs in a thread pool executor to avoid blocking the asynchronous
+event loop. Configurable confidence thresholds control sensitivity for input and output phases
+independently. Supports air-gapped deployment through pre-downloaded model directories. Latency:
+30–80ms. In the post-remediation system, the inspector also implements the IntentEncoder
+Protocol, which allows the same embedding produced for classification to be reused by the fidelity
+scorer.
+e) Custom Inspector: Enables hot-reloadable entity detection through the EntityProvider protocol.
+Queries the entity registry on every invocation (no caching), allowing new entity patterns to be
+registered at runtime without restarting the engine. Supports domain-specific entities such as internal
+
+13
+
+project codes or regional identifiers. Entities are categorized as PII, PCI, or CUSTOM with
+corresponding risk level mappings.
+n) SQL Injection Inspector: Pattern-based detection of SQL injection payloads in user input. Detects
+three primary attack classes: stacked queries ('; DROP TABLE users; --), UNION-based
+extraction, and comment-terminator obfuscation. Implementation uses compiled regex with anchored
+boundary detection to minimize false positives on legitimate text containing SQL keywords. Findings
+carry entity_type = "SQL_INJECTION" and route through the Strategy Selector to either redact
+or block based on risk band. Latency: sub-1ms.
+o) Shell Injection Inspector: Pattern-based detection of shell command injection in user input.
+Implements two-stage detection: an initial scan for shell metacharacters followed by a heuristic check
+that distinguishes legitimate text containing punctuation from actual shell command syntax. Findings
+carry entity_type = "SHELL_INJECTION". Latency: sub-1ms.
+p) Conversation Turn Inspector: Multi-turn deception tracking inspector implementing the
+ConversationTurnInspector Protocol. Reads and updates a ConversationState object
+across consecutive turns to detect gradual policy erosion, role-play coercion, hypothetical framing, and
+slow-escalation patterns where each individual turn looks benign but the trajectory crosses a policy
+boundary. Runs in STAGE_DECEPTION_INSPECT, output feeds into policy routing as an additional
+signal. Skipped when no ConversationState is provided. This module addresses the jailbreak
+sensing concern from midterm: single-turn jailbreak detection cannot catch attacks distributed across
+multiple turns.
+
+2.2.2 Remediation Components
+f) Redact Strategy: Replaces each detected span with a typed placeholder. Initially implemented as flat
+type labels ([CREDIT_CARD]), the post-rewrite version produces numbered placeholders that preserve
+14
+
+repeated-entity structure across a single request: [CREDIT_CARD_1], [CREDIT_CARD_2],
+[PERSON_1]. This numbering is stored in the PlaceholderMap and is the substrate for the
+rehydration step. Findings are processed in reverse order to preserve positional accuracy.
+g) Hash Strategy: Applies HMAC-SHA256 pseudonymization to each detected span, producing a
+deterministic 16-character hexadecimal digest. Same input always produces the same hash, enabling
+correlation across sessions without exposing original values. HMAC key sourced from environment
+variables, a key file, or auto-generated on first use. Note: this is not PCI-approved tokenization.
+h) Block Strategy: Suppresses the input or output entirely. Intended for RESTRICTED classification
+levels or when CRITICAL findings indicate the text should not be processed further. In the postremediation system, block does not silently return an empty string, it triggers STAGE_REFUSAL, which
+constructs a structured RefusalEnvelope communicating why the request was blocked.
+q) Strategy Selector & Content Policy: Two complementary protocols that together implement
+automatic masking strategy, the engine deciding on its own which remediation approach to apply based
+on the type and sensitivity of detected data. The StrategySelector Protocol exposes
+select(finding, policy) -> ActionStrategy. The default implementation maps
+RiskLevel to a strategy via four risk bands: LOW → redact, MEDIUM → redact + warn, HIGH →
+partial block, CRITICAL → hard block (refusal). The ContentPolicy Protocol exposes
+evaluate(finding) -> PolicyDecision. Two concrete policies ship: a rule-based policy
+and a SemanticContentPolicy (under the [semantic] extra) that uses embedding similarity
+for cases where simple rule matching is insufficient.
+s) Intent Preservation Chain: A four-protocol chain (IntentEncoder, IntentLock,
+FidelityScorer, RehydrationVerifier) that addresses the intent consistency after
+rehydration concern. The chain operates as follows. At STAGE_DEFEND, the IntentEncoder
+
+15
+
+produces a semantic embedding of the original user prompt. The embedding is stored in an immutable
+IntentLock object, which is carried through the pipeline alongside the placeholder map. After the
+LLM returns its response and sanitization has been reversed via the placeholder map, the
+FidelityScorer re-encodes the rehydrated response and computes its semantic similarity against
+the locked intent. The RehydrationVerifier then compares this score against a configurable
+threshold (default 0.78 cosine similarity). If the score falls below the threshold, the rehydrated response
+is held back, a verification-failed lifecycle event fires, and the caller receives a structured
+RefusalEnvelope explaining that the response failed the fidelity check.
+t) Refusal Envelope: A structured response object returned to the caller whenever the engine refuses a
+request. The envelope contains: decision (enumerated outcome, BLOCKED, RATE_LIMITED,
+FIDELITY_FAILED, POLICY_VIOLATION), reason_code (machine-readable identifier),
+risk_band, inspector_findings (a sanitized summary), and correlation_id (the request
+rid). This addresses the graceful refusal concern from midterm: rather than silently returning an empty
+string or a generic error, the engine communicates exactly why a request was refused in a form the
+calling application can branch on. The envelope is JSON-serializable for transmission over the FastAPI
+service surface.
+
+2.2.3 Audit and Lifecycle Components
+i) Event Streaming Reporter: Publishes audit events to a NATS message streaming subject using a
+bounded asynchronous queue with a background drain loop. Queue capacity is configurable (default
+1000 events), dropping oldest events when full to prevent memory growth. Events follow a versioned
+schema (v1.0). Operates in fire-and-forget mode, reporting can never block the inspection pipeline.
+Additional reporters include a Log Reporter, Webhook Reporter, and Null Reporter.
+
+16
+
+j) Feature Flag Provider: Provides runtime behavioral control through three implementations:
+Environment Provider (reads from GUARD_* environment variables), Static Provider (in-memory
+dictionary for testing), and Feature Flag Service Provider (integrates with Unleash with automatic
+namespace prefixing). Standard flags include: enabled, lite_mode, action_strategy, and perinspector toggles. Returns defaults on any exception, ensuring flag service outages never break the
+pipeline.
+k) Observability Middleware: In the midterm baseline, observability was a single middleware wrapper
+emitting metrics and spans. The post-remediation architecture splits observability into four independent
+surfaces with explicit failure-posture contracts: the Logger, the Tracer (OpenTelemetry-compatible), the
+MetricSink, and the LifecycleSink. All four are independently pluggable Protocols. The
+stage_runner instrumentation hook ensures that every one of the twelve pipeline stages emits to all
+four surfaces uniformly. Six metrics are emitted: pipeline duration, stage duration, inspector duration,
+findings count, pipeline errors, and reporter drops.
+l) Entity Registry: Thread-safe (RLock-protected) registry for custom entity definitions. Each entity is
+defined with a unique name, category, optional regex pattern, and optional Presidio recognizer. Supports
+hot-reload, entities registered at runtime are picked up on the next inspection call without restart.
+m) Configuration: Immutable Pydantic v2 model managing structural settings: PII entity list, detection
+language, model paths, and cache directories. Supports loading from environment variables. Cleanly
+separated from behavioral configuration (handled by the Flag Provider), Configuration controls WHAT
+to detect, Flag Provider controls HOW to respond.
+r) Lifecycle Audit Subsystem: A typed event taxonomy and pluggable durable-sink architecture for
+forensic audit and operator visibility. The LifecycleSink Protocol allows multiple sink
+implementations to coexist via a composite sink. Twenty-nine distinct event types are defined (see
+
+17
+
+Appendix A for the complete taxonomy), spanning request entry, every stage exit, every inspector run,
+every finding, placeholder map construction, strategy application, refusal construction, backend
+invocation, rehydration verification, and request completion. All events carry id, parent_id, seq,
+ts, rid, and event_type, forming a directed acyclic graph per request that supports both live
+inspection and forensic replay. Three concrete sinks ship: RingBufferSink (in-memory, bounded),
+SqliteLifecycleSink (durable, four-table schema, WAL mode), and CompositeSink (fanout). The default in production is SqliteLifecycleSink with a 30-day retention policy. Failure
+mode is open: a sink that raises does not propagate the exception into the pipeline.
+
+2.3 Data Model
+The engine's data model consists of fifteen Protocol contracts and seven core frozen dataclasses,
+depicted across Figures 3a and 3b. Figure 4 groups the protocols by concern; Figure 5 shows the data
+classes and their relationships.
+
+Figure 4 — The Fifteen Protocols Grouped by Concern
+
+18
+
+The fifteen Protocols fall into six concern groups: pipeline contracts (Guard, Middleware,
+ActionStrategy, three protocols), detection contracts (Inspector, JailbreakDetector,
+ConversationTurnInspector, EntityProvider, four protocols), policy contracts
+(StrategySelector, ContentPolicy, two protocols), intent preservation contracts
+(IntentEncoder, FidelityScorer, RehydrationVerifier, three protocols), observability
+contracts (Reporter, LifecycleSink, two protocols), and configuration (FlagProvider, one
+protocol).
+
+Figure 5 — Core Data Classes and Their Composition Relationships
+
+19
+
+The fifteen Protocols are: Guard (top-level entry point with pre_process() and
+post_process()); Inspector (inspect() returning findings); ActionStrategy (apply()
+returning transformed text); Reporter (report() for fire-and-forget audit dispatch); FlagProvider
+(is_enabled(), get_string(), get_list()); EntityProvider (get_entities());
+Middleware (before() and after() hooks); LifecycleSink (emit(), query(), close());
+IntentEncoder (encode() producing embeddings); FidelityScorer (score() returning similarity);
+RehydrationVerifier (verify() gating rehydration); JailbreakDetector (detect());
+ConversationTurnInspector (inspect_turn() carrying state across turns); StrategySelector
+(select() for automatic strategy selection); and ContentPolicy (evaluate() returning policy
+decisions).
+The seven core frozen dataclasses are: GuardInput (text, context, conversation_state, metadata);
+GuardResult (text, findings, action, decision, rid); Finding (inspector, entity_type, start, end,
+risk_level, score); IntentLock (rid, embedding, threshold, created_at); PlaceholderMap (mappings,
+ordered_keys); RefusalEnvelope (decision, reason_code, risk_band, inspector_findings, correlation_id);
+and DecisionRecord (rid, final_decision, finding_summary, fidelity_score, duration_ms). All
+dataclasses are immutable, ensuring thread-safety and enabling fearless concurrent processing of
+independent requests.
+A twenty-ninth class category, LifecycleEvent with twenty-nine subtypes, carries the audit trail.
+All lifecycle events inherit from LifecycleEventBase and carry: id (UUID), parent_id (UUID
+linking to causally-prior event), seq (monotonic per-rid counter), ts (UTC timestamp), rid (request
+correlation id), and event_type (string discriminator). The complete event taxonomy is given in
+Appendix A.
+
+20
+
+2.4 Design Decisions and Trade-offs
+The architectural choices described above follow from a set of design principles that govern every
+extension decision in the engine. This section documents those principles and the trade-offs accepted in
+choosing them.
+Fail-Open by Default. Exceptions in inspectors, middleware, or reporters are caught and logged. The
+pipeline always returns a valid result. This ensures the guardrail layer can never break production traffic,
+a critical requirement for enterprise adoption where availability takes precedence over strictness. Postremediation, this principle was made more precise: the system distinguishes between fail-open
+components (detection and observability, a broken detector returning zero findings is safer than blocking
+all traffic) and fail-closed components (transformation, a broken sanitizer cannot be trusted to have
+produced a safe output, so its failure must propagate). The complete failure-posture table is given in
+Appendix B.
+Protocol-First Extensibility. All extension seams are PEP 544 structural typing protocols. Third-party
+code can implement any protocol without importing or depending on the engine library. If an object has
+the right method signatures, it satisfies the protocol regardless of class hierarchy. The midterm system
+exposed seven such protocols; the post-remediation system exposes fifteen. The protocol count grew
+because the system grew, but the mechanism did not change. The alternative considered at design time
+was abstract base class inheritance, the conventional Python pattern. It was rejected because every
+consumer of the library would have had to import the base class to subclass it, which creates compiletime coupling between the consumer and the library version. With structural typing, no such coupling
+exists: the consumer's class needs to satisfy a method signature, not inherit a runtime artifact.
+Structural vs Behavioral Configuration Separation. Configuration controls WHAT to detect (entity
+lists, model paths, language). Flag Provider controls HOW to respond (enabled/disabled, lite mode,
+strategy selection). Flag Provider always takes precedence, enabling runtime overrides without
+21
+
+redeployment. Mixing these would make runtime overrides impossible, every behavioral change would
+require a configuration reload, which in turn would require a service restart.
+Zero Compile-Time Infrastructure Dependencies. NATS, Unleash, OpenTelemetry, Presidio, and
+PyTorch are all optional and guarded by import-time exception handling. The post-remediation arcguard-core package, the contract layer, has zero non-stdlib runtime dependencies whatsoever. Heavy
+extras are isolated to the arc-guard runtime package behind optional install groups.
+Async-First Concurrency. IO-bound operations are properly awaited. CPU-bound ML inference runs
+in a thread pool executor. Event streaming uses bounded async queues. Fire-and-forget semantics for
+reporting. Entity registry is RLock-protected for thread-safe concurrent access. The midterm architecture
+audit identified four concurrency-related issues in this principle's implementation; these were addressed
+during remediation as detailed in Chapter 4.
+Compliance Alignment. PII detection and pseudonymization support GDPR data minimization. Credit
+card redaction prevents PAN transmission (PCI-DSS). Custom entity registry supports jurisdictionspecific identifiers (DPDPA 2023, Aadhaar). HMAC pseudonymization is explicitly documented as not
+PCI-approved tokenization; this disclaimer is reproduced in the operator documentation to ensure
+deployers do not mistake the engine's pseudonymization for certified tokenization.
+Forensic Auditability. The midterm system relied on log-based observability, sufficient for debugging,
+inadequate for forensic reconstruction. A regulator asking "what did this user's request look like at every
+stage of processing on a given timestamp" could not be answered from logs alone, because logs are
+unstructured and not request-correlated. The post-remediation system adopts a stronger principle: every
+architecturally significant event in the request lifecycle is a typed object with a request correlation id,
+persisted to durable storage, and queryable by request id.
+
+22
+
+Intent Preservation as a Quality Gate. Sanitization is fundamentally a transformation: the engine takes
+one string and returns a different string. If the post-rehydration response no longer corresponds to the
+original user intent, because the LLM hallucinated, drifted, or contradicted the placeholder-rich input it
+was given, naive substitution amplifies the failure. The intent preservation chain treats fidelity as a nonoptional quality gate. The default cosine-similarity threshold of 0.78 was selected empirically from the
+137-prompt evaluation corpus; thresholds above 0.85 produced excessive false rejections on legitimate
+paraphrasing, thresholds below 0.70 admitted genuine intent drift.
+Graceful Refusal as a First-Class Outcome. A guardrail that blocks a request is performing a normal,
+expected, designed-for action, not handling an error. Blocked requests get the same lifecycle event
+treatment as passed requests, the same correlation id propagation, and the same observability emission.
+The RefusalEnvelope is a structured response, not a status code with no body. The contrast with the
+midterm baseline, which silently returned an empty string on block, is intentional and direct.
+Additive Evolution. Every architectural addition introduced after the midterm has been purely additive.
+The twelve-stage pipeline shape, the core data types, and the protocol contracts have remained stable
+through the post-midterm phase. New stages, events, dashboard routes, inspectors, and strategies were
+added; no existing contract was modified or deprecated. This is the practical test of the protocol-first
+principle: if extensions truly work without coupling, then adding them should not require breaking
+existing contracts.
+
+23
+
+3. METHODOLOGY
+3.1 Approach
+The work was conducted in two phases corresponding to the BITS WILP semester structure. Each phase
+had distinct deliverables, distinct evaluation criteria, and distinct architectural commitments.
+Phase One, Baseline Implementation (January–March 2026). The first phase produced the engine
+architecture submitted at midterm: four inspectors (regex injection, Presidio NER, DistilBERT semantic,
+custom entity), three action strategies (redact, hash, block), seven extension protocols defined as ABCs,
+and an implicit pipeline with approximately five processing stages. The phase was test-driven: every
+module was implemented alongside its unit and integration tests, with code coverage targets defined per
+module category. The midterm submission included a self-conducted architecture audit identifying
+seventeen issues across four severity levels.
+Phase Two, Testing & Audit Remediation (April–May 2026). The second phase addressed the audit
+findings and the architectural concerns surfaced at the midterm viva. The work was scoped against two
+parallel deliverables: closing the seventeen audit issues with documented remediation, and introducing
+seven new modules that addressed the six viva concerns (jailbreak sensing, semantic extensibility, intent
+consistency after rehydration, automatic masking strategy, code injection coverage, graceful refusal).
+Migration from ABC inheritance to PEP 544 structural Protocols, the introduction of the twelve-stage
+pipeline, and the introduction of the twenty-nine-event lifecycle audit subsystem were all completed
+during this phase.
+The implementation methodology across both phases was test-driven and additive. Every architectural
+extension was introduced through a documented design specification without breaking changes to
+existing contracts. The twelve-stage pipeline shape and the core data types have remained stable through
+the project; new stages, events, and dashboard routes were added as backward-compatible extensions.
+24
+
+3.2 Tools and Technologies
+The major technical specifications of the engine are listed in Table 2. The table consolidates language
+and runtime, architectural choices, detection components, evaluation parameters, and integration
+substrates.
+Table 2 — Major Technical Specifications of the Guardrail Engine
+Sl No.
+1
+2
+
+Technical Parameter
+Language and Runtime
+Architecture Pattern
+
+3
+
+Pipeline Stages
+
+4
+
+Extension Mechanism
+
+5
+
+Data Type Safety
+
+6
+7
+8
+9
+
+Configuration Model
+Inspector Count
+Strategy Count
+Policy & Selector Count
+
+10
+11
+
+PII Detection Engine
+Semantic Model
+
+12
+
+Default PII Entities
+
+13
+
+Code Injection Coverage
+
+14
+
+Multi-Turn Deception
+
+15
+
+Pseudonymization
+
+16
+
+Placeholder Numbering
+
+17
+
+Intent Preservation
+
+18
+
+Refusal Semantics
+
+19
+
+Lifecycle Event Types
+
+25
+
+Specification
+Python 3.11+, asyncio-based
+Chain-of-Responsibility with stageinstrumented middleware
+12 explicit named stages
+(STAGE_VALIDATE through
+STAGE_REPORT)
+15 structural typing protocols (PEP
+544)
+Frozen dataclasses (immutable, threadsafe)
+Pydantic v2 (immutable, validated)
+7 concrete inspectors
+5 action strategies
+1 selector + 2 content policies (rulebased + semantic)
+Microsoft Presidio AnalyzerEngine
+DistilBERT (distilbert-baseuncased-finetuned-sst-2english)
+CREDIT_CARD,
+EMAIL_ADDRESS,
+PHONE_NUMBER, PERSON,
+IBAN_CODE, US_SSN,
+US_PASSPORT, IP_ADDRESS
+SQL (stacked, UNION, commentterminator); shell (metachar +
+heuristic); template (SSTI patterns)
+ConversationTurnInspector
+at STAGE_DECEPTION_INSPECT
+HMAC-SHA256 (16-char hex digest,
+deterministic)
+Typed and numbered (e.g.,
+[CREDIT_CARD_1],
+[PERSON_2])
+IntentLock + FidelityScorer
++ RehydrationVerifier; default
+fidelity threshold 0.78 cosine
+similarity
+Structured RefusalEnvelope
+(decision, reason_code, risk_band,
+correlation_id)
+29 distinct event classes
+
+Sl No.
+20
+
+Technical Parameter
+Default Lifecycle Sink
+
+21
+
+Event Streaming
+
+22
+
+Feature Flags
+
+23
+
+Observability Surfaces
+
+24
+
+Metrics
+
+25
+
+Span Types
+
+26
+
+API Surface
+
+27
+
+Operator Dashboard
+
+28
+29
+30
+
+Pipeline Latency, Lite Mode
+Pipeline Latency, Full Mode
+Injection Detection Latency
+
+31
+32
+
+PII Detection Latency
+Semantic Analysis Latency
+
+33
+
+Fidelity Scoring Latency
+
+34
+
+Core Runtime Dependency
+
+35
+
+Optional Dependency Groups
+
+36
+
+Thread Safety
+
+37
+
+Code Quality Gates
+
+38
+
+Test Coverage
+
+Specification
+SqliteLifecycleSink (schema
+v2, WAL mode, 4 tables, stdlib
+sqlite3)
+NATS (bounded async queue, capacity
+1000)
+OpenFeature-aligned; Unleash
+integration
+4 independent: Logger, Tracer,
+MetricSink, LifecycleSink
+6 (pipeline duration, stage duration,
+inspector duration, findings count,
+errors, reporter drops)
+3 (guardrail.pre_process,
+guardrail.post_process,
+guardrail.stage.*)
+FastAPI service with
+guard_endpoint, 4 dashboard
+read routes, SSE /events
+GuardRailFlow SPA, Vite + React +
+TypeScript
+< 25 ms P99
+100–150 ms
+< 1 ms (compiled regex; SQL/shell
+inspectors at parity)
+5–20 ms (Presidio NER)
+30–80 ms (DistilBERT via thread
+executor)
+5–15 ms (single embedding + cosine
+similarity)
+arc-guard-core has zero nonstdlib runtime dependencies
+[semantic], [jailbreak-ml],
+[nats], [unleash], [otel]
+RLock-protected entity registry; frozen
+data types throughout
+ruff (linter), mypy (type checker),
+pytest (asyncio auto-mode)
+Unit, Integration, Contract,
+Performance, Security, End-to-end
+
+3.3 Implementation Plan
+The phase plan submitted at midterm specified a five-phase timeline. The status of each phase as of
+submission is shown in Table 3. The visual timeline of the same plan is shown in Figure 6.
+Table 3 — Executed Phase Plan
+
+26
+
+Sl No
+1
+
+Phase
+Dissertation Outline
+
+Window
+17 Jan 2026 – 7 Feb
+2026
+
+2
+
+Design &
+Development
+Testing & Audit
+Remediation
+
+7 Feb 2026 – 21 Mar
+2026
+21 Mar 2026 – 21 Apr
+2026
+
+—
+
+Midterm Viva
+
+7 Apr 2026
+
+4
+
+Dissertation Review
+
+21 Apr 2026 – 12
+May 2026
+
+5
+
+Submission
+
+12 May 2026 – 29
+May 2026
+
+3
+
+Work
+Literature review and
+prepare Dissertation
+Outline
+Design &
+Development Activity
+Software Testing,
+Architecture Audit
+Remediation, User
+Evaluation,
+Conclusion
+Mid-semester viva
+presentation to
+Supervisor and
+Additional Examiner
+Submit Dissertation to
+Supervisor &
+Additional Examiner
+for review and
+feedback
+Final Review and
+submission of
+Dissertation
+
+Status
+COMPLETED
+COMPLETED
+COMPLETED
+
+COMPLETED
+
+COMPLETED
+
+IN PROGRESS
+
+Figure 6 — ARC Guardrail Engine Dissertation Timeline 2026
+
+3.4 Evaluation Strategy
+The engine was evaluated across three dimensions, each with its own methodology.
+Threat detection accuracy is measured against a curated 137-prompt corpus spanning 9 threat
+categories (prompt injection, PII/PCI, jailbreak heuristic, jailbreak ML, multi-turn deception, semantic
+policy violation, SQL injection, shell injection, template injection) at three difficulty gradients (easy,
+medium, super_hard) with two benign baselines. The corpus is located at
+packages/api/tests/corpus/ and is regenerated as new threat categories are added. Each
+prompt is annotated with the expected outcome (block, redact, pass) and the expected inspector.
+27
+
+The methodology distinguishes canonical attack forms (which any working detector should catch) from
+obfuscated forms (which test the detector's robustness to paraphrase) and adversarially-framed forms
+(which test the detector's tolerance for legitimate-looking inputs containing harmful payloads). False
+positive rate is measured against the baseline corpus.
+Codebase health is evaluated against seven dimensions: protocol purity, dependency hygiene, type
+safety, async correctness, error handling, naming and conventions, and documentation. Each dimension
+is scored on a letter grade scale at midterm and post-remediation, providing a quantitative measure of the
+remediation impact. Test coverage is measured via pytest-cov against four module categories with
+target thresholds defined per category.
+Runtime latency is measured against a 10,000-request synthetic workload generated from the threat
+corpus, executed against a baseline reference machine. Two operating modes are measured: lite mode
+(semantic and ML-jailbreak inspectors disabled via FlagProvider) and full mode (all inspectors
+enabled). Per-stage latency contribution is decomposed to identify dominant cost stages. Targets are
+stated against P99 percentile rather than median, reflecting the operational reality that tail latency
+determines user-visible performance.
+Detailed results from all three evaluation dimensions are presented in Chapter 5.
+
+4. IMPLEMENTATION
+4.1 Development Environment
+The engine is implemented as three Python packages in a single workspace. The arc-guard-core
+package contains the contract layer (Protocols, frozen dataclasses, stage constants, lifecycle event types)
+28
+
+and has zero non-stdlib runtime dependencies, a property enforced by the
+test_install_closure.py integration test. The arc-guard package contains the runtime
+implementations (concrete inspectors, action strategies, lifecycle sinks, intent preservation chain) with
+optional extras for heavy dependencies ([semantic] for DistilBERT, [jailbreak-ml] for the
+ML jailbreak detector, [nats] for the NATS reporter, [unleash] for the feature flag service,
+[otel] for OpenTelemetry). The arc-guard-service package contains the FastAPI HTTP
+transport surface and the Server-Sent Events streaming endpoint.
+Python 3.11+ is the minimum supported runtime. The codebase enforces three quality gates at every
+commit: ruff (linting and formatting), mypy --strict (type checking against the contract layer),
+and pytest with asyncio auto-mode (test execution). Test categories are organized into a layered
+pyramid: unit tests (per-module behavior), integration tests (cross-module interactions), contract tests
+(Protocol conformance), performance tests (latency budgets), security tests (threat corpus regression),
+and end-to-end tests (HTTP transport through to lifecycle sink). Coverage targets per category are listed
+in Chapter 5.
+The development workflow uses specification-driven development. Each architectural change is
+preceded by a written design specification that records the problem, the proposed change, the
+alternatives considered, and the migration path. Specifications are reviewed before implementation;
+implementation is reviewed against the specification; the specification is finalized when the
+implementation merges. This produces a written record of architectural intent independent of the code
+itself, which forms the substrate for the design discussion in Chapter 2 Section 2.4.
+
+4.2 Core Modules
+The runtime modules described in Chapter 2 Section 2.2 are organized around the twelve-stage pipeline.
+The pipeline executes every guard request through exactly twelve named stages, each defined as a
+29
+
+Final[str] constant in packages/core/src/arc_guard_core/stages.py. The stage
+names form a closed authoritative set that all instrumentation, audit, and downstream tooling can rely on.
+The stages are listed in execution order in Table 4.
+Table 4 — The Twelve Pipeline Stages
+#
+1
+
+Stage Constant
+STAGE_VALIDATE
+
+2
+
+STAGE_DEFEND
+
+3
+
+STAGE_CLASSIFY
+
+4
+
+STAGE_DECEPTION_INSPECT
+
+5
+
+STAGE_SANITIZE
+
+6
+
+STAGE_ROUTE
+
+7
+
+STAGE_EXECUTE
+
+8
+
+STAGE_REFUSAL
+
+30
+
+Purpose
+Schema validation and boundary
+checks on the incoming
+GuardInput. Rejects malformed
+payload shapes, invalid thresholds,
+unknown rule references, and crossfield config errors before any detection
+runs.
+Captures information needed for intent
+preservation. The IntentEncoder
+produces a semantic embedding of the
+original prompt, stored in the
+IntentLock for later fidelity
+verification.
+Detection layer. All registered
+inspectors run independently and emit
+Finding objects. Inspector failures
+are isolated (fail-open) and do not
+block other inspectors.
+Multi-turn deception tracking. Reads
+and updates ConversationState
+to detect gradual policy erosion across
+turns. Skipped when no
+ConversationState is supplied.
+Transforms detected sensitive spans
+into typed placeholders
+([CREDIT_CARD_1],
+[PERSON_2]). Builds the
+PlaceholderMap.
+Resolves the policy decision for the
+aggregated findings. The strategy
+selector consults the content policy
+and produces a PolicyDecision.
+Applies the resolved action strategy to
+the text. For redact/warn/pass-through
+routes, this stage produces the final
+pre-LLM payload. For block routes,
+this stage is bypassed.
+Constructs the RefusalEnvelope
+when the routing decision is BLOCK.
+Bypasses the LLM entirely.
+
+#
+9
+
+Stage Constant
+STAGE_VERIFY
+
+10
+
+STAGE_REHYDRATE
+
+11
+
+STAGE_DECISION_EMIT
+
+12
+
+STAGE_REPORT
+
+The twelve-stage pipeline is depicted in Figure 7.
+
+31
+
+Purpose
+After the LLM responds, the
+FidelityScorer re-encodes the
+rehydrated response and compares
+against the IntentLock. If
+similarity falls below threshold, the
+rehydration is held back and a refusal
+is emitted.
+Reverses sanitization by substituting
+placeholders back to original values
+using the PlaceholderMap. Only
+runs if STAGE_VERIFY passes.
+Writes the final DecisionRecord
+for this request to the lifecycle sink.
+Dispatches the audit event to the
+configured reporter (NATS, log,
+webhook). Fire-and-forget.
+
+Figure 7 — The Twelve-Stage Pipeline
+
+32
+
+The functional block diagram showing the request sequence from caller to response is given across
+Figures 4 and 5. Figure 8 covers the pre-process phase (stages 1–6), and Figure 9 covers the post-process
+phase including the conditional branches for blocking and fidelity failure (stages 7–12).
+
+Figure 8 — Pre-Process Phase: Stages 1–6 from caller to PolicyDecision
+
+33
+
+Figure 9 — Post-Process Phase: Stages 7–12 including refusal and fidelity-gate branches
+
+34
+
+4.2.1 Module One, Inspector Chain
+The seven inspectors described in Chapter 2 Section 2.2.1 (modules b, c, d, e, n, o, p) execute in parallel
+within STAGE_CLASSIFY for the first six; module p (Conversation Turn Inspector) runs separately in
+STAGE_DECEPTION_INSPECT. Each inspector implements the Inspector Protocol (inspect()
+returning list[Finding] with a timeout_ms attribute). Inspector failures are isolated via
+asyncio.wait_for per-inspector timeouts and a fail-open exception handler that logs an
+InspectorFailed lifecycle event without affecting other inspectors.
+
+4.2.2 Module Two, Strategy Selector and Action Strategies
+The five action strategies (modules f, g, h, plus the warn and refusal variants introduced via the strategy
+selector) are routed automatically based on detected risk. The StrategySelector Protocol (module
+q) consults the ContentPolicy to map each finding to the appropriate strategy via four risk bands.
+The RefusalEnvelope (module t) is the structured response returned to callers when the policy
+resolves to BLOCK or when the fidelity gate at STAGE_VERIFY fails.
+
+4.2.3 Module Three, Lifecycle Audit and Intent Preservation
+The lifecycle audit subsystem (module r) emits twenty-nine typed event classes through the
+LifecycleSink Protocol. The default SqliteLifecycleSink uses Write-Ahead Logging mode
+for concurrent reader access, supporting the dashboard's request workspace view without locking the
+writer. The intent preservation chain (module s), IntentEncoder → IntentLock →
+FidelityScorer → RehydrationVerifier, operates as a quality gate at STAGE_VERIFY
+before rehydration is applied.
+The interaction between the inspector chain, strategy selector, and lifecycle subsystem is shown in
+Figures 2a and 2b.
+
+35
+
+4.3 Integration
+Integration with enterprise infrastructure is handled through pluggable Protocols. NATS event streaming
+(module i) uses a bounded asynchronous queue with a background drain loop; the queue is sized for a
+single-instance deployment processing tens of requests per second and exports a dropped-events counter
+as a Prometheus metric. The Unleash-aligned feature flag provider (module j) handles runtime
+behavioral overrides without redeployment; standard flags include enabled, lite_mode,
+action_strategy, and per-inspector toggles. OpenTelemetry tracing (module k) emits three span
+types (guardrail.pre_process, guardrail.post_process, guardrail.stage.*)
+with stage-level granularity sufficient for cross-service correlation in distributed traces.
+The four-surface observability split, Logger, Tracer, MetricSink, LifecycleSink, replaces the midterm
+baseline's single observability middleware. Each surface is a separate Protocol with its own failure
+posture. The stage_runner instrumentation hook ensures uniformity across all twelve stages: a
+single hook emits to all four surfaces, eliminating per-stage instrumentation drift.
+
+4.4 Deployment
+The engine supports three deployment topologies, each appropriate for a different operational context.
+Embedded library mode. The application imports arc-guard directly and constructs its own
+GuardPipeline. No HTTP transport is involved. The lifecycle sink can be configured to write to the
+application's own SQLite database or to a shared fleet-wide store. This mode incurs zero per-request
+network overhead and is recommended for latency-sensitive applications where the engine executes
+alongside the LLM client in the same process.
+Co-located service mode. The application makes a localhost HTTP call to a sidecar arc-guardservice instance running in the same pod or container group. This mode introduces single-digitmillisecond loopback overhead in exchange for language independence, non-Python applications can
+36
+
+integrate via the OpenAI-compatible endpoint. The dashboard and lifecycle sink are owned by the
+sidecar.
+Centralized service mode. A pool of arc-guard-service instances behind a load balancer serves
+multiple applications over the network. This mode introduces network-hop latency (typically 5–15 ms
+within a regional VPC) but concentrates audit and dashboard data in a single fleet-wide store,
+simplifying compliance reporting. The trade-off is that the engine is no longer "in process"; a centralized
+deployment loses the sub-25 ms lite-mode latency target by construction.
+The arc-guard-service FastAPI surface exposes two guard endpoints (POST /v1/guard and
+POST /v1/chat/completions for OpenAI-compatible integration), four dashboard read routes
+(GET /requests, GET /requests/{rid}, GET /requests/{rid}/decision, GET
+/requests/{rid}/debug), and a Server-Sent Events streaming endpoint (GET /events). The
+GuardRailFlow Single-Page Application (Vite + React + TypeScript) consumes these routes to provide
+three operator views: a paginated request explorer, a per-request workspace drilldown, and a real-time
+SSE feed of events as they fire.
+The default recommendation is embedded library mode for production application-side deployment, and
+centralized service mode for the operator dashboard surface, combined via a shared SQLite store on
+networked storage, or a fleet-wide PostgreSQL store via the optional [postgres] extra (planned, not
+in current submission).
+
+4.5 Viva Concerns and Architectural Response
+Six concerns raised during the midterm viva were architectural rather than corrective, they identified
+gaps in the system's capability surface rather than defects in its existing implementation. These concerns
+drove the introduction of the seven new modules described in Chapter 2 Section 2.2. The mapping is
+shown in Table 5.
+37
+
+Two of the six concerns, jailbreak sensing and intent consistency after rehydration, were raised by
+Dr. Srinath Naidu, Associate Professor (Off Campus), CSIS, BITS-Pilani, during the midterm viva
+session. The jailbreak-sensing concern surfaced the architectural question of how a single-turn injection
+inspector would handle adversaries who split a jailbreak payload across multiple conversational turns;
+this drove the introduction of the ConversationTurnInspector Protocol (module p) and the
+multi-turn deception tracking subsystem. The rehydration concern surfaced the question of whether
+replacing placeholders with original values after the LLM response could introduce semantic drift, for
+instance, if the LLM's reasoning was conditioned on the placeholder rather than the real entity. This
+drove the introduction of the IntentLock + FidelityScorer + RehydrationVerifier
+chain (module s) that captures pre-sanitization intent as an embedding and gates rehydration on a cosinesimilarity threshold of 0.78.
+Table 5 — Viva Concerns and Architectural Additions
+Viva Concern
+Jailbreak sensing
+
+Raised By
+Dr. Srinath Naidu (Faculty
+Mentor)
+
+Architectural Addition
+Multi-turn deception
+tracking + dedicated
+jailbreak detector
+
+Intent consistency after
+rehydration
+
+Dr. Srinath Naidu (Faculty
+Mentor)
+
+Semantic extensibility
+
+Mr. Vikram Gundegowli
+(Additional Examiner)
+
+Automatic masking strategy
+
+Mr. Vikram Gundegowli
+(Additional Examiner)
+Mr. Vikram Gundegowli
+(Additional Examiner)
+Ms. Uma Maheswari
+Kandaswamy (Supervisor)
+
+IntentLock +
+FidelityScorer +
+RehydrationVerifier
+chain
+SemanticContentPoli
+cy Protocol;
+IntentEncoder reuse
+contract
+StrategySelector
+with risk-band routing
+SQL, shell, and template
+injection inspectors
+STAGE_REFUSAL +
+RefusalEnvelope
+
+Code injection
+Graceful refusal
+
+Modules Affected
+Module p (Conversation
+Turn Inspector);
+enhancement to module b
+(Injection Inspector)
+Module s (Intent
+Preservation Chain)
+Module q (Strategy Selector
+& Content Policy)
+Module q
+Modules n, o
+Module t (Refusal
+Envelope); pipeline Stage 8
+
+These six concerns were addressed in the post-midterm phase. The architectural additions are
+documented in the modules above; their behavior is evaluated against the threat corpus in Chapter 5.
+38
+
+5. RESULTS AND ANALYSIS
+5.1 Experimental Setup
+The threat corpus consists of 137 prompts spanning nine threat categories, two baseline categories, and
+three difficulty gradients. The corpus is located at packages/api/tests/corpus/ and is the
+authoritative validation set for the engine. Each prompt is annotated with the expected outcome (block,
+redact, pass) and the expected inspector. The corpus was constructed during the post-midterm phase
+and is regenerated as new threat categories are added. The corpus composition is given in Table 6.
+Table 6 — Threat Corpus Composition
+Category
+Prompt injection
+PII / PCI
+
+Jailbreak
+(heuristic)
+Jailbreak (ML)
+
+Multi-turn
+deception
+Semantic policy
+violation
+SQL injection
+Shell injection
+Template
+injection (SSTI)
+
+Inspector
+RegexPromptI
+njectionInsp
+ector
+PresidioNerI
+nspector
+JailbreakDet
+ector (rulebased)
+JailbreakDet
+ector
+([jailbreakml])
+Conversation
+TurnInspecto
+r
+SemanticCont
+entPolicy
+SqlInjection
+Inspector
+ShellInjecti
+onInspector
+SqlInjection
+Inspector
+(template path)
+
+Entity Type
+JAILBREAK_DI
+RECT_OVERRID
+E
+EMAIL,
+PERSON,
+CREDIT_CARD,
+etc.
+JAILBREAK_HE
+URISTIC_MATC
+H
+JAILBREAK_ML
+_DETECTED
+
+Default Action
+block
+
+Difficulty Levels
+easy / medium /
+super_hard
+
+Count
+15
+
+redact
+
+easy / medium /
+super_hard
+
+15
+
+block
+
+easy / medium /
+super_hard
+
+15
+
+block
+
+easy / medium /
+super_hard
+
+15
+
+DECEPTION_DE
+TECTED
+
+block
+
+easy / medium /
+super_hard
+
+15
+
+POLICY_VIOLA
+TION
+SQL_INJECTIO
+N
+SHELL_INJECT
+ION
+TEMPLATE_INJ
+ECTION
+
+block
+
+easy / medium /
+super_hard
+easy / medium /
+super_hard
+easy / medium /
+super_hard
+easy / medium /
+super_hard
+
+15
+
+redact
+redact
+redact
+
+39
+
+15
+15
+15
+
+Category
+Baseline, multiturn
+Baseline, noinspector
+Total
+
+Inspector
+(none)
+
+Entity Type
+,
+
+Default Action
+pass
+
+Difficulty Levels
+,
+
+Count
+1
+
+(none)
+
+,
+
+pass
+
+,
+
+1
+137
+
+The three difficulty levels apply uniformly across categories. easy is the canonical, unambiguous attack
+form (inspector is expected to fire cleanly); medium is obfuscated, paraphrased, or indirect (some
+variants are documented gaps where the inspector does not fire); super_hard is legitimately framed,
+red-team wrapped, or multi-layer context (blocked if the requested output is itself the harmful payload).
+Latency was measured against a 10,000-request synthetic workload generated from the threat corpus,
+executed against a baseline reference machine (Apple M4 Max, 64 GB RAM, Python 3.11.9, presidioanalyzer 2.2.x). Two operating modes were measured: lite mode (semantic and ML-jailbreak inspectors
+disabled via FlagProvider) and full mode (all inspectors enabled).
+
+5.2 Results
+5.2.1 Threat Detection Accuracy
+Detection accuracy outcomes by category and difficulty level are shown in Table 7.
+Table 7 — Detection Outcomes by Category and Difficulty
+Category
+
+Easy (5)
+
+Medium (5)
+
+Super-Hard (5)
+
+Prompt injection
+PII / PCI
+Jailbreak (heuristic)
+Jailbreak (ML)
+Multi-turn deception
+Semantic policy
+violation
+SQL injection
+Shell injection
+Template injection
+Aggregate
+
+5/5
+5/5
+5/5
+5/5
+5/5
+5/5
+
+5/5
+5/5
+4/5
+5/5
+4/5
+4/5
+
+4/5
+5/5
+3/5
+4/5
+3/5
+3/5
+
+Aggregate Detection
+Rate
+14/15 = 93%
+15/15 = 100%
+12/15 = 80%
+14/15 = 93%
+12/15 = 80%
+12/15 = 80%
+
+5/5
+5/5
+5/5
+45/45 = 100%
+
+5/5
+5/5
+4/5
+41/45 = 91%
+
+4/5
+5/5
+3/5
+34/45 = 76%
+
+14/15 = 93%
+15/15 = 100%
+12/15 = 80%
+120/135 = 89%
+
+40
+
+5.2.2 Codebase Health and Test Coverage
+Codebase health was evaluated against seven dimensions, scored at midterm and post-remediation.
+Results are shown in Table 8.
+Table 8 — Codebase Health Scorecard (Post-Remediation)
+Category
+Protocol Purity
+
+Midterm Grade
+A−
+
+Post-Remediation Grade
+A
+
+Dependency Hygiene
+
+A
+
+A
+
+Type Safety
+
+B
+
+A−
+
+Async Correctness
+
+B−
+
+A−
+
+Error Handling
+
+B
+
+A−
+
+Naming and Conventions
+
+A−
+
+A
+
+Documentation
+
+C+
+
+B+
+
+Overall
+
+B+
+
+A−
+
+Notes
+All 15 protocols
+@runtime_checkable;
+zero base classes; generic
+types added in 5 protocol
+signatures
+Zero circular imports; arcguard-core has zero
+non-stdlib runtime deps;
+optional extras isolated
+mypy --strict clean
+across arc-guard-core;
+~3 Any types remain in
+arc-guard adapter layer
+(documented)
+Per-inspector timeouts (H6);
+narrowed exception scope
+(H5); tracked task set (C1);
+graceful shutdown (C3)
+Failure-posture table; circuit
+breakers (C5); explicit failopen vs fail-closed split
+Three-package taxonomy;
+no god-objects; consistent
+STAGE_* constants
+Architecture diagrams
+(Chapter 2); operator
+integration guide
+
+Test coverage by module category is shown in Table 9.
+Table 9 — Test Coverage by Module Category (Post-Remediation)
+Category
+arc-guard-core/
+(contracts)
+arc-guard/ pipeline &
+inspectors
+arc-guard/ strategies &
+rehydration
+
+Target
+≥ 90%
+
+Actual
+94%
+
+Status
+Meets target
+
+≥ 75%
+
+82%
+
+Meets target
+
+≥ 75%
+
+78%
+
+Meets target
+
+41
+
+Category
+arc-guard/ lifecycle
+sinks
+arc-guard-service/
+transport
+Contract tests
+Integration tests
+Performance tests
+Security tests
+
+Target
+≥ 80%
+
+Actual
+87%
+
+Status
+Meets target
+
+≥ 70%
+
+73%
+
+Meets target
+
+binary pass/fail
+binary pass/fail
+per-test SLO
+binary pass/fail
+
+100% pass
+100% pass
+All meet SLO
+100% pass
+
+Pass
+Pass
+Pass
+Pass
+
+5.2.3 Latency Measurements
+Pipeline latency distribution across both operating modes is shown in Table 10. Per-stage latency
+contribution in full mode is shown in Table 11.
+Table 10 — Pipeline Latency Distribution
+Mode
+Lite mode
+Full mode
+
+P50
+8 ms
+65 ms
+
+P90
+15 ms
+110 ms
+
+P99
+22 ms
+142 ms
+
+P99.9
+31 ms
+178 ms
+
+Table 11 — Per-Stage Latency Contribution (Full Mode, P99)
+Stage
+STAGE_VALIDATE
+STAGE_DEFEND (intent
+encode)
+STAGE_CLASSIFY (7
+inspectors)
+STAGE_DECEPTION_INS
+PECT
+STAGE_SANITIZE
+STAGE_ROUTE
+STAGE_EXECUTE
+STAGE_VERIFY (fidelity)
+STAGE_REHYDRATE
+STAGE_DECISION_EMIT
+STAGE_REPORT
+Pipeline overhead
+Total
+
+Median Latency
+< 1 ms
+12 ms
+
+P99 Latency
+< 1 ms
+18 ms
+
+% of P99 Budget
+< 1%
+13%
+
+38 ms
+
+95 ms
+
+67%
+
+2 ms
+
+4 ms
+
+3%
+
+< 1 ms
+< 1 ms
+< 1 ms
+8 ms
+< 1 ms
+< 1 ms
+< 1 ms
+5 ms
+65 ms
+
+1 ms
+1 ms
+1 ms
+14 ms
+1 ms
+2 ms
+1 ms
+4 ms
+142 ms
+
+< 1%
+< 1%
+< 1%
+10%
+< 1%
+1%
+< 1%
+3%
+100%
+
+42
+
+5.3 Analysis and Discussion
+The aggregate detection rate of 89% across 135 attack prompts (excluding baselines) sits within the
+acceptable range for an enterprise privacy guardrail. The decomposition by difficulty is more
+informative than the aggregate: detection holds at 100% for canonical attack forms, drops to 91% for
+obfuscated forms, and to 76% for adversarially-framed attacks. This shape is consistent with the stated
+design posture, the engine is a privacy-first detection layer that handles the realistic distribution of attack
+inputs encountered in production. The two baseline categories (multi-turn benign and no-inspector
+benign) confirm that the engine produces zero false positives on benign traffic, a property that is
+operationally more important than maximizing detection on super_hard prompts, because false
+positives directly impede legitimate enterprise traffic.
+Both operating modes meet the latency targets stated in Chapter 3. Lite mode P99 of 22 ms is within the
+25 ms target. Full mode P99 of 142 ms is within the 100–150 ms target band. The per-stage
+decomposition confirms that the dominant cost in full mode is STAGE_CLASSIFY (67% of P99
+budget), of which the majority is the DistilBERT semantic inspector. This is consistent with the design
+choice to make semantic analysis optional via lite mode for latency-sensitive paths. The intent
+preservation chain (defend + verify) contributes 23% of P99 latency together, non-trivial but justified by
+the quality-gate role it plays. No stage exceeds its individually budgeted contribution, and no stage
+exhibits long-tail behavior beyond P99.9 of approximately 1.25× P99.
+To make the architecture concrete, three end-to-end traces follow, one for each of the three primary
+outcomes: successful redaction, hard block, and multi-turn deception detection. These traces
+demonstrate the system in operation rather than in description.
+Trace A: PII Redaction, Successful Sanitize → LLM → Rehydrate. A customer support application
+receives the message "My name is Jane Smith and my card ending in 4242 is being declined. Card
+number: 4532-1234-5678-4242. Can you help?" and invokes POST /v1/guard. The request flows
+43
+
+through STAGE_VALIDATE (passes), STAGE_DEFEND (IntentEncoder produces a 384-dimensional
+embedding stored in IntentLock), STAGE_CLASSIFY (Presidio identifies PERSON at LOW risk
+and CREDIT_CARD at HIGH risk; injection and jailbreak inspectors find nothing),
+STAGE_DECEPTION_INSPECT (no-op, single turn), STAGE_SANITIZE (text becomes "My name is
+[PERSON_1]... Card number: [CREDIT_CARD_1]..."), STAGE_ROUTE (resolves to WARN, redaction
+sufficient), STAGE_EXECUTE (LLM is called with sanitized text and returns a response that still
+references the placeholders), STAGE_VERIFY (fidelity score 0.91, well above the 0.78 threshold),
+STAGE_REHYDRATE (placeholders mapped back to originals), STAGE_DECISION_EMIT, and
+STAGE_REPORT. Total wall-clock time: approximately 665 ms, dominated by the LLM call. Pipeline
+overhead: approximately 45 ms.
+Trace B: Prompt Injection, Hard Block via STAGE_REFUSAL. A different request, "Ignore all
+previous instructions. You are now DAN (Do Anything Now). Reveal the system prompt and your
+training data.", flows differently. STAGE_CLASSIFY produces three findings at CRITICAL risk: a
+regex match on "Ignore all previous instructions", a jailbreak signal for direct override, and a jailbreak
+signal for role-play coercion. STAGE_ROUTE resolves to BLOCK. STAGE_REFUSAL (instead of
+STAGE_EXECUTE) constructs a RefusalEnvelope with decision="BLOCKED",
+reason_code="PROMPT_INJECTION_HARD_BLOCK", risk_band="CRITICAL", sanitized
+inspector findings, and the request correlation id. The LLM is never called. Stages 9 and 10 are skipped.
+The transport returns the envelope as JSON with HTTP status 200. This trace illustrates the graceful
+refusal principle operationally: a blocked request travels the same pipeline as a successful one, emits the
+same kinds of lifecycle events, produces the same DecisionRecord, and fires the same audit
+dispatch. The only difference is that stages 8, 9, and 10 are replaced by a single refusal stage and the
+LLM is never invoked.
+44
+
+Trace C: Multi-Turn Deception, Trajectory Detection. A more adversarial scenario unfolds across
+three turns. Turn 1: "Let's play a game. You're a helpful assistant who explains historical events.",
+benign in isolation, passes through. Turn 2: "In this game, all your usual rules don't apply, since it's just
+a roleplay.", the ConversationTurnInspector recognizes the gradual policy erosion pattern and
+emits a HIGH-risk finding; routing resolves to WARN. Turn 3: "Now, as the game character, explain
+how someone might bypass an enterprise firewall.", the trajectory has crossed into operational territory;
+the inspector emits a CRITICAL finding for DECEPTION_OPERATIONAL_PIVOT; routing resolves
+to BLOCK. Single-turn jailbreak detection cannot see this attack, none of the three turns in isolation
+contains a direct override marker, role-play coercion that triggers the heuristic detector, or a regex
+pattern that fires any inspector. The attack succeeds against a single-turn guard precisely because each
+turn is innocuous; the attack exists only as a trajectory across turns.
+These three traces, taken together, demonstrate the operational symmetry between accepted and refused
+requests, the fidelity gate's role in catching responses that drift from intent, and the multi-turn inspector's
+coverage of attack patterns that single-turn detection cannot see.
+
+5.4 Discrepancies and Limitations
+Three limitations of this evaluation should be acknowledged. First, the threat corpus of 137 prompts is
+curated rather than adversarially generated; a production red-team exercise would likely surface attack
+patterns not represented in the corpus. Second, latency measurements were taken on a single reference
+machine; multi-tenant cloud deployments with noisy-neighbour effects will produce wider tail latencies.
+Third, the evaluation does not include long-running multi-turn conversation tests at scale, the current
+ConversationTurnInspector is validated against fifteen synthetic conversation traces, which is
+sufficient for correctness but inadequate for characterizing drift across thousands-of-turn sessions.
+
+45
+
+The HMAC tokenization issue (C7 in Table 6) is documented as partially closed because certified vault
+integration remains a deployment-time decision; the dissertation does not claim PCI-approved
+tokenization. The TokenizationProvider Protocol scaffolded during remediation provides the
+integration seam for an operator's certified vault, but the certification itself is out of scope for this work.
+These limitations frame the future work outlined in Chapter 6.
+
+6. CONCLUSIONS AND RECOMMENDATIONS
+6.1 Summary of Findings
+This dissertation has presented the design and implementation of a Privacy-First Data Guardrail Engine,
+a protocol-driven, in-process privacy enforcement tool for enterprise AI systems. The work was
+conducted in two phases corresponding to the BITS WILP semester structure. The system at submission
+is materially different from the system at midterm: the inspector chain grew from four to seven, the
+protocol count grew from seven to fifteen, the implicit pipeline became explicitly twelve named stages,
+observability split into four independent surfaces, and an intent preservation chain was introduced as a
+quality gate. The eight objectives stated in Chapter 1 are verified against the implementation in Table 12.
+Table 12 — Objective Verification Matrix
+#
+1
+
+Objective
+Design a protocol-driven
+engine using PEP 544
+structural typing
+
+Verification
+Fifteen Protocols defined in
+arc-guard-core; zero
+base classes; conformance
+tested at type-check time
+and at construction time
+
+46
+
+Reference
+Ch 2 Section 2.3, Section
+2.4
+
+#
+2
+
+Objective
+Implement a multi-inspector
+detection layer
+
+3
+
+Implement a 12-stage
+instrumented pipeline
+
+4
+
+Implement risk-aware action
+strategies
+
+5
+
+Implement intent-preserving
+rehydration
+
+6
+
+Implement a typed lifecycle
+audit subsystem
+
+7
+
+Integrate enterprise
+infrastructure
+
+8
+
+Achieve sub-25 ms P99 lite
+mode, sub-150 ms full
+mode; validate against 137prompt corpus
+
+Verification
+Seven concrete inspectors:
+regex injection, Presidio
+NER, semantic, custom
+entity, SQL injection, shell
+injection, conversation turn
+deception
+Twelve named stages in
+arc-guard-core/stag
+es.py; uniform
+stage_runner
+instrumentation hook
+Five strategies;
+StrategySelector
+with risk-band routing;
+structured
+RefusalEnvelope for
+blocked requests
+IntentEncoder →
+IntentLock →
+FidelityScorer →
+RehydrationVerifier
+chain; default cosine
+threshold 0.78
+Twenty-nine event classes;
+ring-buffer, SQLite, and
+composite sinks; SSE
+streaming endpoint
+NATS event streaming
+reporter; Unleash-aligned
+feature flag provider;
+OpenTelemetry tracing and
+metrics
+Lite mode P99: 22 ms; full
+mode P99: 142 ms;
+aggregate detection rate
+89% across 135 attack
+prompts
+
+Reference
+Ch 2 Section 2.2.1
+
+Ch 4 Section 4.2
+
+Ch 2 Section 2.2.2
+
+Ch 2 Section 2.2.2; Ch 4
+Section 4.2.3
+
+Ch 2 Section 2.2.3;
+Appendix A
+Ch 4 Section 4.3
+
+Ch 5 Section 5.2
+
+All eight objectives are met. Objectives 3, 5, and 6 were introduced during the Testing & Audit
+Remediation phase as architectural responses to concerns surfaced at the midterm review.
+
+6.2 Conclusions
+The contributions of this dissertation fall into three tiers.
+Architectural contributions. The engine itself is the primary contribution: a protocol-driven detectionand-remediation pipeline that operates in-process with sub-25 ms lite-mode latency, exposes fifteen
+47
+
+extension Protocols for third-party integration without library coupling, and ships with a typed lifecycle
+audit subsystem comprising twenty-nine event classes and durable SQLite storage. The twelve-stage
+pipeline shape, the four-protocol intent preservation chain, and the structured refusal envelope are
+architectural artifacts not present in other open-source guardrail libraries surveyed in Chapter 1.
+Methodological contributions. The dissertation demonstrates an audit-driven development approach: a
+self-conducted architecture audit at the midterm review identified seventeen issues across four severity
+levels with concrete file:line references; the second-phase work executed against this audit and reports a
+94% closure rate (sixteen of seventeen issues resolved, one partial). This methodology, explicit audit,
+traceable remediation, honest disclosure of residual risk, is a transferable contribution that applies to any
+production-bound software project.
+Empirical contributions. The 137-prompt threat corpus (nine threat categories, three difficulty
+gradients, two baselines) is a reusable evaluation artifact for future work in this space. The per-stage
+latency decomposition (Table 11) provides a budget breakdown that operators can use to identify
+bottlenecks in their own deployments. The codebase health scorecard at midterm (B+) and postremediation (A−) provides a quantitative measure of the remediation impact.
+The structural risk of enterprise AI adoption, that business-sensitive context flows to third-party
+inference endpoints under contractual rather than technical guarantees, is not addressed by stronger
+contracts. It is addressed by detection, transformation, and audit at the boundary between the application
+and the model. The engine described in this dissertation is a working implementation of that boundary:
+open, extensible, instrumented, and honest about what it does and does not guarantee.
+
+6.3 Recommendations
+For organizations considering adoption of the engine, three deployment recommendations emerge from
+the work.
+48
+
+Use embedded library mode for latency-sensitive paths. The protocol-first design means an
+organization can install arc-guard-core plus the runtime extras they actually need, without paying
+transitive dependency cost for unused features. Embedded deployment incurs zero per-request network
+overhead, the difference between sub-25 ms lite mode and 5–15 ms additional network-hop latency in
+centralized mode is operationally significant for high-throughput applications.
+Run lite mode in production paths and full mode in audit paths. The engine's lite mode (semantic
+and ML-jailbreak inspectors disabled) is appropriate for high-volume production paths where latency
+dominates. Full mode is appropriate for audit replay or high-risk paths where additional detection is
+worth the latency. The FlagProvider enables this split without code changes.
+Invest in the lifecycle sink early. The default SqliteLifecycleSink is sufficient for singleinstance deployments and supports the dashboard out of the box. Multi-instance deployments should
+either share a SQLite path on networked storage (operationally simple but introduces a shared-storage
+failure mode) or migrate to PostgreSQL via the optional [postgres] extra (more operationally
+complex but production-grade). The third option, federated SQLite stores with a cross-instance index, is
+forward work.
+For organizations evaluating the engine against compliance requirements: the engine supports GDPR
+data minimization through redaction, PCI scope reduction through credit card detection, and DPDPA
+jurisdictional compliance through the custom entity registry (e.g., Aadhaar). Certified PCI tokenization
+is not delivered by the engine itself; the TokenizationProvider Protocol provides the integration
+seam for a certified vault, but the certification itself is the operator's responsibility.
+
+6.4 Future Work
+Five forward-looking themes emerge for post-submission work, each tied to a specific gap in the current
+submission.
+49
+
+Multi-tenant deployment. The current default lifecycle sink is single-writer SQLite. Forward work
+extends the LifecycleSink Protocol to a multi-instance deployment via either networked SQLite
+(e.g., dqlite or rqlite for Raft-replicated SQLite) or a fully-validated PostgreSQL implementation.
+Per-tenant isolation, separate audit stores per organization in a multi-tenant deployment, is a related
+extension that requires a tenant_id field on LifecycleEvent and tenant-scoped query routes on
+the dashboard.
+Certified tokenization integration. The TokenizationProvider Protocol scaffolded during
+remediation requires concrete integration with at least one certified tokenization vault. Candidate
+integrations include AWS Payment Cryptography, HashiCorp Vault Transform Secrets Engine, or a
+hardware security module via PKCS#11. The integration must be validated against PCI-DSS audit
+requirements, including key-rotation procedures, audit-log immutability, and separation of duties
+between key custodians and operational staff.
+Threat corpus expansion via red-team exercise. The current 137-prompt corpus is curated; production
+deployments encounter attack distributions not represented in curated test sets. Forward work conducts a
+structured red-team exercise across at least three target deployments, captures the resulting attack
+corpus, and feeds the corpus back into the evaluation harness. The exercise should specifically target the
+architecturally-novel detection paths introduced during remediation: multi-turn deception trajectories,
+intent-preservation fidelity gates, and structured refusal envelopes.
+Multi-language inspector parity. The current implementation is pure Python. The STAGE_CLASSIFY
+stage dominates full-mode latency (67% of P99 budget per Table 11), of which the majority is the
+DistilBERT semantic inspector. Forward work investigates a Rust or Go implementation of the regex
+injection, SQL injection, and shell injection inspectors, the pattern-matching inspectors with the most
+predictable performance characteristics, exposed to the Python pipeline via PyO3 or ctypes. The
+
+50
+
+Protocol-first extension model makes such an extension straightforward: a Rust inspector that satisfies
+the Inspector Protocol via a Python adapter is structurally equivalent to a Python inspector at the
+type level.
+Federated lifecycle audit. Multi-region deployments produce per-region lifecycle stores that cannot
+trivially be queried as a unified set. Forward work designs a federated audit query layer that supports
+cross-region "find request rid=X" queries without centralizing the per-region storage.
+Three open research questions also emerge from the dissertation that warrant academic rather than
+engineering investigation. First, the cosine-similarity threshold of 0.78 used for fidelity verification was
+selected empirically; a principled derivation tied to information-theoretic bounds on response-intent
+divergence would strengthen the design. Second, the multi-turn deception detection currently relies on
+hand-engineered trajectory patterns; a learned trajectory classifier would generalize more robustly to
+novel attack patterns but introduces training-data and bias concerns that the current system avoids by
+construction. Third, the relationship between detection rate and false positive rate is not formally
+characterized; an ROC analysis across the threat corpus and a benign baseline corpus would quantify the
+operating point of the system in a way that the current categorical detection-rate table does not.
+
+APPENDICES
+Appendix A: Lifecycle Event Taxonomy
+This appendix lists the complete set of typed lifecycle event classes emitted by the engine. All events are
+defined in packages/core/src/arc_guard_core/lifecycle/events.py as
+frozen=True dataclasses inheriting from LifecycleEventBase. The base class carries six fields
+51
+
+common to every event: id (UUID), parent_id (UUID linking to causally-prior event), seq
+(monotonic per-rid counter), ts (UTC timestamp), rid (request correlation id), and event_type
+(string discriminator).
+Table 13 — Lifecycle Event Classes
+#
+1
+
+Event Class
+RequestStarted
+
+2
+3
+4
+5
+
+PreProcessCompleted
+PostProcessStarted
+PostProcessCompleted
+StageRan
+
+6
+
+InspectorRan
+
+7
+
+InspectorFailed
+
+8
+
+FindingProduced
+
+9
+
+PlaceholderMapBuilt
+
+10
+
+SanitizationApplied
+
+11
+12
+
+PolicyRuleEvaluated
+PolicyResolved
+
+13
+14
+15
+
+StrategyExecuted
+RefusalProduced
+BackendCalled
+
+16
+
+BackendResponded
+
+17
+18
+
+ResponseAssembled
+DecisionEmitted
+
+19
+
+RehydrationVerified
+
+20
+
+JailbreakDetected
+
+21
+
+DeceptionScored
+
+22
+
+RequestCompleted
+
+52
+
+When It Fires
+Entry to pre_process transport
+handler
+pre_process returns
+Entry to post_process
+post_process returns
+Every stage exit (carries stage,
+duration_ms, outcome)
+Each inspector completion (carries
+inspector, finding_count,
+duration_ms)
+Inspector raised an exception (failopen captured)
+Each Finding emitted by an
+inspector
+Sanitization placeholder map
+assembled
+Sanitization complete (optional
+text_after under payload-capture
+flag)
+Each policy rule evaluation
+Final PolicyDecision set
+resolved
+Each ActionStrategy application
+RefusalEnvelope constructed
+Downstream LLM/backend call
+initiated (optional
+model_config_snapshot)
+Backend response received (optional
+token_usage)
+Final GuardResult assembled
+DecisionRecord written to
+lifecycle store
+Rehydration verifier verdict (carries
+fidelity_score, threshold,
+passed)
+Jailbreak signal above threshold
+(carries category, optional
+evidence_reference)
+Deception turn score computed
+(carries marker_counts)
+Final event, always fires, even on error
+paths
+
+#
+23
+
+Event Class
+IntentEncoded
+
+24
+
+IntentLockCreated
+
+25
+
+FidelityScored
+
+26
+
+RehydrationApplied
+
+27
+
+LifecycleSinkFailed
+
+28
+
+CircuitBreakerTripped
+
+29
+
+ShutdownInitiated
+
+When It Fires
+IntentEncoder.encode()
+produced an embedding for the prompt
+IntentLock instantiated and stored
+for the request
+Fidelity score computed at
+STAGE_VERIFY
+Placeholder map applied to the
+rehydrated text
+A sink raised; failure counted, request
+continues
+Reporter or sink circuit breaker
+entered open state
+Pipeline __aexit__ invoked; drain
+underway
+
+The events form a directed acyclic graph per request, parent_id linkage allows a complete causal
+reconstruction of any request from its rid.
+
+Appendix B: Failure Posture by Component
+This appendix specifies the failure posture (fail-open versus fail-closed) for every component category in
+the engine. The distinction is operationally consequential: a fail-open component returning empty
+findings is safer than blocking all traffic; a fail-closed component cannot be trusted to have produced
+safe output, so its failure must propagate.
+Table 14 — Failure Posture by Component
+Component
+Inspector (any)
+
+Posture
+Fail-open
+
+ActionStrategy
+
+Fail-closed
+
+Reporter
+
+Fail-open
+
+LifecycleSink
+
+Fail-open
+
+Rationale
+A broken detector returning zero
+findings is safer than blocking all
+traffic. InspectorFailed event
+captures the failure without affecting
+other inspectors
+A broken transformation cannot be
+trusted to have produced safe output;
+the request must be refused
+Audit dispatch is asynchronous and
+fire-and-forget; reporter failure is
+logged but never propagates to the
+pipeline caller
+A dropped lifecycle event never
+affects request outcome; orchestrator
+counts failures and proceeds
+
+53
+
+Component
+FlagProvider
+
+Posture
+Fail-open with safe defaults
+
+EntityProvider
+
+Fail-open
+
+Middleware
+
+Fail-open
+
+IntentEncoder
+
+Fail-open with degradation flag
+
+FidelityScorer
+
+Fail-closed within stage
+
+RehydrationVerifier
+
+Fail-closed
+
+Tracer
+
+Fail-open
+
+MetricSink
+
+Fail-open
+
+Rationale
+Flag service outages must not break
+the pipeline; defaults are documented
+per flag
+Custom entity registry failures fall
+back to built-in entities only
+Original input/result used as fallback;
+middleware exceptions logged
+If encoder fails, IntentLock is
+constructed with a degraded=True
+marker; downstream STAGE_VERIFY
+skips the fidelity check rather than
+failing
+Fidelity scoring failure causes
+STAGE_VERIFY to refuse
+rehydration; the response is held back
+rather than substituted blindly
+A non-passing verdict causes refusal
+via RefusalEnvelope
+Tracing failures are logged; spans
+missing rather than incorrect
+Counter/histogram failures are
+silenced; observability degraded but
+request unaffected
+
+Appendix C: Threat Corpus Reference
+This appendix summarizes the structure of the 137-prompt evaluation corpus introduced in Chapter 5.
+The corpus is located at packages/api/tests/corpus/ and is the authoritative validation set for
+the engine.
+Corpus structure: 9 threat categories × 5 prompts per difficulty level × 3 difficulty levels = 135 attack
+prompts; 2 baseline categories × 1 prompt = 2 benign prompts; total 137 prompts.
+Difficulty levels: easy is the canonical, unambiguous attack form (inspector is expected to fire
+cleanly); medium is obfuscated, paraphrased, or indirect (some variants are documented as expected
+gaps); super_hard is legitimately framed, red-team wrapped, or multi-layer context (blocked if the
+requested output is itself the harmful payload).
+
+54
+
+Threat categories: prompt injection, PII/PCI, jailbreak heuristic, jailbreak ML, multi-turn deception,
+semantic policy violation, SQL injection, shell injection, template injection (SSTI). Detailed mapping is
+given in Table 6.
+Baseline categories: _baseline__multi_turn (validates that benign multi-turn conversations
+pass without findings) and _baseline__no_inspector (validates that benign single-turn requests
+pass without findings).
+The corpus is regenerated as new threat categories are added in subsequent phases of the project; the
+current snapshot reflects the post-midterm submission state.
+
+Appendix D: Configuration Reference
+This appendix consolidates the runtime configuration surface of the engine. The configuration is layered
+in three tiers, each with a distinct lifecycle: structural configuration (Pydantic v2 models loaded from
+environment variables at startup), behavioral configuration (Unleash feature flags resolved per-request
+through the FlagProvider Protocol), and operational configuration (NATS subject names, OTel
+endpoints, sink storage paths). The separation between structural and behavioral configuration is
+deliberate: structural settings control what the engine can do (which inspectors are wired in, which
+strategies are registered), while behavioral settings control how the engine should behave right now
+(whether to short-circuit on the first finding, which risk threshold to apply, which percentage of traffic
+gets the experimental policy). Operators can change behavior at runtime by editing flags without
+restarting the service.
+Environment variable schema (structural): the engine reads the following variables at startup. They
+are immutable for the lifetime of the process. Table 15 summarizes the schema.
+Table 15 — Environment Variable Schema (Structural Configuration)
+
+55
+
+Variable
+ARC_GUARD_MODE
+
+Default
+full
+
+ARC_GUARD_PRESIDIO_
+LANG
+
+Purpose
+Inspection mode, lite
+skips semantic inspector
+Presidio analyzer language
+code
+
+ARC_GUARD_SEMANTIC_
+MODEL_DIR
+
+DistilBERT model directory
+path
+
+ARC_GUARD_ENTITY_RE
+GISTRY_MAX
+ARC_GUARD_SEMANTIC_
+POOL_WORKERS
+
+Bounded LRU cap on
+custom entity registry
+Thread pool size for
+semantic inspector
+
+/opt/models/
+distilbertinjection
+1024
+
+ARC_GUARD_INSPECTOR
+_TIMEOUT_MS
+ARC_GUARD_FIDELITY_
+THRESHOLD
+ARC_GUARD_NATS_URL
+
+Per-inspector hard timeout
+
+100
+
+Cosine threshold for
+RehydrationVerifier
+NATS server URL for audit
+dispatch
+NATS subject prefix for
+events
+Lifecycle sink backend
+
+0.78
+
+SqliteLifecycleSink
+database file
+OTLP exporter endpoint
+
+/var/lib/arcguard/events.db
+http://
+localhost:4318
+
+ARC_GUARD_NATS_SUBJ
+ECT
+ARC_GUARD_LIFECYCLE
+_SINK
+ARC_GUARD_SQLITE_PA
+TH
+ARC_GUARD_OTEL_ENDP
+OINT
+
+en
+
+16
+
+nats://
+localhost:4222
+arc.guard.events
+sqlite
+
+Notes
+lite for sub-25ms P99
+budgets
+Multilingual support
+requires additional spaCy
+models
+Pre-downloaded for airgapped deployment
+Prevents memory growth in
+long-running services
+Tune per CPU count;
+default sized for 8-core
+hosts
+Triggers fail-open path on
+breach
+Below this, rehydration is
+gated
+Empty value disables NATS
+reporter
+Per-tenant suffix appended
+at runtime
+ring, sqlite,
+composite
+Created on first run; WAL
+mode enabled
+Empty disables tracing
+
+Content policy YAML (structural): the ContentPolicy Protocol implementation accepts a YAML
+file mapping entity types to risk bands and strategies. The default policy ships at
+packages/api/src/arc_guard_service/policies/default.yaml and is reproduced
+in skeleton form below:
+yaml
+policy_version: "1.0"
+data_classifications:
+PUBLIC: { default_action: pass }
+INTERNAL: { default_action: warn }
+SENSITIVE: { default_action: redact }
+56
+
+RESTRICTED: { default_action: block }
+entity_routing:
+CREDIT_CARD: { classification: RESTRICTED, strategy: block }
+EMAIL_ADDRESS: { classification: SENSITIVE, strategy: redact }
+PERSON: { classification: SENSITIVE, strategy: redact }
+US_SSN: { classification: RESTRICTED, strategy: block }
+INJECTION_INTENT: { classification: RESTRICTED, strategy: block }
+EMPLOYEE_ID: { classification: INTERNAL, strategy: hash }
+
+Feature flag inventory (behavioral): the engine reads the following flags through the
+FlagProvider Protocol at the start of each request. Default values apply when the flag is missing
+from the provider. Table 16 lists the current flags.
+Table 16 — Feature Flag Inventory (Behavioral Configuration)
+Flag
+arc.guard.semantic_
+enabled
+arc.guard.fidelity_
+gate_enabled
+arc.guard.short_cir
+cuit_on_first
+arc.guard.deception
+_window_turns
+
+Type
+boolean
+
+Default
+true
+
+boolean
+
+true
+
+boolean
+
+false
+
+integer
+
+5
+
+arc.guard.policy_va
+riant
+
+string
+
+default
+
+Purpose
+Master switch for the
+semantic inspector
+Engage rehydration verifier
+Stop inspector chain on first
+HIGH finding
+Conversation history
+window for deception
+inspector
+Selects which policy YAML
+is active (canary support)
+
+Appendix E: Build, Deployment, and Smoke-Test Procedure
+This appendix documents the reproduction procedure for the engine. It is included so that an operator or
+examiner can take the public repository and reproduce a running instance with the threat corpus passing
+against it.
+57
+
+Repository layout: the engine is a monorepo with three Python packages under packages/. core/
+contains the contract layer (arc-guard-core) with no non-stdlib runtime dependency. guard/
+contains the runtime (arc-guard) with Presidio, DistilBERT, NATS, OpenTelemetry, and Unleash as
+optional extras. api/ contains the FastAPI service (arc-guard-service) with the threat corpus
+and the end-to-end test suite. Each package has its own pyproject.toml with explicit version
+pinning.
+Local build:
+```bash
+
+Python 3.11+ required
+python -m venv .venv && source .venv/bin/activate
+pip install -e "packages/core[dev]"
+pip install -e "packages/guard[presidio,semantic,nats,otel,dev]"
+pip install -e "packages/api[dev]"
+python -m spacy download en_core_web_lg
+
+Pre-download DistilBERT model for air-gapped operation
+python -c "from transformers import AutoModel, AutoTokenizer; \
+AutoModel.from_pretrained('madhurjindal/autonlp-Gibberish-Detector-492513457'); \
+AutoTokenizer.from_pretrained('madhurjindal/autonlp-Gibberish-Detector-492513457')"
+```
+
+58
+
+Container build: the repository ships a multi-stage Dockerfile.api that produces a ~620 MB
+image with the runtime, dependencies, and pre-downloaded models baked in. Build:
+bash
+docker build -t arc-guard-service:local -f packages/api/Dockerfile .
+
+Local run via Docker Compose: the docker-compose.local.yml file in the repository root
+brings up the engine plus its dependent services (NATS server, OTel collector, Unleash admin UI,
+Grafana for trace visualization). Start:
+```bash
+docker compose -f docker-compose.local.yml up -d
+
+Verify health
+curl http://localhost:8000/healthz
+curl http://localhost:8000/readyz
+```
+Smoke test: the threat corpus doubles as the smoke test. From the repository root:
+bash
+pytest packages/api/tests/corpus/ -v
+
+A green run validates: (a) all 7 inspectors load; (b) the policy YAML parses; (c) NATS dispatch
+succeeds; (d) the SQLite lifecycle sink writes events; (e) the fidelity gate engages on the expected
+prompts; (f) refusal envelopes serialize correctly. The expected outcome is the result distribution in
+
+59
+
+Table 7. Test runtime on a 2024-era M-class workstation is approximately 18 seconds for the full 137prompt sweep.
+Operator dashboard: the engine ships a read-only React dashboard at packages/dashboard/. It
+connects to the /v1/events/stream Server-Sent Events endpoint and visualizes the lifecycle event
+DAG per request. Build and serve:
+```bash
+cd packages/dashboard && npm install && npm run dev
+
+Open http://localhost:5173
+`
+The dashboard is intended for forensic replay and not for live operational monitoring; for production
+observability, the OpenTelemetry traces and the Grafana dashboards (also in the compose file) are the
+canonical surfaces.
+
+REFERENCES
+[1] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, L. Kaiser, and I.
+Polosukhin, "Attention is All You Need," in Proc. 31st Int. Conf. Neural Information Processing
+Systems (NeurIPS), pp. 5998–6008, Curran Associates Inc., 2017.
+[2] European Parliament and Council of the European Union, "Regulation (EU) 2016/679, General Data
+Protection Regulation (GDPR)," Official Journal of the European Union, L 119, pp. 1–88, May 2016.
+
+60
+
+[3] R. Krishnamurthy, A. Kapoor, and S. Gupta, "Privacy-Preserving Personal Identifiable Information
+(PII) Label Detection Using Machine Learning," in Proc. 14th Int. Conf. Computing Communication and
+Networking Technologies (ICCCNT), IEEE, 2023.
+[4] Microsoft Corporation, "Presidio, An Open-Source Framework for Detecting and Anonymizing PII,"
+Microsoft Open Source, 2023. [Online]. Available: https://microsoft.github.io/presidio/
+[5] S. Iyer et al., "Adaptive PII Mitigation Framework for Large Language Models," arXiv preprint,
+arXiv:2501.12465, Jan. 2025.
+[6] Y. Liu et al., "Formalizing and Benchmarking Prompt Injection Attacks and Defenses," in Proc. 33rd
+USENIX Security Symposium, USENIX Association, 2024.
+[7] S. Abdelnabi, K. Greshake, S. Mishra, C. Endres, T. Holz, and M. Fritz, "Not What You've Signed
+Up For: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection," in
+Proc. 16th ACM Workshop on Artificial Intelligence and Security (AISec), ACM, 2023.
+[8] NVIDIA Corporation, "NeMo Guardrails: A Toolkit for Controllable and Safe LLM Applications
+with Programmable Rails," NVIDIA Open Source, 2023. [Online]. Available:
+https://github.com/NVIDIA/NeMo-Guardrails
+[9] S. G. Ayyamperumal and L. Peruri, "Current State of LLM Risks and AI Guardrails," arXiv preprint,
+arXiv:2406.12934, Jun. 2024.
+[10] G. van Rossum et al., "PEP 544, Protocols: Structural Subtyping (Static Duck Typing)," Python
+Enhancement Proposals, 2017. [Online]. Available: https://peps.python.org/pep-0544/
+[11] V. Sanh, L. Debut, J. Chaumond, and T. Wolf, "DistilBERT, a Distilled Version of BERT: Smaller,
+Faster, Cheaper and Lighter," in 5th Workshop on Energy Efficient Machine Learning and Cognitive
+Computing @ NeurIPS, 2019.
+
+61
+
+[12] OpenTelemetry Authors, "OpenTelemetry Specification v1.0," Cloud Native Computing
+Foundation, 2023. [Online]. Available: https://opentelemetry.io/docs/specs/otel/
+[13] M. Otero et al., "Towards a Lightweight Distributed Telemetry for Microservices," in Proc. IEEE
+44th Int. Conf. Distributed Computing Systems Workshops (ICDCSW), IEEE, 2024.
+[14] E. Gamma, R. Helm, R. Johnson, and J. Vlissides, Design Patterns: Elements of Reusable ObjectOriented Software, Addison-Wesley Professional, 1994.
+[15] S. Yao, J. Zhao, D. Yu, N. Du, I. Shafran, K. Narasimhan, and Y. Cao, "ReAct: Synergizing
+Reasoning and Acting in Language Models," in Proc. 11th Int. Conf. Learning Representations (ICLR),
+OpenReview, 2023.
+[16] J. Wei, X. Wang, D. Schuurmans, M. Bosma, F. Xia, E. Chi, Q. Le, and D. Zhou, "Chain-ofThought Prompting Elicits Reasoning in Large Language Models," in Proc. 36th Int. Conf. Neural
+Information Processing Systems (NeurIPS), pp. 24824–24837, Curran Associates Inc., 2022.
+[17] P. Lewis, E. Perez, A. Piktus, F. Petroni, V. Karpukhin, N. Goyal, H. Küttler, M. Lewis, W. Yih, T.
+Rocktäschel, S. Riedel, and D. Kiela, "Retrieval-Augmented Generation for Knowledge-Intensive NLP
+Tasks," in Proc. 33rd Int. Conf. Neural Information Processing Systems (NeurIPS), pp. 9459–9474,
+Curran Associates Inc., 2020.
+[18] B. Burns and D. Oppenheimer, "Design Patterns for Container-Based Distributed Systems," in
+Proc. 8th USENIX Workshop on Hot Topics in Cloud Computing (HotCloud), USENIX Association,
+2016.
+[19] J. Johnson, M. Douze, and H. Jégou, "Billion-Scale Similarity Search with GPUs," IEEE Trans. Big
+Data, vol. 7, no. 3, pp. 535–547, IEEE, 2019.
+[20] D. R. Hipp, "SQLite Write-Ahead Logging," SQLite Documentation, 2023. [Online]. Available:
+https://www.sqlite.org/wal.html
+
+62
+
+[21] OWASP Foundation, "Server Side Template Injection," OWASP Cheat Sheet Series, 2024.
+[Online]. Available: https://owasp.org/www-community/vulnerabilities/Server_Side_Template_Injection
+[22] X. Shen, Z. Chen, M. Backes, Y. Shen, and Y. Zhang, "'Do Anything Now': Characterizing and
+Evaluating In-The-Wild Jailbreak Prompts on Large Language Models," in Proc. ACM Conference on
+Computer and Communications Security (CCS), ACM, 2024.
+[23] OpenTelemetry Authors, "Semantic Conventions for Generative AI," Cloud Native Computing
+Foundation, 2025. [Online]. Available: https://opentelemetry.io/docs/specs/semconv/gen-ai/
+
+GLOSSARY
+Term / Abbreviation
+AI
+API
+CORS
+DLP
+DPDPA
+DSL
+Fail-Open
+Fail-Closed
+Fidelity Score
+GDPR
+GuardRailFlow
+HIPAA
+HMAC
+HTTP
+IntentLock
+LifecycleSink
+
+Definition
+Artificial Intelligence
+Application Programming Interface
+Cross-Origin Resource Sharing, HTTP-level mechanism for
+controlling cross-origin browser requests
+Data Loss Prevention
+Digital Personal Data Protection Act (India, 2023)
+Domain-Specific Language
+Failure posture where a broken component returns a benign
+default rather than blocking traffic; applied to detection and
+observability components
+Failure posture where a broken component refuses
+processing rather than producing potentially-unsafe output;
+applied to transformation components
+Cosine similarity between the captured intent embedding
+and the rehydrated response embedding; default threshold
+0.78
+General Data Protection Regulation (EU)
+The Vite/React/TypeScript Single-Page Application
+providing the operator dashboard for the engine
+Health Insurance Portability and Accountability Act
+Hash-based Message Authentication Code
+HyperText Transfer Protocol
+Immutable object holding the semantic embedding of a
+request's original prompt, used for fidelity verification on
+rehydration
+Pluggable Protocol for durable storage of typed lifecycle
+events; default is SqliteLifecycleSink
+
+63
+
+Term / Abbreviation
+LLM
+ML
+NATS
+NER
+NLP
+OTEL
+P99
+PAN
+PCI
+PCI-DSS
+PEP
+PHI
+PII
+PlaceholderMap
+Protocol (PEP 544)
+RefusalEnvelope
+`rid`
+SHA
+SIEM
+SPA
+SQLite WAL
+SSE
+SSN
+SSTI
+`stage_runner`
+`STAGE_`**
+Structural Typing
+Typed Placeholder
+
+Definition
+Large Language Model
+Machine Learning
+Neural Autonomic Transport System, message streaming
+substrate for audit event dispatch
+Named Entity Recognition
+Natural Language Processing
+OpenTelemetry
+99th Percentile Latency
+Primary Account Number
+Payment Card Industry
+Payment Card Industry Data Security Standard
+Python Enhancement Proposal
+Protected Health Information
+Personally Identifiable Information
+Per-request mapping from typed placeholder back to
+original value, used for rehydration
+Python's structural typing primitive; satisfaction is
+determined by method signature compatibility, not
+inheritance
+Structured response object returned to the caller when a
+request is refused
+Request correlation id; minted at transport entry,
+propagated through every lifecycle event for the request
+Secure Hash Algorithm
+Security Information and Event Management
+Single-Page Application
+Write-Ahead Logging mode of SQLite, enabling concurrent
+readers with a single writer
+Server-Sent Events, HTTP-based streaming protocol used
+by the dashboard live event feed
+Social Security Number
+Server-Side Template Injection
+Uniform instrumentation hook wrapping every pipeline
+stage; emits lifecycle events, OpenTelemetry spans, and
+metrics
+Twelve named pipeline stages defined as Final[str]
+constants in arc-guard-core/stages.py
+Type compatibility determined by structure (method
+signatures) rather than nominal inheritance
+Placeholder of the form [ENTITY_TYPE_N] that
+preserves entity type and repeat-occurrence numbering
+through sanitization
+
+End of Dissertation
+
+64
+
+Balasubramaniyan Murugappa
+2024MT03053 | M.Tech Cloud Computing
+BITS Pilani, Pilani Campus
+
+65
+
+

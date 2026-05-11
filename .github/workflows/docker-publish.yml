@@ -1,0 +1,152 @@
+name: docker-publish
+
+# Builds and publishes the arc-guard Docker images to Docker Hub on tag push.
+# Three images per release:
+#   wilp/2024mt03053-arc-guard-service:<version>    (slim, default)
+#   wilp/2024mt03053-arc-guard-service:<version>-ml (with semantic+ml extras)
+#   wilp/2024mt03053-arc-guardrail-flow:<version>   (dashboard)
+#
+# All images are also tagged `:latest` (and `:ml` for the heavy variant).
+#
+# Multi-arch: linux/amd64 + linux/arm64. The :ml variant takes ~30 min to
+# build on emulated arm64; the slim variants build in under 5 min each.
+#
+# Required repo secrets:
+#   DOCKERHUB_USERNAME — Docker Hub login
+#   DOCKERHUB_TOKEN    — Docker Hub access token (with Read/Write/Delete)
+#
+# Trigger:
+#   git tag v0.7.1 && git push --tags
+# Or run manually from the Actions tab.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag (without leading v, e.g. 0.7.1)"
+        required: true
+        default: "latest"
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: docker.io
+  IMAGE_OWNER: wilp
+  IMAGE_PREFIX: 2024mt03053
+
+jobs:
+  resolve-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.compute.outputs.version }}
+    steps:
+      - id: compute
+        name: Derive image version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.tag }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "Resolved version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  api-slim:
+    needs: resolve-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push arc-guard-service (slim)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: packages/api/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_PREFIX }}-arc-guard-service:${{ needs.resolve-version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_PREFIX }}-arc-guard-service:latest
+          cache-from: type=gha,scope=api-slim
+          cache-to: type=gha,scope=api-slim,mode=max
+
+  api-ml:
+    needs: resolve-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push arc-guard-service (ml)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: packages/api/Dockerfile.ml
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_PREFIX }}-arc-guard-service:${{ needs.resolve-version.outputs.version }}-ml
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_PREFIX }}-arc-guard-service:ml
+          cache-from: type=gha,scope=api-ml
+          cache-to: type=gha,scope=api-ml,mode=max
+
+  dashboard:
+    needs: resolve-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push arc-guardrail-flow
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/guardrail-flow
+          file: apps/guardrail-flow/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_PREFIX }}-arc-guardrail-flow:${{ needs.resolve-version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_PREFIX }}-arc-guardrail-flow:latest
+          cache-from: type=gha,scope=dashboard
+          cache-to: type=gha,scope=dashboard,mode=max
