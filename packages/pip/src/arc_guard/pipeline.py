@@ -460,13 +460,21 @@ class GuardPipeline:
         ``fidelity_warning``, ``deception_score``, ``conversation_state``)
         from the prior result so downstream stages that re-bind via
         this helper don't lose state.
+
+        Refusal envelope precedence: if an upstream inspector already set
+        a refusal on ``result`` (e.g. ``SemanticIntentInspector`` emitting
+        a specific ``policy_violation`` / ``social_engineering_detected``
+        envelope), preserve it — the inspector knows the *specific* reason
+        better than the router's generic ``_select_refusal_code`` fallback,
+        which only sees entity-type strings. The router's refusal is used
+        only when no upstream refusal exists.
         """
         return GuardResult(
             text=outcome.transformed_text,
             action=outcome.aggregate_action,
             findings=result.findings,
             decisions=outcome.decisions,
-            refusal=outcome.refusal,
+            refusal=result.refusal if result.refusal is not None else outcome.refusal,
             clarification=outcome.clarification,
             bypass_reason=result.bypass_reason,
             phase=result.phase,

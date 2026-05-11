@@ -76,9 +76,7 @@ async def test_preflight_advertises_chat_headers(allowed_client) -> None:
     )
     allowed = resp.headers.get("access-control-allow-headers", "")
     allowed_set = {h.strip().lower() for h in allowed.split(",") if h.strip()}
-    assert {"content-type", "cache-control", "last-event-id", "x-request-id"}.issubset(
-        allowed_set
-    )
+    assert {"content-type", "cache-control", "last-event-id", "x-request-id"}.issubset(allowed_set)
 
 
 @pytest.mark.asyncio

@@ -397,14 +397,34 @@ def _build_full_pipeline(lifecycle_hook: Any | None = None) -> Any:
     if not _extra_installed("semantic"):
         skipped.append("semantic_intent_inspector (install [semantic] extra)")
     else:
+        # Use the production SemanticIntentInspector so the replay exercises
+        # the same prototype set, threshold, and refusal envelope shaped
+        # operators will see in deployment. The in-tool _SemanticIntentInspector
+        # below is kept for now as a historical prototype only.
         try:
-            inspectors.append(_SemanticIntentInspector())
-            activated.append("semantic_intent (intent-classification, threshold=0.55)")
+            from arc_guard.inspectors.semantic_intent import (  # noqa: PLC0415
+                SemanticIntentInspector as _ProdSemanticIntentInspector,
+            )
+
+            inspectors.append(_ProdSemanticIntentInspector())
+            activated.append("semantic_intent (production class, threshold=0.55)")
         except Exception as exc:
             skipped.append(f"semantic_intent_inspector ({exc})")
 
     deception_inspector = StatefulConversationInspector()
     activated.append("deception")
+
+    # Engage the production PolicyRuleSet so RiskClassifier — and the
+    # min_inspectors_for_critical voting threshold — actually run during
+    # corpus replay. Without this the pipeline takes the legacy no-router
+    # path and detector intercepts dictate the final action without any
+    # band classification.
+    from arc_guard_service.pipeline_factories import _all_inspectors_policy
+
+    policy_ruleset = _all_inspectors_policy()
+    activated.append(
+        f"policy_ruleset (min_inspectors_for_critical={policy_ruleset.risk_thresholds.min_inspectors_for_critical})"
+    )
 
     print(f"[pipeline] activated: {', '.join(sorted(activated))}")
     if skipped:
@@ -413,6 +433,7 @@ def _build_full_pipeline(lifecycle_hook: Any | None = None) -> Any:
     return GuardPipeline(
         inspectors=inspectors,
         config=config,
+        policy_ruleset=policy_ruleset,
         reporter=LogReporter(),
         jailbreak_detector=jailbreak_detector,
         conversation_turn_inspector=deception_inspector,

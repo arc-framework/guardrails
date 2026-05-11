@@ -86,7 +86,10 @@ function pickFeaturedExamples(examples: ChatExamplePreset[], count: number): Cha
   const shuffled = [...examples];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+    const a = shuffled[index]!;
+    const b = shuffled[swapIndex]!;
+    shuffled[index] = b;
+    shuffled[swapIndex] = a;
   }
 
   return shuffled.slice(0, count);

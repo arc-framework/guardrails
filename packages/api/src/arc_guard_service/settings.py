@@ -138,6 +138,14 @@ class ServiceSettings(BaseSettings):
     request_summary_stale_threshold_seconds: int = Field(default=600, ge=1)
     request_summary_sweep_interval_seconds: int = Field(default=60, ge=0)
 
+    # Inspector-vote threshold for CRITICAL band escalation. When set above 1,
+    # a CRITICAL-severity finding from a single inspector demotes to HIGH so
+    # the run produces a redact + refusal envelope instead of a hard block.
+    # Defends against single-inspector false positives (e.g. heuristic
+    # jailbreak detector firing on benign prompt-injection-shaped phrasings).
+    # Env var: ARC_GUARD_SERVICE_MIN_INSPECTORS_FOR_CRITICAL
+    min_inspectors_for_critical: int = Field(default=1, ge=1, le=10)
+
     @field_validator("dashboard_origins", mode="before")
     @classmethod
     def _coerce_origins_from_env(cls, value: object) -> object:

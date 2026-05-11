@@ -82,5 +82,7 @@ def test_critical_band_hard_block() -> None:
     assert result.action == "block"
     assert result.text == ""
     assert result.refusal is not None
-    assert result.refusal.code == "jailbreak"
+    # JailbreakDetector fires JAILBREAK_DIRECT_OVERRIDE on this text → router
+    # selects jailbreak_strong (more specific than the generic JAILBREAK).
+    assert result.refusal.code == "jailbreak_strong"
     assert pipeline._last_decision.aggregate_band.value == "critical"

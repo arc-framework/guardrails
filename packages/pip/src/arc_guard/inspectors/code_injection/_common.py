@@ -35,7 +35,7 @@ def build_code_injection_finding(
     raw_text: str,
     capture_raw_matches: bool,
     score: float = 1.0,
-    risk_level: RiskLevel = RiskLevel.HIGH,
+    risk_level: RiskLevel = RiskLevel.MEDIUM,
 ) -> Finding:
     """Construct a ``Finding`` with the documented code-injection metadata.
 

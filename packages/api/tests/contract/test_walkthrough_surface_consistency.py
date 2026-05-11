@@ -74,6 +74,22 @@ def test_walkthrough_public_surface_names_in_manifest(walkthrough: Path) -> None
         "SemanticBundle",
         "InjectionInspector",
         "RegistryFrozenError",
+        # Semantic-intent inspector public surface:
+        "SemanticIntentInspector",
+        "all_inspectors_pipeline_factory",
+        # Entity types emitted by SemanticIntentInspector (documented values,
+        # not symbols — kept in walkthroughs as backticked tokens for clarity)
+        "DECEPTION_DETECTED",
+        "POLICY_VIOLATION",
+        "JAILBREAK_INTENT",
+        # Refusal-code / trigger string values used in walkthrough tables.
+        # Not symbols (the RefusalCode enum carries different uppercase member
+        # names for the canonical set), but stable strings the inspector
+        # emits and the dashboard renders.
+        "social_engineering",
+        "social_engineering_detected",
+        "policy_violation",
+        "jailbreak_strong",
         # arc_guard_core.lifecycle subpackage (28 events + Protocol + helpers)
         "LifecycleSink",
         "LifecycleEvent",

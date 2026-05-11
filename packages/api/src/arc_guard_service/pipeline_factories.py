@@ -20,7 +20,7 @@ from arc_guard.inspectors.presidio import PresidioInspector
 from arc_guard.jailbreak.detector import RuleBasedJailbreakDetector
 from arc_guard.pipeline import GuardPipeline
 from arc_guard.reporters.log_reporter import LogReporter
-from arc_guard_core.policy import PolicyRule, PolicyRuleSet
+from arc_guard_core.policy import PolicyRule, PolicyRuleSet, RiskThresholds
 
 from arc_guard_service.observability import StdlibBridgeLogger
 
@@ -96,9 +96,22 @@ def _all_inspectors_policy() -> PolicyRuleSet:
     Adds policy entries for the semantic-intent inspector's emitted entity
     types so dashboard surfaces (Decision / Policy tabs) reflect why an
     intent-class refusal fired.
+
+    Inspector-vote threshold is plumbed from ServiceSettings so operators can
+    tune CRITICAL-band escalation without forking the factory. Default 1
+    preserves prior behavior; setting it to 2+ requires that many distinct
+    inspectors before a CRITICAL band is allowed (single-inspector CRITICAL
+    findings demote to HIGH, which surfaces a redact + refusal envelope).
     """
+    from arc_guard_service.settings import ServiceSettings
+
+    settings = ServiceSettings()
+    risk_thresholds = RiskThresholds(
+        min_inspectors_for_critical=settings.min_inspectors_for_critical,
+    )
 
     return PolicyRuleSet(
+        risk_thresholds=risk_thresholds,
         rules=(
             PolicyRule(id="r_email", match="EMAIL_ADDRESS", strategy="redact"),
             PolicyRule(id="r_phone", match="PHONE_NUMBER", strategy="redact"),
@@ -109,9 +122,40 @@ def _all_inspectors_policy() -> PolicyRuleSet:
             PolicyRule(id="r_ip", match="IP_ADDRESS", strategy="redact"),
             PolicyRule(id="r_card", match="CREDIT_CARD", strategy="redact"),
             PolicyRule(id="r_injection", match="INJECTION", strategy="block"),
+            # Code-injection inspectors emit prefix-style entity types, not
+            # an umbrella SHELL_INJECTION / SQL_INJECTION / TEMPLATE_INJECTION.
+            # Each concrete subtype gets its own rule mapped to redact (HIGH
+            # severity, sanitize the span instead of refusing the request).
+            PolicyRule(id="r_shell_cmdsub", match="shell.command_substitution", strategy="redact"),
+            PolicyRule(id="r_shell_pipe", match="shell.pipe_into_destructive", strategy="redact"),
+            PolicyRule(id="r_shell_chain", match="shell.command_chaining", strategy="redact"),
+            PolicyRule(id="r_sql_stacked", match="sql.stacked_statement", strategy="redact"),
+            PolicyRule(id="r_sql_comment", match="sql.comment_terminator", strategy="redact"),
+            PolicyRule(id="r_sql_union", match="sql.union_injection", strategy="redact"),
+            PolicyRule(id="r_sql_tautology", match="sql.tautology", strategy="redact"),
+            PolicyRule(id="r_tpl_sandbox", match="template.sandbox_escape", strategy="redact"),
+            PolicyRule(id="r_tpl_active", match="template.active_html", strategy="redact"),
+            PolicyRule(id="r_tpl_expression", match="template.expression", strategy="redact"),
+            # JailbreakDetector category → entity_type mapping (defined in
+            # arc_guard.pipeline._JAILBREAK_CATEGORY_TO_ENTITY_TYPE) covers
+            # five categories. The original ruleset only knew about two; the
+            # other three would otherwise hit the closed-posture POLICY_BLOCK
+            # fallback because no rule matched them.
             PolicyRule(
                 id="r_jailbreak_override",
                 match="JAILBREAK_DIRECT_OVERRIDE",
+                strategy="block",
+            ),
+            PolicyRule(id="r_jailbreak_role", match="JAILBREAK_ROLE_PLAY", strategy="block"),
+            PolicyRule(id="r_jailbreak_hypo", match="JAILBREAK_HYPOTHETICAL", strategy="block"),
+            PolicyRule(
+                id="r_jailbreak_erosion",
+                match="JAILBREAK_POLICY_EROSION",
+                strategy="block",
+            ),
+            PolicyRule(
+                id="r_jailbreak_indirect",
+                match="JAILBREAK_INDIRECT_INJECTION",
                 strategy="block",
             ),
             PolicyRule(

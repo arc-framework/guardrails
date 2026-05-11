@@ -11,6 +11,7 @@ import "reactflow/dist/style.css";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { BrandLogo } from "@/components/visuals/brand";
 import { CANONICAL_EDGES, CANONICAL_NODES } from "@/lib/workflow/canonical-graph";
 import { deriveNodeStates } from "@/lib/workflow/derive-node-state";
 import { spreadLayout } from "@/lib/canvas/dagre-layout";
@@ -137,6 +138,12 @@ export interface LifecycleCanvasProps {
   activeStage?: StageName | null;
   selectedNodeId?: string | null;
   onNodeSelect?: (nodeId: string | null) => void;
+  /**
+   * Render the brand-mark loader overlay centered on the canvas. Set this
+   * while the request is in flight and no lifecycle events have arrived
+   * yet — the overlay clears the moment the first event lands.
+   */
+  inFlight?: boolean;
 }
 
 export function LifecycleCanvas({
@@ -144,6 +151,7 @@ export function LifecycleCanvas({
   activeStage = null,
   selectedNodeId,
   onNodeSelect,
+  inFlight = false,
 }: LifecycleCanvasProps) {
   const spreadLevel = useUiStore((s) => s.canvasSpreadLevel);
   const cycleSpread = useUiStore((s) => s.cycleCanvasSpreadLevel);
@@ -202,79 +210,125 @@ export function LifecycleCanvas({
   const showResume = playback.status === "paused";
   const playbackEnabled = stagePath.length > 0;
 
+  // Show the brand-mark loader only while the request is in flight AND
+  // the canvas hasn't received its first lifecycle event yet. Once events
+  // start arriving the canvas itself communicates progress (active stage,
+  // animated edges) and the overlay would just clutter.
+  const showFlightLoader = inFlight && events.length === 0;
+
   return (
     <div className="relative h-full w-full" style={{ minHeight: 360 }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={NODE_TYPES}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable
-        onNodeClick={handleNodeClick}
-        onPaneClick={handlePaneClick}
-        proOptions={{ hideAttribution: true }}
+      {/*
+        Cross-fade: while showFlightLoader is true the canvas + controls fade
+        to opacity-0 and the loader fades to opacity-100. When the first
+        lifecycle event lands the directions invert, so the canvas appears
+        to "materialize" into view as the brand mark fades out. Both layers
+        stay mounted across the transition so ReactFlow keeps its layout
+        and the brand mark's SVG animations don't restart.
+      */}
+      <div
+        className={`pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 transition-opacity duration-500 ease-out ${
+          showFlightLoader ? "opacity-100" : "opacity-0"
+        }`}
+        aria-live="polite"
+        aria-hidden={!showFlightLoader}
+        aria-label="Request in flight — waiting for first lifecycle event"
       >
-        <Background gap={16} size={1} />
-        <Controls position="bottom-right" showInteractive={false} />
-      </ReactFlow>
+        <div className="relative flex h-40 w-40 items-center justify-center">
+          <span className="absolute inset-0 animate-ping rounded-full bg-primary/15" />
+          <span
+            className="absolute inset-3 animate-pulse rounded-full bg-primary/25"
+            style={{ animationDuration: "2.4s" }}
+          />
+          <span
+            className="absolute inset-6 rounded-full bg-primary/10 blur-md"
+            style={{ animation: "pulse 3.6s ease-in-out infinite" }}
+          />
+          <BrandLogo className="relative h-24 w-24 drop-shadow-[0_0_22px_hsl(var(--primary)/0.6)]" />
+        </div>
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          Inspecting request…
+        </p>
+      </div>
 
-      <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-md border bg-card/95 px-2 py-1 shadow-sm backdrop-blur">
-        <Button
-          variant={spreadLevel === 1 ? "outline" : "default"}
-          size="sm"
-          onClick={cycleSpread}
-          aria-label={`Spread level ${spreadLevel} of 3 — click to cycle`}
-          title={`Layout density level ${spreadLevel}/3. Click to cycle Spread → Wide → Reset.`}
+      <div
+        className={`absolute inset-0 transition-opacity duration-700 ease-in ${
+          showFlightLoader ? "opacity-0" : "opacity-100"
+        }`}
+        aria-hidden={showFlightLoader}
+      >
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={NODE_TYPES}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable
+          onNodeClick={handleNodeClick}
+          onPaneClick={handlePaneClick}
+          proOptions={{ hideAttribution: true }}
         >
-          {SPREAD_LABEL_BY_LEVEL[spreadLevel]}
-        </Button>
+          <Background gap={16} size={1} />
+          <Controls position="bottom-right" showInteractive={false} />
+        </ReactFlow>
 
-        {playbackEnabled ? (
-          <>
-            <Separator orientation="vertical" className="h-5" />
-            {showPlay ? (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={playback.play}
-                title="Replay this request stage-by-stage"
-              >
-                ▶ Replay
-              </Button>
-            ) : null}
-            {showPause ? (
-              <Button variant="outline" size="sm" onClick={playback.pause} title="Pause">
-                ❚❚
-              </Button>
-            ) : null}
-            {showResume ? (
-              <Button variant="default" size="sm" onClick={playback.resume} title="Resume">
-                ▶
-              </Button>
-            ) : null}
-            {playback.status !== "idle" ? (
-              <>
+        <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-md border bg-card/95 px-2 py-1 shadow-sm backdrop-blur">
+          <Button
+            variant={spreadLevel === 1 ? "outline" : "default"}
+            size="sm"
+            onClick={cycleSpread}
+            aria-label={`Spread level ${spreadLevel} of 3 — click to cycle`}
+            title={`Layout density level ${spreadLevel}/3. Click to cycle Spread → Wide → Reset.`}
+          >
+            {SPREAD_LABEL_BY_LEVEL[spreadLevel]}
+          </Button>
+
+          {playbackEnabled ? (
+            <>
+              <Separator orientation="vertical" className="h-5" />
+              {showPlay ? (
                 <Button
-                  variant="ghost"
+                  variant="default"
                   size="sm"
-                  onClick={playback.skipToEnd}
-                  title="Jump to final state"
+                  onClick={playback.play}
+                  title="Replay this request stage-by-stage"
                 >
-                  ⏭
+                  ▶ Replay
                 </Button>
-                <Button variant="ghost" size="sm" onClick={playback.reset} title="Reset to start">
-                  ↺
+              ) : null}
+              {showPause ? (
+                <Button variant="outline" size="sm" onClick={playback.pause} title="Pause">
+                  ❚❚
                 </Button>
-              </>
-            ) : null}
-            <Badge variant="outline" className="text-[10px]">
-              {playback.currentIndex + 1} / {stagePath.length}
-            </Badge>
-          </>
-        ) : null}
+              ) : null}
+              {showResume ? (
+                <Button variant="default" size="sm" onClick={playback.resume} title="Resume">
+                  ▶
+                </Button>
+              ) : null}
+              {playback.status !== "idle" ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={playback.skipToEnd}
+                    title="Jump to final state"
+                  >
+                    ⏭
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={playback.reset} title="Reset to start">
+                    ↺
+                  </Button>
+                </>
+              ) : null}
+              <Badge variant="outline" className="text-[10px]">
+                {playback.currentIndex + 1} / {stagePath.length}
+              </Badge>
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );

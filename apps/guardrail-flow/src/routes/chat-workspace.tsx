@@ -426,6 +426,7 @@ export function ChatWorkspaceRoute() {
                     activeStage={activeStage}
                     selectedNodeId={selectedNodeId}
                     onNodeSelect={setSelectedNodeId}
+                    inFlight={activeTurn?.status === "sending"}
                   />
                 </div>
               </div>

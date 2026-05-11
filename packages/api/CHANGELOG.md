@@ -2,6 +2,15 @@
 
 All notable changes to the `arc-guard-service` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+- `arc_guard_service.pipeline_factories.all_inspectors_pipeline_factory()` — comprehensive opt-in pipeline factory that wires every available inspector (Injection + Presidio + Shell-injection + Template-injection + SQL-injection-when-`[code-injection]`-installed + Semantic-intent-when-`[semantic]`-installed), plus the heuristic jailbreak detector and stateful deception inspector, plus a `PolicyRuleSet` mapping every emitted entity type to a routed `block` strategy so dashboard Decision/Policy surfaces populate. Wire via `ServiceSettings.pipeline_factory = "arc_guard_service.pipeline_factories.all_inspectors_pipeline_factory"` or env var `ARC_GUARD_SERVICE_PIPELINE_FACTORY`. Default service behavior unchanged — the existing `_build_default_pipeline` (Injection + Presidio only) remains the implicit default.
+- The factory logs INFO when an optional extra is absent: `[code-injection] extra not installed — SQL inspector skipped` / `[semantic] extra not installed — semantic intent inspector skipped`. Operators see exactly which detectors are active without consulting the install set.
+
+### Migration notes
+- Additive only. Operators who were already using the existing `guardrailflow_dev_pipeline_factory` see no change. New deployments wanting full coverage should switch their `pipeline_factory` setting to `all_inspectors_pipeline_factory` and ensure `[semantic]` (and optionally `[code-injection]` / `[jailbreak-ml]`) extras are installed.
+
 ## [0.7.0] — 2026-05-09
 
 ### Removed

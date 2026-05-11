@@ -58,4 +58,7 @@ def test_four_rules_fire_in_finding_order_with_block_winning_aggregate() -> None
     assert result.action == "block"
     assert result.text == ""
     assert result.refusal is not None
-    assert result.refusal.code == "jailbreak"
+    # The default JailbreakDetector fires JAILBREAK_DIRECT_OVERRIDE on the
+    # "ignore previous instructions" suffix; the router upgrades the refusal
+    # code to jailbreak_strong when a JAILBREAK_* subtype is present.
+    assert result.refusal.code == "jailbreak_strong"

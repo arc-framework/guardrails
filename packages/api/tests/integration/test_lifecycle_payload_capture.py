@@ -124,7 +124,9 @@ def test_capture_flags_can_be_enabled_independently() -> None:
     """Sanitized capture without raw, and raw capture without sanitized,
     are both valid. Verify the matrix."""
     # raw=on, sanitized=off → raw_input populated, text_after/response_text None
-    with _build_client(lifecycle_capture_payloads=False, lifecycle_capture_raw_input=True) as client:
+    with _build_client(
+        lifecycle_capture_payloads=False, lifecycle_capture_raw_input=True
+    ) as client:
         body = _send_pii(client, "capture-matrix-raw-only")
     rs = next(e for e in body["events"] if e["event_type"] == "RequestStarted")
     assert rs["raw_input"] is not None

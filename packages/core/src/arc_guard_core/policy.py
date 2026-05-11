@@ -45,6 +45,7 @@ class RiskThresholds(BaseModel):
     high_escalates_at: int = 1
     critical_escalates_at: int = 1
     soft_pii_aggregation: int = 3
+    min_inspectors_for_critical: int = 1
 
     @field_validator(
         "low_max_count",
@@ -57,6 +58,13 @@ class RiskThresholds(BaseModel):
     def _non_negative(cls, value: int) -> int:
         if value < 0:
             raise ValueError("threshold counts must be >= 0")
+        return value
+
+    @field_validator("min_inspectors_for_critical")
+    @classmethod
+    def _at_least_one(cls, value: int) -> int:
+        if value < 1:
+            raise ValueError("min_inspectors_for_critical must be >= 1")
         return value
 
     @model_validator(mode="after")

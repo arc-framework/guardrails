@@ -34,7 +34,7 @@ def build_chat_examples_router() -> Any:
 
     router = APIRouter()
 
-    @router.get(
+    @router.get(  # type: ignore[untyped-decorator]
         "/chat/examples",
         response_model=list[ChatExamplePreset],
         summary="Validated chat presets sourced from the Swagger/OpenAPI corpus",

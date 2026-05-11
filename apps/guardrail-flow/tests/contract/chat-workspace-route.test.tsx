@@ -213,7 +213,7 @@ vi.mock("@/components/workspace/DebugDock", () => ({
 describe("ChatWorkspaceRoute", () => {
   it("keeps the lifecycle canvas mounted while a request is still sending", async () => {
     const user = userEvent.setup();
-    let resolveTurn: ((value: ReturnType<typeof buildMutationResult>) => void) | null = null;
+    let resolveTurn: ((value: ReturnType<typeof buildMutationResult>) => void) | undefined;
 
     mocks.mutateAsync.mockImplementationOnce(
       () =>

@@ -402,6 +402,13 @@ class RuleBasedPolicyRouter:
 
     def _select_refusal_code(self, findings: Sequence[Finding]) -> RefusalCode:
         types = {f.entity_type.upper() for f in findings}
+        # JailbreakDetector emits subtypes like JAILBREAK_DIRECT_OVERRIDE,
+        # JAILBREAK_ROLE_PLAY, etc. Treat any JAILBREAK_ prefix as a strong-
+        # class detection so the router's refusal code matches what the
+        # legacy detector intercept produces (jailbreak_strong). Plain
+        # "JAILBREAK" or "INJECTION" alone (no subtype) stays at JAILBREAK.
+        if any(t.startswith("JAILBREAK_") for t in types):
+            return RefusalCode.JAILBREAK_STRONG
         if "INJECTION" in types or "JAILBREAK" in types:
             return RefusalCode.JAILBREAK
         if any(t in types for t in ("US_SSN", "CREDIT_CARD", "PHONE_NUMBER")):

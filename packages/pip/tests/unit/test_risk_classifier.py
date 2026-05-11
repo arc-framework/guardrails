@@ -117,6 +117,49 @@ class _StubInspector:
         )
 
 
+def _f_named(et: str, risk: RiskLevel, inspector: str) -> Finding:
+    return Finding(et, 0, 1, risk, inspector)
+
+
+def test_min_inspectors_for_critical_default_keeps_single_inspector_critical() -> None:
+    """Default threshold (1) preserves single-inspector CRITICAL escalation."""
+    findings = [_f_named("JAILBREAK_DIRECT_OVERRIDE", RiskLevel.CRITICAL, "jailbreak")]
+    band, marker = _CLF.classify(findings, RiskThresholds())
+    assert band == RiskBand.CRITICAL
+    assert marker is None
+
+
+def test_min_inspectors_for_critical_two_demotes_single_inspector_critical() -> None:
+    """Threshold=2 with one inspector at CRITICAL demotes to HIGH and emits a marker."""
+    thresholds = RiskThresholds(min_inspectors_for_critical=2)
+    findings = [
+        _f_named("JAILBREAK_DIRECT_OVERRIDE", RiskLevel.CRITICAL, "jailbreak"),
+        _f_named("JAILBREAK_ROLE_PLAY", RiskLevel.CRITICAL, "jailbreak"),
+    ]
+    band, marker = _CLF.classify(findings, thresholds)
+    assert band == RiskBand.HIGH
+    assert marker is not None
+    assert "vote_downgrade:critical→high" in marker
+
+
+def test_min_inspectors_for_critical_two_keeps_critical_when_two_inspectors_agree() -> None:
+    """Threshold=2 with CRITICAL findings from two distinct inspectors stays CRITICAL."""
+    thresholds = RiskThresholds(min_inspectors_for_critical=2)
+    findings = [
+        _f_named("JAILBREAK_DIRECT_OVERRIDE", RiskLevel.CRITICAL, "jailbreak"),
+        _f_named("DECEPTION_DETECTED", RiskLevel.CRITICAL, "SemanticIntentInspector"),
+    ]
+    band, marker = _CLF.classify(findings, thresholds)
+    assert band == RiskBand.CRITICAL
+    assert marker is None
+
+
+def test_min_inspectors_for_critical_below_one_rejected() -> None:
+    """Threshold values below 1 must be rejected at construction time."""
+    with pytest.raises(ValueError):
+        RiskThresholds(min_inspectors_for_critical=0)
+
+
 def test_aggregation_marker_recorded_in_decision_rationale() -> None:
     """The aggregation marker MUST appear in the rationale when it changes the band."""
     policy = PolicyRuleSet(
