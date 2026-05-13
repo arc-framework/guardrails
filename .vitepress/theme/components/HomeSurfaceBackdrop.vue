@@ -50,8 +50,14 @@ function measureSurfaceHeight() {
   }
 
   const homeRect = home.getBoundingClientRect();
-  const cutoffRect = cutoff.getBoundingClientRect();
-  const height = Math.max(cutoffRect.top - homeRect.top + navOffset - 24, 620);
+  const divider =
+    cutoff.previousElementSibling instanceof HTMLElement &&
+    cutoff.previousElementSibling.tagName === 'HR'
+      ? cutoff.previousElementSibling
+      : cutoff;
+  const dividerRect = divider.getBoundingClientRect();
+  const boundary = divider === cutoff ? dividerRect.top : dividerRect.bottom;
+  const height = Math.max(boundary - homeRect.top + navOffset, 620);
 
   surface.style.setProperty('--arc-home-surface-height', `${height}px`);
 }
