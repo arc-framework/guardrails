@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, markRaw, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useVueFlow, VueFlow, type NodeMouseEvent } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
-import { getCanvasDocument, getCanvasEntry } from '../canvasRegistry';
+import {
+  getCanvasDocument,
+  getCanvasEntry,
+  listCanvasEntries,
+} from '../canvasRegistry';
 import {
   parseCanvas,
   type CanvasGroupNodeData,
@@ -24,11 +28,13 @@ const props = withDefaults(
 );
 
 const nodeTypes = {
-  canvasText: CanvasTextNode,
-  canvasGroup: CanvasGroupNode,
+  canvasText: markRaw(CanvasTextNode),
+  canvasGroup: markRaw(CanvasGroupNode),
 };
 
 const DOCS_SPREAD_FACTOR = 1.18;
+const DEFAULT_LAYOUT_MODE = 'spread' as const;
+const canvasEntries = listCanvasEntries();
 
 const flowId = `arc-doc-canvas-${props.canvasId}`;
 const { fitView, zoomIn, zoomOut } = useVueFlow(flowId);
@@ -36,7 +42,7 @@ const { fitView, zoomIn, zoomOut } = useVueFlow(flowId);
 const document = computed(() => getCanvasDocument(props.canvasId));
 const entry = computed(() => getCanvasEntry(props.canvasId));
 
-const layoutMode = ref<'original' | 'spread'>('original');
+const layoutMode = ref<'original' | 'spread'>(DEFAULT_LAYOUT_MODE);
 const selectedId = ref<string | null>(null);
 const boardElement = ref<HTMLElement | null>(null);
 const isFullscreen = ref(false);
@@ -59,6 +65,21 @@ const activeCanvas = computed(() =>
 const flowNodes = computed(() => activeCanvas.value?.nodes ?? []);
 const flowEdges = computed(() => activeCanvas.value?.edges ?? []);
 const flowKey = computed(() => `${props.canvasId}:${layoutMode.value}`);
+const currentCanvasIndex = computed(() =>
+  canvasEntries.findIndex((entry) => entry.id === props.canvasId),
+);
+const previousCanvas = computed(() => {
+  const currentIndex = currentCanvasIndex.value;
+
+  return currentIndex > 0 ? canvasEntries[currentIndex - 1] : null;
+});
+const nextCanvas = computed(() => {
+  const currentIndex = currentCanvasIndex.value;
+
+  return currentIndex >= 0 && currentIndex < canvasEntries.length - 1
+    ? canvasEntries[currentIndex + 1]
+    : null;
+});
 
 const selectedSourceNode = computed(
   () =>
@@ -95,7 +116,7 @@ const selectedNodePreview = computed(() =>
 watch(
   document,
   (nextDocument) => {
-    layoutMode.value = 'original';
+    layoutMode.value = DEFAULT_LAYOUT_MODE;
     selectedId.value =
       nextDocument?.nodes.find((node) => node.type === 'text')?.id ?? null;
   },
@@ -126,6 +147,43 @@ function handleFitView() {
   void fitView({ padding: 0.2 });
 }
 
+function buildCanvasHref(canvasId: string): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const url = new URL(window.location.href);
+  url.pathname = url.pathname.replace(/\/[^/]*\/?$/, `/${canvasId}`);
+  url.hash = '';
+  return url.toString();
+}
+
+function navigateToCanvas(canvasId: string | undefined) {
+  const href = canvasId ? buildCanvasHref(canvasId) : null;
+
+  if (!href || typeof window === 'undefined') {
+    return;
+  }
+
+  window.location.assign(href);
+}
+
+function handleFullscreenPagerKeydown(event: KeyboardEvent) {
+  if (!isFullscreen.value) {
+    return;
+  }
+
+  if (event.key === 'ArrowLeft' && previousCanvas.value) {
+    event.preventDefault();
+    navigateToCanvas(previousCanvas.value.id);
+  }
+
+  if (event.key === 'ArrowRight' && nextCanvas.value) {
+    event.preventDefault();
+    navigateToCanvas(nextCanvas.value.id);
+  }
+}
+
 function syncFullscreenState() {
   if (typeof window === 'undefined') {
     return;
@@ -154,6 +212,7 @@ onMounted(() => {
 
   syncFullscreenState();
   window.document.addEventListener('fullscreenchange', syncFullscreenState);
+  window.addEventListener('keydown', handleFullscreenPagerKeydown);
 });
 
 onBeforeUnmount(() => {
@@ -162,6 +221,7 @@ onBeforeUnmount(() => {
   }
 
   window.document.removeEventListener('fullscreenchange', syncFullscreenState);
+  window.removeEventListener('keydown', handleFullscreenPagerKeydown);
 });
 
 const nodeCount = computed(() => parsedCanvas.value?.nodes.length ?? 0);
@@ -276,6 +336,15 @@ const edgeCount = computed(() => parsedCanvas.value?.edges.length ?? 0);
 
         <div class="arc-canvas-toolbar__group">
           <button
+            v-if="previousCanvas"
+            class="arc-canvas-toolbar__button arc-canvas-toolbar__button--pager"
+            type="button"
+            :title="`Open ${previousCanvas.title}`"
+            @click="navigateToCanvas(previousCanvas.id)">
+            Prev
+          </button>
+
+          <button
             class="arc-canvas-toolbar__button"
             type="button"
             :aria-pressed="layoutMode === 'spread'"
@@ -286,6 +355,15 @@ const edgeCount = computed(() => parsedCanvas.value?.edges.length ?? 0);
             "
             @click="toggleLayout">
             {{ layoutMode === 'spread' ? 'Original' : 'Spread' }}
+          </button>
+
+          <button
+            v-if="nextCanvas"
+            class="arc-canvas-toolbar__button arc-canvas-toolbar__button--pager"
+            type="button"
+            :title="`Open ${nextCanvas.title}`"
+            @click="navigateToCanvas(nextCanvas.id)">
+            Next
           </button>
         </div>
       </div>
@@ -299,7 +377,7 @@ const edgeCount = computed(() => parsedCanvas.value?.edges.length ?? 0);
         :node-types="nodeTypes"
         :fit-view-on-init="true"
         :fit-view-options="{ padding: 0.2 }"
-        :min-zoom="0.1"
+        :min-zoom="0.02"
         :max-zoom="1.6"
         :nodes-draggable="false"
         :nodes-connectable="false"

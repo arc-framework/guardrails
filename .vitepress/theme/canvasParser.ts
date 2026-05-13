@@ -9,6 +9,8 @@ import type {
 export interface CanvasTextNodeData {
   text: string;
   color?: string;
+  compact?: boolean;
+  heading?: boolean;
 }
 
 export interface CanvasGroupNodeData {
@@ -33,13 +35,13 @@ const EDGE_STROKE: Record<string, string> = {
   '6': 'rgba(168, 85, 247, 0.78)',
 };
 
-const MIN_TEXT_WIDTH = 280;
+const MIN_TEXT_WIDTH = 268;
 const MAX_TEXT_WIDTH = 420;
-const MIN_TEXT_HEIGHT = 132;
+const MIN_TEXT_HEIGHT = 112;
 const WIDTH_STEP = 28;
-const HEIGHT_STEP = 24;
-const CONTENT_PADDING_Y = 32;
-const CONTENT_PADDING_X = 28;
+const HEIGHT_STEP = 20;
+const CONTENT_PADDING_Y = 24;
+const CONTENT_PADDING_X = 24;
 const CHAR_PIXEL_WIDTH = 7.2;
 const BASE_LINE_HEIGHT = 20;
 const H1_LINE_HEIGHT = 28;
@@ -102,6 +104,8 @@ export function parseCanvas(document: CanvasSourceDocument): ParsedCanvas {
         data: {
           text: node.text ?? '',
           color: node.color,
+          compact: isCompactTextNode(node.text ?? '', height),
+          heading: isHeadingTextNode(node.text ?? ''),
         },
         draggable: false,
         connectable: false,
@@ -163,19 +167,51 @@ function estimateTextNodeSize(
   sourceHeight?: number,
 ): { width: number; height: number } {
   const lines = normalizeLines(text);
+  const hasSourceWidth = typeof sourceWidth === 'number' && sourceWidth > 0;
+  const hasSourceHeight = typeof sourceHeight === 'number' && sourceHeight > 0;
   const preferredWidth = estimatePreferredWidth(lines);
-  const baseWidth = Math.max(sourceWidth ?? 0, preferredWidth, MIN_TEXT_WIDTH);
-  const width = roundUpToStep(Math.min(baseWidth, MAX_TEXT_WIDTH), WIDTH_STEP);
+  const fallbackWidth = roundUpToStep(
+    Math.min(Math.max(preferredWidth, MIN_TEXT_WIDTH), MAX_TEXT_WIDTH),
+    WIDTH_STEP,
+  );
+  const width = hasSourceWidth ? sourceWidth : fallbackWidth;
   const availableTextWidth = Math.max(width - CONTENT_PADDING_X * 2, 180);
   const heightEstimate = estimateHeight(lines, availableTextWidth);
-  const baseHeight = Math.max(
-    sourceHeight ?? 0,
-    heightEstimate,
-    MIN_TEXT_HEIGHT,
+  const fallbackHeight = roundUpToStep(
+    Math.max(heightEstimate, MIN_TEXT_HEIGHT),
+    HEIGHT_STEP,
   );
-  const height = roundUpToStep(baseHeight, HEIGHT_STEP);
+  const height = hasSourceHeight ? sourceHeight : fallbackHeight;
 
   return { width, height };
+}
+
+function isCompactTextNode(text: string, height: number): boolean {
+  const nonBlankLines = normalizeLines(text).filter(
+    (line) => line.trim() !== '',
+  );
+
+  if (height > 0 && height <= 64) {
+    return true;
+  }
+
+  return (
+    isHeadingTextNode(text) &&
+    height > 0 &&
+    height <= 132 &&
+    nonBlankLines.length <= 3
+  );
+}
+
+function isHeadingTextNode(text: string): boolean {
+  const firstLine = normalizeLines(text)
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  return (
+    typeof firstLine === 'string' &&
+    /^(#{1,3}\s|[A-Z]{2,}\d*\b|UC\d\s·)/.test(firstLine)
+  );
 }
 
 function normalizeLines(text: string): string[] {

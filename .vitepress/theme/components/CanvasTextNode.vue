@@ -16,6 +16,8 @@ const sides = [
 const colorBandClass = computed(() => colorClassFor(props.data.color));
 const renderedText = computed(() => renderCanvasText(props.data.text));
 const isSelected = computed(() => props.selected === true);
+const isCompact = computed(() => props.data.compact === true);
+const isHeading = computed(() => props.data.heading === true);
 
 function colorClassFor(color?: string): string {
   switch (color) {
@@ -42,6 +44,8 @@ function colorClassFor(color?: string): string {
     class="arc-canvas-text-node"
     :class="[
       colorBandClass,
+      isCompact ? 'arc-canvas-text-node--compact' : '',
+      isHeading ? 'arc-canvas-text-node--heading' : '',
       isSelected ? 'arc-canvas-text-node--selected' : '',
     ]">
     <template v-for="side in sides" :key="side.id">

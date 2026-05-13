@@ -1,6 +1,16 @@
+import { generateBreadcrumbsData } from '@nolebase/vitepress-plugin-breadcrumbs/vitepress';
+import { GitChangelog } from '@nolebase/vitepress-plugin-git-changelog/vite';
 import { defineConfig } from 'vitepress';
+import {
+  groupIconMdPlugin,
+  groupIconVitePlugin,
+} from 'vitepress-plugin-group-icons';
+import llmstxt from 'vitepress-plugin-llms';
 
 const base = process.env.DOCS_BASE || '/';
+const repoUrl = 'https://github.com/arc-framework/guardrails';
+const docsBranch = 'main';
+const siteUrl = 'https://arc-framework.github.io/guardrails/';
 
 export default defineConfig({
   title: 'arc-guardrails',
@@ -11,6 +21,12 @@ export default defineConfig({
   cleanUrls: true,
   srcDir: 'docs/vitepress',
   lastUpdated: true,
+  sitemap: {
+    hostname: siteUrl,
+  },
+  transformPageData(pageData, context) {
+    generateBreadcrumbsData(pageData, context);
+  },
 
   themeConfig: {
     logo: '/logo-mark.svg',
@@ -84,19 +100,45 @@ export default defineConfig({
 
     search: { provider: 'local' },
     outline: { level: [2, 3] },
-    socialLinks: [],
+    socialLinks: [{ icon: 'github', link: repoUrl }],
+
+    editLink: {
+      pattern: `${repoUrl}/edit/${docsBranch}/docs/vitepress/:path`,
+      text: 'Edit this page on GitHub',
+    },
 
     lastUpdated: {
       text: 'Last updated',
+      formatOptions: {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      },
     },
 
     footer: {
-      message: 'Open source documentation built with VitePress.',
+      message: 'Open source but Use responsibly 🛡️',
     },
   },
 
   markdown: {
     lineNumbers: true,
+    config(md) {
+      md.use(groupIconMdPlugin);
+    },
+  },
+
+  vite: {
+    optimizeDeps: {
+      exclude: ['@nolebase/vitepress-plugin-breadcrumbs/client'],
+    },
+    ssr: {
+      noExternal: ['@nolebase/vitepress-plugin-breadcrumbs'],
+    },
+    plugins: [
+      GitChangelog({ repoURL: () => repoUrl }),
+      groupIconVitePlugin(),
+      llmstxt(),
+    ],
   },
 
   ignoreDeadLinks: true,

@@ -1,6 +1,6 @@
 import type { Edge, Node } from '@vue-flow/core';
 
-const GROUP_PADDING = 24;
+const GROUP_PADDING = 20;
 
 export function fitGroupBounds(nodes: Node[]): Node[] {
   const groupNodes = nodes.filter((node) => node.type === 'canvasGroup');
