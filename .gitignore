@@ -30,6 +30,8 @@ htmlcov/
 # Packaging artifacts
 build/
 dist/
+.vitepress/cache/
+.vitepress/dist/
 *.egg-info/
 pip-wheel-metadata/
 
@@ -46,3 +48,5 @@ arc-guard-agent-prompts.md
 .github/copilot-instructions.md
 .github/claude-instructions.md
 .gitnexus
+
+node_modules/

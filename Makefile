@@ -12,6 +12,7 @@ UV           := env -u VIRTUAL_ENV uv
 
 .PHONY: help init install install-minimal \
         smoke \
+	docs-install docs-dev docs-build docs-preview \
         api-up api-down api-logs demo sse \
         docker-build docker-up docker-up-prod docker-down docker-logs docker-nuke dashboard-logs \
 	test test-core test-pip test-api test-fast \
@@ -25,6 +26,7 @@ UV           := env -u VIRTUAL_ENV uv
 FIX ?= 0
 TEST_JOBS ?= 3
 ALL_JOBS ?= 5
+DOCS_PM ?= pnpm
 
 RUFF_CHECK_FLAGS :=
 DASHBOARD_LINT_SCRIPT := lint
@@ -51,6 +53,12 @@ help:
 	@echo
 	@echo "Quick checks:"
 	@echo "  smoke              run the canonical in-process flow end-to-end (~2s)"
+	@echo
+	@echo "Documentation site:"
+	@echo "  docs-install       install VitePress docs dependencies at the repo root"
+	@echo "  docs-dev           start the docs site locally on 127.0.0.1:5174"
+	@echo "  docs-build         build the docs site for production"
+	@echo "  docs-preview       preview the built docs site on 127.0.0.1:4174"
 	@echo
 	@echo "Live api (OpenAI-compatible chat-completions service):"
 	@echo "  api-up             boot the api on 127.0.0.1:8766 (BACKEND=echo by default)"
@@ -135,6 +143,20 @@ install-minimal:
 	@echo
 	@echo "Workspace venv ready at packages/.venv (no optional extras)."
 	@echo "Activate: source packages/.venv/bin/activate"
+
+# ---------- Documentation site ----------
+
+docs-install:
+	@$(DOCS_PM) install
+
+docs-dev:
+	@$(DOCS_PM) docs:dev
+
+docs-build:
+	@$(DOCS_PM) docs:build
+
+docs-preview:
+	@$(DOCS_PM) docs:preview
 
 # ---------- Smoke ----------
 #
