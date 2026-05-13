@@ -59,6 +59,5 @@ async def test_leak_scanner_returns_empty_for_full_corpus() -> None:
             leaks_per_input[text[:60]] = len(leaks)
 
     assert leaks_per_input == {}, (
-        f"payload-leak scanner found leaks for {len(leaks_per_input)} inputs: "
-        f"{leaks_per_input}"
+        f"payload-leak scanner found leaks for {len(leaks_per_input)} inputs: {leaks_per_input}"
     )

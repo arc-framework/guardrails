@@ -62,17 +62,15 @@ def test_decode_rejects_non_object_payload() -> None:
 
 
 def test_decode_rejects_missing_seq() -> None:
-    bogus = base64.urlsafe_b64encode(
-        json.dumps({"rid": "01JABC0EVT"}).encode("utf-8")
-    ).decode("ascii")
+    bogus = base64.urlsafe_b64encode(json.dumps({"rid": "01JABC0EVT"}).encode("utf-8")).decode(
+        "ascii"
+    )
     with pytest.raises(ValueError, match="missing required key 'seq'"):
         decode_debug_cursor(bogus, expected_rid="01JABC0EVT")
 
 
 def test_decode_rejects_missing_rid() -> None:
-    bogus = base64.urlsafe_b64encode(
-        json.dumps({"seq": 1}).encode("utf-8")
-    ).decode("ascii")
+    bogus = base64.urlsafe_b64encode(json.dumps({"seq": 1}).encode("utf-8")).decode("ascii")
     with pytest.raises(ValueError, match="missing required key 'rid'"):
         decode_debug_cursor(bogus, expected_rid="01JABC0EVT")
 

@@ -45,6 +45,8 @@ services:
 
   api:
     profiles: ["dev", "prod"]
+    image: arc-guardrail-service
+    container_name: arc-guardrail-service
     build:
       context: ../..
       dockerfile: packages/api/Dockerfile
@@ -54,11 +56,16 @@ services:
       ARC_GUARD_SERVICE_BIND: 0.0.0.0
       ARC_GUARD_SERVICE_PORT: "8766"
       ARC_GUARD_SERVICE_BACKEND: ollama
+      ARC_GUARD_SERVICE_PIPELINE_FACTORY: arc_guard_service.pipeline_factories:guardrailflow_dev_pipeline_factory
       ARC_GUARD_SERVICE_OLLAMA_URL: http://ollama:11434/v1/chat/completions
       ARC_GUARD_SERVICE_LOG_LEVEL: INFO
       ARC_GUARD_SERVICE_LIFECYCLE_SQLITE_PATH: /data/arc_guardrail.db
-      ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS: "${ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS:-false}"
-      ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT: "${ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT:-false}"
+      # Dev profile defaults to ON so the dashboard's Decision / Payload /
+      # Diff/Replay tabs populate out of the box. Override via shell env
+      # to disable on shared / production-like deployments.
+      ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS: "${ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_PAYLOADS:-true}"
+      ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT: "${ARC_GUARD_SERVICE_LIFECYCLE_CAPTURE_RAW_INPUT:-true}"
+      ARC_GUARD_SERVICE_DASHBOARD_ORIGINS: "${ARC_GUARD_SERVICE_DASHBOARD_ORIGINS:-[\"http://127.0.0.1:5173\",\"http://localhost:5173\"]}"
     volumes:
       - lifecycle-data:/data
     depends_on:
@@ -83,6 +90,31 @@ services:
       api:
         condition: service_healthy
 
+  # GuardRailFlow operator dashboard (Vite dev server). Dev profile only.
+  # Source is bind-mounted for hot-reload; node_modules live in a named volume
+  # so the host directory does not stomp on the container's installed packages.
+  # The browser talks directly to the api service via localhost:8766 — the env
+  # var must use the host address, not the Docker-internal service name.
+  dashboard:
+    profiles: ["dev"]
+    image: arc-guardrail-flow
+    container_name: arc-guardrail-flow
+    build:
+      context: ../../apps/guardrail-flow
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_DASHBOARD_MODE: live
+      VITE_DASHBOARD_API_URL: "http://localhost:8766"
+    volumes:
+      - ../../apps/guardrail-flow:/app
+      - arc-guardrail-flow-modules:/app/node_modules
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   ollama-models:
   lifecycle-data:
+  arc-guardrail-flow-modules:

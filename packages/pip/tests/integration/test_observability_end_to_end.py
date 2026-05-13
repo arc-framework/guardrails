@@ -162,7 +162,9 @@ async def test_offload_helper_increments_counter_in_realistic_flow() -> None:
         return 42
 
     result = await run_off_loop(
-        _blocking, stage="execute", metric_sink=metric_sink,
+        _blocking,
+        stage="execute",
+        metric_sink=metric_sink,
     )
     assert result == 42
     counters = [m for m in metric_sink.captured_metrics if m.name == OFFLOAD_COUNTER]

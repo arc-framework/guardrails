@@ -32,9 +32,7 @@ class DebugEntryWriter:
         queue_capacity: int = 5000,
     ) -> None:
         self._path = str(path)
-        self._queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue(
-            maxsize=queue_capacity
-        )
+        self._queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue(maxsize=queue_capacity)
         self._dropped_writes = 0
         self._closed = False
         self._drain_task: asyncio.Task[None] | None = None

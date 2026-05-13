@@ -65,6 +65,7 @@ def _serialize(finding) -> str:  # type: ignore[no-untyped-def]
 
 
 @pytest.mark.parametrize("text", SQL_ATTACKS)
+@pytest.mark.requires_code_injection
 def test_sql_default_omits_raw_match(text: str) -> None:
     inspector = SqlInjectionInspector()
     out = _inspect_sync(inspector, text)
@@ -98,6 +99,7 @@ def test_template_default_omits_raw_match(text: str) -> None:
         assert text not in _serialize(f)
 
 
+@pytest.mark.requires_code_injection
 def test_sql_opt_in_includes_raw_match() -> None:
     inspector = SqlInjectionInspector(capture_raw_matches=True)
     out = _inspect_sync(inspector, SQL_ATTACKS[0])
@@ -122,6 +124,7 @@ def test_template_opt_in_includes_raw_match() -> None:
     assert any("raw_match" in f.metadata for f in findings)
 
 
+@pytest.mark.requires_code_injection
 def test_fingerprint_metadata_always_present_at_default() -> None:
     """The fingerprint structure must replace the raw payload, not be absent."""
     inspector = SqlInjectionInspector()

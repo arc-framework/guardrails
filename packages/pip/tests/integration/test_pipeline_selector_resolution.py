@@ -131,9 +131,7 @@ def test_validator_accepts_ruleset_with_selector_rule() -> None:
     from arc_guard.policy import validate_strategies_registered
 
     ruleset = PolicyRuleSet(
-        rules=(
-            PolicyRule(id="r6", match="EMAIL_ADDRESS", selector="test_for_validator"),
-        )
+        rules=(PolicyRule(id="r6", match="EMAIL_ADDRESS", selector="test_for_validator"),)
     )
     # Must not raise.
     validate_strategies_registered(ruleset)
@@ -143,9 +141,7 @@ def test_validator_rejects_ruleset_with_unknown_selector() -> None:
     from arc_guard.policy import validate_strategies_registered
 
     ruleset = PolicyRuleSet(
-        rules=(
-            PolicyRule(id="r7", match="EMAIL_ADDRESS", selector="absent_selector"),
-        )
+        rules=(PolicyRule(id="r7", match="EMAIL_ADDRESS", selector="absent_selector"),)
     )
     with pytest.raises(ConfigCrossFieldError) as exc:
         validate_strategies_registered(ruleset)

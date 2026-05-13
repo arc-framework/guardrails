@@ -22,31 +22,33 @@ from arc_guard.observability import RecordingLogger
 from arc_guard.observability.ring_buffer_lifecycle_sink import RingBufferLifecycleSink
 from arc_guard.pipeline import GuardPipeline
 
-_VOLATILE_FIELDS = frozenset({
-    "decision_id",
-    "duration_ms",
-    "total_duration_ms",
-    "latency_ms",
-    "elapsed_ms",
-    "intent_size_bytes",
-    "input_size_bytes",
-    "span_id",
-    "trace_id",
-})
+_VOLATILE_FIELDS = frozenset(
+    {
+        "decision_id",
+        "duration_ms",
+        "total_duration_ms",
+        "latency_ms",
+        "elapsed_ms",
+        "intent_size_bytes",
+        "input_size_bytes",
+        "span_id",
+        "trace_id",
+    }
+)
 
 
 def _snapshot(logger: RecordingLogger) -> str:
     """Project logger captures into a deterministic JSON string."""
     rows: list[dict[str, Any]] = []
     for ev in logger.captured_events:
-        clean_fields = {
-            k: v for k, v in ev.fields.items() if k not in _VOLATILE_FIELDS
-        }
-        rows.append({
-            "name": ev.name,
-            "level": ev.level,
-            "fields": clean_fields,
-        })
+        clean_fields = {k: v for k, v in ev.fields.items() if k not in _VOLATILE_FIELDS}
+        rows.append(
+            {
+                "name": ev.name,
+                "level": ev.level,
+                "fields": clean_fields,
+            }
+        )
     return json.dumps(rows, sort_keys=True, default=str)
 
 

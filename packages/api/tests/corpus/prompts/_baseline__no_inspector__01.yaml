@@ -1,0 +1,18 @@
+id: _baseline__no_inspector__01
+inspector: _baseline
+difficulty: easy
+swagger_summary: 'Baseline — passes through unchanged'
+swagger_description: |
+  Plain question with no PII or injection patterns.
+  pre_process.action='pass', backend is called normally,
+  post_process.action='pass'.
+request:
+  model: llama3.2
+  messages:
+    - role: user
+      content: 'What is 2 + 2?'
+expected:
+  action: pass
+  phase: pre_process
+  refusal_code: null
+  findings: []

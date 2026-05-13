@@ -100,8 +100,7 @@ class RequestSummaryProjector:
             )
         elif et == "DecisionEmitted":
             self._conn.execute(
-                "UPDATE request_summaries"
-                " SET decision_id = ?, final_action = ? WHERE rid = ?",
+                "UPDATE request_summaries SET decision_id = ?, final_action = ? WHERE rid = ?",
                 (
                     getattr(event, "decision_id", None),
                     getattr(event, "action", None),
@@ -110,18 +109,14 @@ class RequestSummaryProjector:
             )
         elif et == "RefusalProduced":
             self._conn.execute(
-                "UPDATE request_summaries"
-                " SET refusal_code = ? WHERE rid = ?",
+                "UPDATE request_summaries SET refusal_code = ? WHERE rid = ?",
                 (getattr(event, "refusal_code", None), rid),
             )
         elif et == "RequestCompleted":
             blocked = bool(getattr(event, "blocked", False))
             pre_action = getattr(event, "pre_action", "pass")
             post_action = getattr(event, "post_action", None)
-            final_action = (
-                "block" if blocked
-                else (post_action or pre_action or "pass")
-            )
+            final_action = "block" if blocked else (post_action or pre_action or "pass")
             duration_ms = int(getattr(event, "total_duration_ms", 0.0))
             self._conn.execute(
                 "UPDATE request_summaries"
@@ -130,6 +125,17 @@ class RequestSummaryProjector:
                 "     final_action = COALESCE(final_action, ?)"
                 " WHERE rid = ?",
                 (duration_ms, final_action, rid),
+            )
+        elif et == "RequestErrored":
+            # Stale-live sweeper (or any future caller emitting RequestErrored)
+            # promotes the row to status='errored'. We DO NOT overwrite an
+            # already-completed row — if the natural completion ordering won
+            # the race, that result stands.
+            self._conn.execute(
+                "UPDATE request_summaries"
+                " SET status = 'errored', live = 0"
+                " WHERE rid = ? AND status != 'completed'",
+                (rid,),
             )
 
     async def query(self, rid: str) -> list[LifecycleEvent] | None:

@@ -1,4 +1,4 @@
-"""Integration: payload capture opt-in flags.
+"""Integration: lifecycle payload-capture defaults and overrides.
 
 Covers the spec contracts for the two flags:
 
@@ -9,8 +9,9 @@ Covers the spec contracts for the two flags:
 - `lifecycle_capture_raw_input=True` populates raw inbound text on
   `RequestStarted.raw_input`. This is the security-sensitive flag.
 
-Both flags can be enabled independently. Default settings (both False)
-are validated by the security soak test.
+Both flags can be enabled independently. Default settings keep sanitized
+payload capture on while raw-input capture stays off; the security soak
+test validates that raw PII still never leaks under that default.
 """
 
 from __future__ import annotations
@@ -38,9 +39,7 @@ def _send_pii(client: TestClient, rid: str) -> dict:
         "/v1/chat/completions",
         json={
             "model": "echo",
-            "messages": [
-                {"role": "user", "content": f"my email is {PII_EMAIL} please advise"}
-            ],
+            "messages": [{"role": "user", "content": f"my email is {PII_EMAIL} please advise"}],
         },
         headers={"x-request-id": rid},
     )
@@ -106,8 +105,8 @@ def test_capture_raw_input_true_captures_raw_text_on_request_started() -> None:
     )
 
 
-def test_default_settings_carry_no_payload_fields() -> None:
-    """When NEITHER flag is enabled, the new payload fields are all None."""
+def test_default_settings_capture_sanitized_fields_only() -> None:
+    """Default settings capture sanitized fields while leaving raw_input empty."""
     with _build_client() as client:
         body = _send_pii(client, "capture-default-001")
 
@@ -116,16 +115,18 @@ def test_default_settings_carry_no_payload_fields() -> None:
 
     for ev in body["events"]:
         if ev["event_type"] == "SanitizationApplied":
-            assert ev.get("text_after") is None
+            assert ev.get("text_after") is not None
         if ev["event_type"] == "BackendResponded":
-            assert ev.get("response_text") is None
+            assert ev.get("response_text") is not None
 
 
 def test_capture_flags_can_be_enabled_independently() -> None:
     """Sanitized capture without raw, and raw capture without sanitized,
     are both valid. Verify the matrix."""
     # raw=on, sanitized=off → raw_input populated, text_after/response_text None
-    with _build_client(lifecycle_capture_raw_input=True) as client:
+    with _build_client(
+        lifecycle_capture_payloads=False, lifecycle_capture_raw_input=True
+    ) as client:
         body = _send_pii(client, "capture-matrix-raw-only")
     rs = next(e for e in body["events"] if e["event_type"] == "RequestStarted")
     assert rs["raw_input"] is not None

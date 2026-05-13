@@ -60,9 +60,7 @@ def test_custom_policy_satisfies_protocol() -> None:
 
 
 def test_custom_policy_fires_in_same_lifecycle_position_as_bundled() -> None:
-    custom = RegexContentPolicy(
-        "competitor_block", r"\bcompetitor\b", RefusalCode.POLICY_BLOCK
-    )
+    custom = RegexContentPolicy("competitor_block", r"\bcompetitor\b", RefusalCode.POLICY_BLOCK)
     register_content_policy("competitor_block", custom)
     policies = [get_content_policy(n) for n in list_registered()]
 
@@ -78,9 +76,7 @@ def test_custom_policy_fires_in_same_lifecycle_position_as_bundled() -> None:
 
 
 def test_custom_policy_refusal_envelope_matches_bundled_shape() -> None:
-    custom = RegexContentPolicy(
-        "competitor_block", r"\bcompetitor\b", RefusalCode.POLICY_BLOCK
-    )
+    custom = RegexContentPolicy("competitor_block", r"\bcompetitor\b", RefusalCode.POLICY_BLOCK)
     register_content_policy("competitor_block", custom)
     policies = [get_content_policy(n) for n in list_registered()]
 

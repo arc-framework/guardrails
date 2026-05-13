@@ -102,18 +102,14 @@ class ServiceSettings(BaseSettings):
     lifecycle_sqlite_path: str | None = None
     lifecycle_sqlite_max_rows: int = Field(default=500_000, ge=1_000)
     lifecycle_sqlite_max_age_days: int = Field(default=7, ge=1, le=365)
-    lifecycle_sqlite_cleanup_interval_seconds: float = Field(
-        default=60.0, gt=0.0, le=3600.0
-    )
-    lifecycle_sse_subscriber_queue_capacity: int = Field(
-        default=1000, ge=10, le=100_000
-    )
+    lifecycle_sqlite_cleanup_interval_seconds: float = Field(default=60.0, gt=0.0, le=3600.0)
+    lifecycle_sse_subscriber_queue_capacity: int = Field(default=1000, ge=10, le=100_000)
     lifecycle_lookup_timeout_seconds: float = Field(default=5.0, gt=0.0, le=60.0)
-    # Payload capture is OFF by default — events carry sizes/lengths only.
-    # Enable `lifecycle_capture_payloads` to capture POST-sanitization text.
-    # Enable `lifecycle_capture_raw_input` (separately, security-sensitive) to
-    # capture the raw inbound text on RequestStarted.
-    lifecycle_capture_payloads: bool = False
+    # Sanitized payload capture is ON by default so the dashboard can render
+    # stage diffs and backend responses without extra operator setup.
+    # `lifecycle_capture_raw_input` remains separate and security-sensitive:
+    # enable it explicitly to capture raw inbound text on RequestStarted.
+    lifecycle_capture_payloads: bool = True
     lifecycle_capture_raw_input: bool = False
 
     # Dashboard data plane (additive HTTP routes + filtered SSE).
@@ -125,12 +121,30 @@ class ServiceSettings(BaseSettings):
     dashboard_origins: list[str] = Field(default_factory=list)
     dashboard_max_request_page_size: int = Field(default=200, ge=1, le=1000)
     dashboard_max_debug_page_size: int = Field(default=200, ge=1, le=1000)
-    dashboard_decision_record_queue_capacity: int = Field(
-        default=1000, ge=10, le=100_000
-    )
-    dashboard_debug_entry_queue_capacity: int = Field(
-        default=5000, ge=10, le=100_000
-    )
+    dashboard_decision_record_queue_capacity: int = Field(default=1000, ge=10, le=100_000)
+    dashboard_debug_entry_queue_capacity: int = Field(default=5000, ge=10, le=100_000)
+
+    # Stale-live sweeper. The sweeper finds rows in `request_summaries` with
+    # `live=1` whose `last_event_at` is older than `stale_threshold_seconds`,
+    # emits a `RequestErrored` event for each, and lets the projector flip
+    # the row to `live=0 status=errored`. Set
+    # `request_summary_sweep_interval_seconds` to 0 (or any value <= 0) to
+    # disable the sweeper entirely — useful for dev sessions that want stuck
+    # rows to persist for inspection.
+    #
+    # Env vars:
+    #   ARC_GUARD_SERVICE_REQUEST_SUMMARY_STALE_THRESHOLD_SECONDS
+    #   ARC_GUARD_SERVICE_REQUEST_SUMMARY_SWEEP_INTERVAL_SECONDS
+    request_summary_stale_threshold_seconds: int = Field(default=600, ge=1)
+    request_summary_sweep_interval_seconds: int = Field(default=60, ge=0)
+
+    # Inspector-vote threshold for CRITICAL band escalation. When set above 1,
+    # a CRITICAL-severity finding from a single inspector demotes to HIGH so
+    # the run produces a redact + refusal envelope instead of a hard block.
+    # Defends against single-inspector false positives (e.g. heuristic
+    # jailbreak detector firing on benign prompt-injection-shaped phrasings).
+    # Env var: ARC_GUARD_SERVICE_MIN_INSPECTORS_FOR_CRITICAL
+    min_inspectors_for_critical: int = Field(default=1, ge=1, le=10)
 
     @field_validator("dashboard_origins", mode="before")
     @classmethod
@@ -149,37 +163,23 @@ class ServiceSettings(BaseSettings):
         rejected at the CORS layer."""
         for entry in value:
             if "*" in entry:
-                raise ValueError(
-                    f'invalid origin "{entry}": wildcard not allowed'
-                )
+                raise ValueError(f'invalid origin "{entry}": wildcard not allowed')
             if entry.endswith("/"):
-                raise ValueError(
-                    f'invalid origin "{entry}": trailing slash not allowed'
-                )
+                raise ValueError(f'invalid origin "{entry}": trailing slash not allowed')
             try:
                 parsed = urlparse(entry)
             except ValueError as exc:
                 raise ValueError(f'invalid origin "{entry}": {exc}') from exc
             if parsed.scheme not in ("http", "https"):
-                raise ValueError(
-                    f'invalid origin "{entry}": scheme must be http or https'
-                )
+                raise ValueError(f'invalid origin "{entry}": scheme must be http or https')
             if not parsed.netloc:
-                raise ValueError(
-                    f'invalid origin "{entry}": missing host component'
-                )
+                raise ValueError(f'invalid origin "{entry}": missing host component')
             if parsed.path:
-                raise ValueError(
-                    f'invalid origin "{entry}": path component not allowed'
-                )
+                raise ValueError(f'invalid origin "{entry}": path component not allowed')
             if parsed.query:
-                raise ValueError(
-                    f'invalid origin "{entry}": query component not allowed'
-                )
+                raise ValueError(f'invalid origin "{entry}": query component not allowed')
             if parsed.fragment:
-                raise ValueError(
-                    f'invalid origin "{entry}": fragment component not allowed'
-                )
+                raise ValueError(f'invalid origin "{entry}": fragment component not allowed')
         return value
 
 

@@ -112,9 +112,7 @@ def test_every_non_root_parent_id_resolves_to_an_event_in_the_envelope(
     ids = {e.id for e in events}
     for ev in events[1:]:
         assert ev.parent_id is not None, f"non-root event {ev.event_type} missing parent_id"
-        assert ev.parent_id in ids, (
-            f"dangling parent_id={ev.parent_id} on {ev.event_type}"
-        )
+        assert ev.parent_id in ids, f"dangling parent_id={ev.parent_id} on {ev.event_type}"
 
 
 def test_blocked_request_omits_post_process_events(client: TestClient) -> None:
@@ -158,9 +156,7 @@ def test_pii_request_records_payload_rewritten_with_swap_origin_cross_ref(
         "/v1/chat/completions",
         json={
             "model": "demo",
-            "messages": [
-                {"role": "user", "content": "My email is alice@example.com please"}
-            ],
+            "messages": [{"role": "user", "content": "My email is alice@example.com please"}],
         },
         headers={"x-request-id": rid},
     )

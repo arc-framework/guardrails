@@ -1,0 +1,24 @@
+========================================================================
+Corpus replay summary
+========================================================================
+Total prompts        : 5
+Matched expected     : 0  (0%)
+Mismatched           : 4
+Errored (HTTP/raise) : 1
+Skipped (extra dep)  : 0
+Elapsed              : 70.85 s
+Records written      : /Users/dgtalbug/Workspace/arc/sdk/tools/.corpus-replay/20260510T102429Z.jsonl
+
+By inspector:
+  code_injection_shell        5
+
+Mismatches:
+  - code_injection_shell__easy__01
+      findings: expected=['SHELL_INJECTION'] actual=['shell.command_substitution']
+  - code_injection_shell__easy__02
+      findings: expected=['SHELL_INJECTION'] actual=['shell.command_chaining']
+  - code_injection_shell__easy__03
+      findings: expected=['SHELL_INJECTION'] actual=['shell.command_chaining', 'shell.command_substitution']
+  - code_injection_shell__easy__04
+      findings: expected=['SHELL_INJECTION'] actual=['shell.command_substitution']
+========================================================================

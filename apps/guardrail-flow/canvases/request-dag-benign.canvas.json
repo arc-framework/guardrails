@@ -1,0 +1,349 @@
+{
+  "nodes": [
+    {
+      "id": "title",
+      "type": "text",
+      "text": "# UC1 · Benign Chat — Request DAG\nAll inspectors clean — 0 findings. Route decides `action = pass`. Backend called with the original payload unchanged. No redaction, no block.",
+      "x": -1200,
+      "y": -520,
+      "width": 2340,
+      "height": 80,
+      "color": "5"
+    },
+    {
+      "id": "legend",
+      "type": "text",
+      "text": "cyan = phase boundaries  ·  green = stage events  ·  orange = decisions  ·  yellow = backend  ·  small gray = inert / no-op",
+      "x": -1200,
+      "y": -428,
+      "width": 2340,
+      "height": 38
+    },
+    {
+      "id": "input_msg",
+      "type": "text",
+      "text": "**Conversation · 3 turns**\n\n→  \"What’s the difference between REST and GraphQL?\"\n\n   ←  \"REST uses fixed endpoints per resource; GraphQL uses a single typed endpoint — both HTTP-based.\"\n\n→  \"Which should I use for a mobile app that needs deeply nested data?\"\n   ↑ 0 findings · action = pass",
+      "x": -150,
+      "y": -390,
+      "width": 420,
+      "height": 205,
+      "color": "5"
+    },
+    {
+      "id": "req_start",
+      "type": "text",
+      "text": "## RequestStarted\n`rid = a1b2c3d4`\n`route = /v1/chat/completions`\n`model = llama3.2  input = 18 bytes`",
+      "x": -150,
+      "y": -40,
+      "width": 300,
+      "height": 90,
+      "color": "5"
+    },
+    {
+      "id": "pre_start",
+      "type": "text",
+      "text": "**PreProcessStarted**\n`correlation_id = aabbcc11`\n`decision_id = 00112233`",
+      "x": -560,
+      "y": -40,
+      "width": 260,
+      "height": 75,
+      "color": "5"
+    },
+    {
+      "id": "stage_defend",
+      "type": "text",
+      "text": "*defend · 0.3 ms · no-op*",
+      "x": -860,
+      "y": -340,
+      "width": 220,
+      "height": 38
+    },
+    {
+      "id": "stage_classify",
+      "type": "text",
+      "text": "**CLASSIFY** · `22.1 ms`\n`InspectorRan × 3 — 0 findings`",
+      "x": -860,
+      "y": -280,
+      "width": 220,
+      "height": 60,
+      "color": "4"
+    },
+    {
+      "id": "stage_deception",
+      "type": "text",
+      "text": "*deception · 0.2 ms · inert*",
+      "x": -860,
+      "y": -180,
+      "width": 220,
+      "height": 38
+    },
+    {
+      "id": "stage_sanitize",
+      "type": "text",
+      "text": "*sanitize · 0.1 ms · no-op*",
+      "x": -860,
+      "y": -120,
+      "width": 220,
+      "height": 38
+    },
+    {
+      "id": "stage_route",
+      "type": "text",
+      "text": "**ROUTE** · `0.1 ms`\n`action = pass`",
+      "x": -860,
+      "y": -52,
+      "width": 220,
+      "height": 50,
+      "color": "5"
+    },
+    {
+      "id": "stage_execute",
+      "type": "text",
+      "text": "**EXECUTE** · `0.1 ms`\n`no strategy applied`",
+      "x": -860,
+      "y": 48,
+      "width": 220,
+      "height": 50,
+      "color": "4"
+    },
+    {
+      "id": "stage_verify",
+      "type": "text",
+      "text": "*verify · 0.3 ms · inert*",
+      "x": -860,
+      "y": 148,
+      "width": 220,
+      "height": 38
+    },
+    {
+      "id": "stage_rehydrate",
+      "type": "text",
+      "text": "*rehydrate · 0.0 ms · no-op*",
+      "x": -860,
+      "y": 206,
+      "width": 220,
+      "height": 38
+    },
+    {
+      "id": "policy_res",
+      "type": "text",
+      "text": "**PolicyResolved**\n`max_risk = NONE`\n`action = pass`",
+      "x": -1180,
+      "y": -52,
+      "width": 270,
+      "height": 75,
+      "color": "2"
+    },
+    {
+      "id": "pre_done",
+      "type": "text",
+      "text": "**PreProcessCompleted**\n`action = pass  blocked = false`\n`total_ms = 23.0`",
+      "x": -560,
+      "y": 330,
+      "width": 260,
+      "height": 75,
+      "color": "5"
+    },
+    {
+      "id": "backend_called",
+      "type": "text",
+      "text": "**BackendCalled**\n`ollama  llama3.2`\n`payload_msg_count = 1`",
+      "x": 260,
+      "y": 0,
+      "width": 260,
+      "height": 75,
+      "color": "3"
+    },
+    {
+      "id": "backend_resp",
+      "type": "text",
+      "text": "### BackendResponded\n`2,810 ms`\n`http_status = 200`\n`142 chars  stop`",
+      "x": 600,
+      "y": 0,
+      "width": 260,
+      "height": 100,
+      "color": "3"
+    },
+    {
+      "id": "post_start",
+      "type": "text",
+      "text": "**PostProcessStarted**\n`correlation_id = bb334455`",
+      "x": 260,
+      "y": 160,
+      "width": 260,
+      "height": 60,
+      "color": "5"
+    },
+    {
+      "id": "post_done",
+      "type": "text",
+      "text": "**PostProcessCompleted**\n`action = pass  total_ms = 6.2`",
+      "x": 260,
+      "y": 280,
+      "width": 260,
+      "height": 60,
+      "color": "5"
+    },
+    {
+      "id": "decision",
+      "type": "text",
+      "text": "**DecisionEmitted**\n`action = pass`\n`max_risk = NONE`",
+      "x": -150,
+      "y": 200,
+      "width": 260,
+      "height": 80,
+      "color": "2"
+    },
+    {
+      "id": "resp_assembled",
+      "type": "text",
+      "text": "**ResponseAssembled**\n`arc_guard.blocked = false`\n`finish_reason = stop`",
+      "x": -150,
+      "y": 340,
+      "width": 260,
+      "height": 75,
+      "color": "3"
+    },
+    {
+      "id": "req_complete",
+      "type": "text",
+      "text": "## RequestCompleted\n`blocked = false`\n`pre = pass  post = pass`\n`total_ms = 2,839`",
+      "x": -150,
+      "y": 480,
+      "width": 260,
+      "height": 90,
+      "color": "5"
+    },
+    {
+      "id": "report_flushed",
+      "type": "text",
+      "text": "*ReportFlushed  async*\n`LogReporter  fanout=1  failures=0`",
+      "x": -150,
+      "y": 630,
+      "width": 260,
+      "height": 55
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_input",
+      "fromNode": "input_msg",
+      "fromSide": "bottom",
+      "toNode": "req_start",
+      "toSide": "top",
+      "animated": true,
+      "color": "5",
+      "label": "①"
+    },
+    {
+      "id": "c1",
+      "fromNode": "req_start",
+      "fromSide": "left",
+      "toNode": "pre_start",
+      "toSide": "right",
+      "animated": true,
+      "label": "②"
+    },
+    {
+      "id": "c2",
+      "fromNode": "pre_start",
+      "fromSide": "left",
+      "toNode": "stage_classify",
+      "toSide": "right",
+      "animated": true,
+      "color": "5",
+      "label": "③ classify"
+    },
+    {
+      "id": "c3",
+      "fromNode": "pre_start",
+      "fromSide": "left",
+      "toNode": "stage_route",
+      "toSide": "right"
+    },
+    {
+      "id": "c4",
+      "fromNode": "pre_start",
+      "fromSide": "left",
+      "toNode": "stage_execute",
+      "toSide": "right"
+    },
+    {
+      "id": "c5",
+      "fromNode": "stage_route",
+      "fromSide": "left",
+      "toNode": "policy_res",
+      "toSide": "right"
+    },
+    {
+      "id": "c6",
+      "fromNode": "pre_start",
+      "fromSide": "bottom",
+      "toNode": "pre_done",
+      "toSide": "top"
+    },
+    {
+      "id": "c7",
+      "fromNode": "req_start",
+      "fromSide": "right",
+      "toNode": "backend_called",
+      "toSide": "left",
+      "animated": true,
+      "color": "5",
+      "label": "④ backend"
+    },
+    {
+      "id": "c8",
+      "fromNode": "backend_called",
+      "fromSide": "right",
+      "toNode": "backend_resp",
+      "toSide": "left",
+      "animated": true
+    },
+    {
+      "id": "c9",
+      "fromNode": "backend_called",
+      "fromSide": "bottom",
+      "toNode": "post_start",
+      "toSide": "top"
+    },
+    {
+      "id": "c10",
+      "fromNode": "post_start",
+      "fromSide": "bottom",
+      "toNode": "post_done",
+      "toSide": "top"
+    },
+    {
+      "id": "c11",
+      "fromNode": "req_start",
+      "fromSide": "bottom",
+      "toNode": "decision",
+      "toSide": "top",
+      "label": "⑤ decide"
+    },
+    {
+      "id": "c12",
+      "fromNode": "decision",
+      "fromSide": "bottom",
+      "toNode": "resp_assembled",
+      "toSide": "top"
+    },
+    {
+      "id": "c13",
+      "fromNode": "resp_assembled",
+      "fromSide": "bottom",
+      "toNode": "req_complete",
+      "toSide": "top",
+      "animated": true,
+      "label": "⑥ done"
+    },
+    {
+      "id": "c14",
+      "fromNode": "req_complete",
+      "fromSide": "bottom",
+      "toNode": "report_flushed",
+      "toSide": "top"
+    }
+  ]
+}

@@ -87,7 +87,6 @@ def test_operator_setup_block_stays_compact() -> None:
     """The full setup block above must fit comfortably under 50 LOC."""
     src = inspect.getsource(_operator_setup_block)
     meaningful = sum(
-        1 for line in src.splitlines()
-        if line.strip() and not line.strip().startswith("#")
+        1 for line in src.splitlines() if line.strip() and not line.strip().startswith("#")
     )
     assert meaningful < 50, f"_operator_setup_block is {meaningful} meaningful LOC"

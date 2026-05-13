@@ -60,13 +60,11 @@ async def test_http_transport_overhead_p99_under_budget() -> None:
     p99 = durations_sorted[min(p99_index, len(durations_sorted) - 1)]
 
     print(
-        f"HTTP transport overhead: n={len(durations_ms)} "
-        f"p50={p50:.3f}ms p99={p99:.3f}ms",
+        f"HTTP transport overhead: n={len(durations_ms)} p50={p50:.3f}ms p99={p99:.3f}ms",
     )
 
     assert p99 < _TRANSPORT_OVERHEAD_BUDGET_MS_P99, (
-        f"transport overhead p99={p99:.3f}ms exceeds budget "
-        f"{_TRANSPORT_OVERHEAD_BUDGET_MS_P99}ms"
+        f"transport overhead p99={p99:.3f}ms exceeds budget {_TRANSPORT_OVERHEAD_BUDGET_MS_P99}ms"
     )
 
 
@@ -83,8 +81,7 @@ def test_create_app_boot_under_budget() -> None:
     print(f"create_app boot: n={len(durations_s)} median={median_boot:.3f}s")
 
     assert median_boot < _BOOT_BUDGET_S, (
-        f"create_app boot median={median_boot:.3f}s exceeds budget "
-        f"{_BOOT_BUDGET_S}s"
+        f"create_app boot median={median_boot:.3f}s exceeds budget {_BOOT_BUDGET_S}s"
     )
 
 
@@ -128,6 +125,4 @@ def test_run_guard_overhead_under_budget() -> None:
     # The no-loop branch boots an asyncio loop per call; this is acknowledged
     # in the contract (~1-2ms typical). The budget is generous to keep the
     # benchmark stable across CI hardware.
-    assert sync_p50 < 5.0, (
-        f"run_guard sync p50={sync_p50:.3f}ms exceeds 5ms budget"
-    )
+    assert sync_p50 < 5.0, f"run_guard sync p50={sync_p50:.3f}ms exceeds 5ms budget"

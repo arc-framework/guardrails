@@ -35,9 +35,7 @@ class TokenizeStrategy:
 
         # Apply right-to-left so offsets stay stable
         out = text
-        for _finding_idx, replacement, start, end in sorted(
-            replacements, key=lambda r: -r[2]
-        ):
+        for _finding_idx, replacement, start, end in sorted(replacements, key=lambda r: -r[2]):
             out = out[:start] + replacement + out[end:]
 
         decisions = tuple(

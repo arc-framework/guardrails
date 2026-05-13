@@ -40,19 +40,38 @@ def _now() -> datetime:
 
 async def _seed_burst(sink: SqliteLifecycleSink, rid: str) -> None:
     root = RequestStarted(
-        id=new_event_id(), parent_id=None, seq=0, ts=_now(), rid=rid,
-        route="/v1/chat/completions", model="echo", msg_count=1, input_size_bytes=20,
+        id=new_event_id(),
+        parent_id=None,
+        seq=0,
+        ts=_now(),
+        rid=rid,
+        route="/v1/chat/completions",
+        model="echo",
+        msg_count=1,
+        input_size_bytes=20,
     )
     await sink.emit(root)
     pre = PreProcessStarted(
-        id=new_event_id(), parent_id=root.id, seq=1, ts=_now(), rid=rid,
-        correlation_id="corr-" + rid, decision_id="",
+        id=new_event_id(),
+        parent_id=root.id,
+        seq=1,
+        ts=_now(),
+        rid=rid,
+        correlation_id="corr-" + rid,
+        decision_id="",
     )
     await sink.emit(pre)
     await sink.emit(
         RequestCompleted(
-            id=new_event_id(), parent_id=root.id, seq=2, ts=_now(), rid=rid,
-            blocked=False, pre_action="pass", post_action="pass", total_duration_ms=1.0,
+            id=new_event_id(),
+            parent_id=root.id,
+            seq=2,
+            ts=_now(),
+            rid=rid,
+            blocked=False,
+            pre_action="pass",
+            post_action="pass",
+            total_duration_ms=1.0,
         )
     )
 

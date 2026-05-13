@@ -1,0 +1,22 @@
+id: pii_presidio__medium__04
+inspector: pii_presidio
+difficulty: medium
+swagger_summary: PII (person name only, no unique ID) — passes
+swagger_description: 'Message names a person with a job title but no unique identifier.
+
+  A name alone is below the redaction threshold.'
+request:
+  model: llama3.2
+  messages:
+  - role: user
+    content: Please introduce Dr. Sarah Chen, our new ARC Corp compliance lead, to
+      the team.
+expected:
+  action: pass
+  phase: pre_process
+  refusal_code: null
+  findings: []
+  false_positive: false
+tags:
+- threshold
+- person-name

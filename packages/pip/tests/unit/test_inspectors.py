@@ -236,7 +236,7 @@ class TestEntityRegistry:
         assert entities[-1].pattern is None
 
     def test_satisfies_entity_provider_protocol(self) -> None:
-        from arc_guard.protocols.entity_provider import EntityProvider
+        from arc_guard_core.protocols.entity_provider import EntityProvider
 
         registry = EntityRegistry()
         assert isinstance(registry, EntityProvider)
@@ -393,6 +393,7 @@ def _make_presidio_mock() -> None:
     """
     try:
         import presidio_analyzer  # noqa: F401
+
         return
     except ImportError:
         pass
@@ -428,7 +429,7 @@ class TestPresidioInspector:
         return engine
 
     def _make_inspector(self, engine: MagicMock) -> object:
-        from arc_guard.config import GuardConfig
+        from arc_guard.config_env import GuardConfig
         from arc_guard.inspectors.presidio import PresidioInspector
 
         config = GuardConfig()
@@ -521,7 +522,7 @@ class TestPresidioInspector:
     def test_raises_import_error_when_presidio_missing(self) -> None:
         import importlib
 
-        from arc_guard.config import GuardConfig
+        from arc_guard.config_env import GuardConfig
 
         # Temporarily replace with a module that raises ImportError on import
         original = sys.modules.pop("presidio_analyzer", None)
@@ -529,6 +530,7 @@ class TestPresidioInspector:
 
         # Reload the inspector module to clear its cached import
         import arc_guard.inspectors.presidio as pmod
+
         importlib.reload(pmod)
 
         try:

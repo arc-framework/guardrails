@@ -31,24 +31,16 @@ _MUTATION_METHODS = ("POST", "PUT", "DELETE", "PATCH")
 async def client(tmp_path: Path):
     db = tmp_path / "arc_guardrail.db"
     SqliteLifecycleSink(str(db))
-    settings = ServiceSettings(
-        enable_chat_completions=False, lifecycle_sqlite_path=str(db)
-    )
+    settings = ServiceSettings(enable_chat_completions=False, lifecycle_sqlite_path=str(db))
     app = create_app(settings)
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
 
 
 @pytest.mark.parametrize("route", _ROUTES)
 @pytest.mark.parametrize("method", _MUTATION_METHODS)
 @pytest.mark.asyncio
-async def test_mutation_method_returns_405(
-    client, route: str, method: str
-) -> None:
+async def test_mutation_method_returns_405(client, route: str, method: str) -> None:
     resp = await client.request(method, route)
-    assert resp.status_code == 405, (
-        f"{method} {route} returned {resp.status_code}; expected 405"
-    )
+    assert resp.status_code == 405, f"{method} {route} returned {resp.status_code}; expected 405"

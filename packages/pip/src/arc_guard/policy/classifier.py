@@ -34,9 +34,23 @@ class RiskClassifier:
         for f in findings:
             per_level[f.risk_level] = per_level.get(f.risk_level, 0) + 1
 
-        # Per-finding ceiling
-        if per_level.get(RiskLevel.CRITICAL, 0) >= thresholds.critical_escalates_at:
-            return RiskBand.CRITICAL, None
+        # Per-finding ceiling, gated by an inspector-vote requirement.
+        # When more than one inspector must agree before the band escalates
+        # to CRITICAL, single-inspector CRITICAL findings demote to HIGH so
+        # the run still surfaces a refusal envelope but the aggregate action
+        # falls back to redact instead of a hard block.
+        crit_count = per_level.get(RiskLevel.CRITICAL, 0)
+        if crit_count >= thresholds.critical_escalates_at:
+            crit_inspectors = {
+                f.inspector for f in findings if f.risk_level == RiskLevel.CRITICAL
+            }
+            if len(crit_inspectors) >= thresholds.min_inspectors_for_critical:
+                return RiskBand.CRITICAL, None
+            return RiskBand.HIGH, (
+                f"vote_downgrade:critical→high "
+                f"({len(crit_inspectors)} distinct inspector(s); "
+                f"need {thresholds.min_inspectors_for_critical})"
+            )
         if per_level.get(RiskLevel.HIGH, 0) >= thresholds.high_escalates_at:
             return RiskBand.HIGH, None
 

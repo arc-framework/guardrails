@@ -57,16 +57,11 @@ def force_missing_semantic_extra(monkeypatch: pytest.MonkeyPatch) -> None:
         fromlist: Any = (),
         level: int = 0,
     ) -> Any:
-        if name in encoder_modules or (
-            name.startswith("arc_guard.middleware.semantic.encoder")
-        ):
+        if name in encoder_modules or (name.startswith("arc_guard.middleware.semantic.encoder")):
             raise ImportError(f"forced missing: {name}")
         if name == "arc_guard.middleware.semantic.encoder":
             raise ImportError(f"forced missing: {name}")
-        if (
-            name == "arc_guard.middleware.semantic"
-            and "encoder" in (fromlist or ())
-        ):
+        if name == "arc_guard.middleware.semantic" and "encoder" in (fromlist or ()):
             raise ImportError("forced missing: arc_guard.middleware.semantic.encoder")
         return real_import(name, globals, locals, fromlist, level)
 
@@ -113,7 +108,8 @@ def test_missing_extra_emits_structured_warning_event(
         logger=logger,
     )
     matching = [
-        ev for ev in logger.events
+        ev
+        for ev in logger.events
         if ev["name"] == GUARD_CONTENT_POLICY_SEMANTIC_EXTRA_MISSING_EVENT
     ]
     assert len(matching) == 1
@@ -134,7 +130,6 @@ def test_missing_extra_event_emitted_exactly_once(
         logger=logger,
     )
     count = sum(
-        1 for ev in logger.events
-        if ev["name"] == GUARD_CONTENT_POLICY_SEMANTIC_EXTRA_MISSING_EVENT
+        1 for ev in logger.events if ev["name"] == GUARD_CONTENT_POLICY_SEMANTIC_EXTRA_MISSING_EVENT
     )
     assert count == 1

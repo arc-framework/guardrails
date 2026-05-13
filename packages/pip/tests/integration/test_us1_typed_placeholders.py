@@ -55,8 +55,12 @@ def test_five_distinct_entity_types_yield_five_placeholders() -> None:
 
     # Zero raw entity bytes (≥4-char substrings) leaked.
     raw_substrings = [
-        "Alice Johnson", "alice@acme", "Helios",
-        "4111-1111", "1111-1111", "123-45-6789",
+        "Alice Johnson",
+        "alice@acme",
+        "Helios",
+        "4111-1111",
+        "1111-1111",
+        "123-45-6789",
     ]
     for raw in raw_substrings:
         assert raw not in out, f"raw substring leaked: {raw!r} appears in {out!r}"

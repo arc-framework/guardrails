@@ -6,18 +6,39 @@
 
 PACKAGES_DIR := packages
 TOOLS_DIR    := tools
+UV           := env -u VIRTUAL_ENV uv
 
 .DEFAULT_GOAL := help
 
 .PHONY: help init install install-minimal \
         smoke \
+	docs-install docs-dev docs-build docs-preview \
         api-up api-down api-logs demo sse \
-        docker-build docker-up docker-up-prod docker-down docker-logs docker-nuke \
-        test test-core test-pip test-api \
-        lint lint-core lint-pip lint-api \
+        docker-build docker-up docker-up-prod docker-down docker-logs docker-nuke dashboard-logs \
+	test test-core test-pip test-api test-fast \
+	format format-core format-pip format-api \
+	dashboard-fix \
+	lint lint-core lint-pip lint-api lint-fix \
         typecheck typecheck-core typecheck-pip typecheck-api \
         boundary docs-links \
-        all ci clean clean-cache
+	all all-fix all-fast all-fast-fix ci ci-fast ci-fast-fix fix ci-fix clean clean-cache
+
+FIX ?= 0
+TEST_JOBS ?= 3
+ALL_JOBS ?= 5
+DOCS_PM ?= pnpm
+
+RUFF_CHECK_FLAGS :=
+DASHBOARD_LINT_SCRIPT := lint
+DASHBOARD_FORMAT_SCRIPT := format
+AUTO_FIX_TARGETS :=
+
+ifeq ($(FIX),1)
+RUFF_CHECK_FLAGS := --fix
+DASHBOARD_LINT_SCRIPT := lint:fix
+DASHBOARD_FORMAT_SCRIPT := format:fix
+AUTO_FIX_TARGETS := format
+endif
 
 help:
 	@echo "arc-guardrails — common make targets"
@@ -33,6 +54,12 @@ help:
 	@echo "Quick checks:"
 	@echo "  smoke              run the canonical in-process flow end-to-end (~2s)"
 	@echo
+	@echo "Documentation site:"
+	@echo "  docs-install       install VitePress docs dependencies at the repo root"
+	@echo "  docs-dev           start the docs site locally on 127.0.0.1:5174"
+	@echo "  docs-build         build the docs site for production"
+	@echo "  docs-preview       preview the built docs site on 127.0.0.1:4174"
+	@echo
 	@echo "Live api (OpenAI-compatible chat-completions service):"
 	@echo "  api-up             boot the api on 127.0.0.1:8766 (BACKEND=echo by default)"
 	@echo "                       CAPTURE=1 make api-up  # populate raw_input/text_after/response_text on events"
@@ -42,19 +69,25 @@ help:
 	@echo "  sse                live terminal dashboard for the /events SSE feed (foreground; Ctrl-C to stop)"
 	@echo "                       SSE_URL=http://host:port/events make sse  # point at a different api"
 	@echo
-	@echo "Docker (full Compose stack — api + ollama + llama3.2 + sqlite-ui):"
-	@echo "  docker-build       build the arc-guard-service image"
-	@echo "  docker-up          boot dev profile (api + ollama + sqlite-web DB browser); auto-pulls llama3.2 ~2GB on first run"
-	@echo "  docker-up-prod     boot prod profile (DB browser suppressed)"
+	@echo "Docker (full Compose stack — api + ollama + llama3.2 + sqlite-ui + dashboard):"
+	@echo "  docker-build       build the arc-guardrail-service image"
+	@echo "  docker-up          boot dev profile (api + ollama + sqlite-web + GuardRailFlow dashboard); auto-pulls llama3.2 ~2GB on first run"
+	@echo "  docker-up-prod     boot prod profile (DB browser + dashboard suppressed)"
 	@echo "  docker-down        stop the stack"
 	@echo "  docker-logs        follow the api container's logs"
+	@echo "  dashboard-logs     follow the GuardRailFlow dashboard container's logs"
 	@echo "  docker-nuke        DESTRUCTIVE: stop stack + remove volumes + remove project images (frees ~5-6GB)"
 	@echo
 	@echo "Per-package quality gates:"
 	@echo "  test               pytest for core + pip + api"
+	@echo "  test-fast          same tests, but runs core + pip + api in parallel"
+	@echo "  format             ruff format for core + pip + api"
 	@echo "  lint               ruff check for core + pip + api"
+	@echo "  lint-fix           ruff check --fix for core + pip + api"
 	@echo "  typecheck          mypy for core + pip + api"
+	@echo "  dashboard-fix      dashboard typecheck + eslint --fix + prettier --write + vitest"
 	@echo "  test-core / test-pip / test-api          single-package pytest"
+	@echo "  format-core / format-pip / format-api    single-package ruff format"
 	@echo "  lint-core / lint-pip / lint-api          single-package ruff"
 	@echo "  typecheck-core / typecheck-pip / typecheck-api    single-package mypy"
 	@echo
@@ -64,7 +97,17 @@ help:
 	@echo
 	@echo "Aggregate:"
 	@echo "  all                lint + typecheck + test + boundary"
+	@echo "  all-fix            same as 'fix'"
+	@echo "  all-fast           same aggregate checks, but parallelized across top-level gates"
+	@echo "  all-fast-fix       format first, then run the aggregate checks in parallel with fixes enabled"
 	@echo "  ci                 alias for 'all'"
+	@echo "  ci-fast            alias for 'all-fast'"
+	@echo "  ci-fast-fix        alias for 'all-fast-fix'"
+	@echo "  fix                run 'all' with auto-fix enabled where supported"
+	@echo "  ci-fix             alias for 'fix'"
+	@echo "  all FIX=1          same as 'fix' (GNU make cannot accept 'make all --fix')"
+	@echo "  TEST_JOBS=4 make test-fast   override parallelism for tests"
+	@echo "  ALL_JOBS=6 make all-fast     override parallelism for the aggregate run"
 	@echo
 	@echo "Cleanup:"
 	@echo "  clean              remove __pycache__ / .pytest_cache / .ruff_cache / .mypy_cache / *.egg-info / api log"
@@ -80,7 +123,7 @@ help:
 # directly without prefixing every command with `cd packages && uv run`.
 
 init:
-	@cd $(PACKAGES_DIR) && uv sync --all-extras --dev
+	@cd $(PACKAGES_DIR) && $(UV) sync --all-extras --dev
 	@echo
 	@echo "Workspace venv ready at packages/.venv"
 	@echo
@@ -91,15 +134,29 @@ init:
 	@echo "  Cmd+Shift+P → 'Python: Select Interpreter' → packages/.venv/bin/python"
 	@echo
 	@echo "Or skip activation entirely and use uv:"
-	@echo "  cd packages && uv run pytest"
+	@echo "  cd packages && env -u VIRTUAL_ENV uv run pytest"
 
 install: init
 
 install-minimal:
-	@cd $(PACKAGES_DIR) && uv sync --dev
+	@cd $(PACKAGES_DIR) && $(UV) sync --dev
 	@echo
 	@echo "Workspace venv ready at packages/.venv (no optional extras)."
 	@echo "Activate: source packages/.venv/bin/activate"
+
+# ---------- Documentation site ----------
+
+docs-install:
+	@$(DOCS_PM) install
+
+docs-dev:
+	@$(DOCS_PM) docs:dev
+
+docs-build:
+	@$(DOCS_PM) docs:build
+
+docs-preview:
+	@$(DOCS_PM) docs:preview
 
 # ---------- Smoke ----------
 #
@@ -107,7 +164,7 @@ install-minimal:
 # arc-guard library entrypoint. ~2s. No HTTP, no Docker, no extras.
 
 smoke:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python -c "from arc_guard.pipeline import GuardPipeline; import asyncio; from arc_guard_core.types import GuardInput; result = asyncio.run(GuardPipeline().pre_process(GuardInput(text='hello world'))); print(f'smoke ok: action={result.action}')"
+	cd $(PACKAGES_DIR) && $(UV) run --package arc-guard python -c "from arc_guard.pipeline import GuardPipeline; import asyncio; from arc_guard_core.types import GuardInput; result = asyncio.run(GuardPipeline().pre_process(GuardInput(text='hello world'))); print(f'smoke ok: action={result.action}')"
 
 # ---------- arc-guard-service (live local) ----------
 #
@@ -135,13 +192,13 @@ api-up:
 	@cd $(PACKAGES_DIR) && \
 	  ARC_GUARD_SERVICE_BIND=$(API_HOST) ARC_GUARD_SERVICE_PORT=$(API_PORT) \
 	  $(CAPTURE_ENV) \
-	  nohup uv run --package arc-guard-service --extra fastapi \
+	  nohup $(UV) run --package arc-guard-service --extra fastapi \
 	  python -m arc_guard_service \
 	  > ../$(API_LOG_FILE) 2>&1 &
 	@until lsof -ti:$(API_PORT) >/dev/null 2>&1; do sleep 1; done
 	@echo "api up at http://$(API_HOST):$(API_PORT) (pid $$(lsof -ti:$(API_PORT))). log: $(API_LOG_FILE)"
 	@echo
-	@echo "  Guard endpoint:  POST http://$(API_HOST):$(API_PORT)/v1/guard"
+	@echo "  Legacy guard:    POST http://$(API_HOST):$(API_PORT)/v1/guard  (410 tombstone)"
 	@echo "  Chat endpoint:   POST http://$(API_HOST):$(API_PORT)/v1/chat/completions"
 	@echo "  Live events:     GET  http://$(API_HOST):$(API_PORT)/events"
 	@echo "  Lifecycle replay:GET  http://$(API_HOST):$(API_PORT)/lifecycle/{rid}"
@@ -165,7 +222,7 @@ api-logs:
 SSE_URL ?= http://$(API_HOST):$(API_PORT)/events
 
 sse:
-	@cd $(PACKAGES_DIR) && uv run python ../$(TOOLS_DIR)/sse_dashboard.py $(SSE_URL)
+	@cd $(PACKAGES_DIR) && $(UV) run python ../$(TOOLS_DIR)/sse_dashboard.py $(SSE_URL)
 
 demo:
 	@echo "===1. BENIGN==="
@@ -188,7 +245,7 @@ demo:
 
 # ---------- Docker — full stack with Ollama ----------
 #
-# docker-build      : build the arc-guard-service image
+# docker-build      : build the arc-guardrail-service image
 # docker-up         : DEV profile — api + ollama + auto-pulled llama3.2 + sqlite-web DB browser
 # docker-up-prod    : PROD profile — api + ollama only (sqlite-web suppressed)
 # docker-down       : stop the stack
@@ -197,7 +254,7 @@ demo:
 # For api without an LLM, use `make api-up` locally — faster than running
 # the container in isolation.
 
-DOCKER_IMAGE := arc-guard-service:dev
+DOCKER_IMAGE := arc-guardrail-service:dev
 COMPOSE_FILE := packages/api/docker-compose.yml
 
 docker-build:
@@ -211,13 +268,16 @@ docker-up:
 	@until curl -sf http://127.0.0.1:8766/ >/dev/null 2>&1; do sleep 1; done
 	@echo "waiting for sqlite-ui (dev profile) to respond on http://127.0.0.1:8081/ ..."
 	@until curl -sf http://127.0.0.1:8081/ >/dev/null 2>&1; do sleep 1; done
+	@echo "waiting for dashboard (GuardRailFlow) to respond on http://127.0.0.1:5173/ ..."
+	@until curl -sf http://127.0.0.1:5173/ >/dev/null 2>&1; do sleep 2; done
 	@echo
 	@echo "Stack up (dev profile):"
 	@echo "  api         http://127.0.0.1:8766"
 	@echo "  ollama      http://127.0.0.1:11434"
 	@echo "  sqlite-ui   http://127.0.0.1:8081  (DB browser; dev profile only)"
+	@echo "  dashboard   http://127.0.0.1:5173  (GuardRailFlow; dev profile only)"
 	@echo
-	@echo "  Guard endpoint:    POST http://127.0.0.1:8766/v1/guard"
+	@echo "  Legacy guard:      POST http://127.0.0.1:8766/v1/guard  (410 tombstone)"
 	@echo "  Chat endpoint:     POST http://127.0.0.1:8766/v1/chat/completions"
 	@echo "  Live events:       GET  http://127.0.0.1:8766/events"
 	@echo "  Lifecycle replay:  GET  http://127.0.0.1:8766/lifecycle/{rid}"
@@ -238,7 +298,7 @@ docker-up-prod:
 	@echo "  api      http://127.0.0.1:8766"
 	@echo "  ollama   http://127.0.0.1:11434"
 	@echo
-	@echo "  Guard endpoint:    POST http://127.0.0.1:8766/v1/guard"
+	@echo "  Legacy guard:      POST http://127.0.0.1:8766/v1/guard  (410 tombstone)"
 	@echo "  Chat endpoint:     POST http://127.0.0.1:8766/v1/chat/completions"
 	@echo "  Live events:       GET  http://127.0.0.1:8766/events"
 	@echo "  Lifecycle replay:  GET  http://127.0.0.1:8766/lifecycle/{rid}"
@@ -253,6 +313,9 @@ docker-down:
 docker-logs:
 	docker compose -f $(COMPOSE_FILE) logs -f api
 
+dashboard-logs:
+	docker compose -f $(COMPOSE_FILE) logs -f dashboard
+
 # docker-nuke — full teardown. DESTRUCTIVE: deletes the llama3.2 model cache
 # (~2GB) AND the entire lifecycle event history stored in api_lifecycle-data.
 # Removes every image this project has ever built (current + stale tags from
@@ -262,9 +325,9 @@ docker-nuke:
 	@echo "tearing down containers and named volumes (deletes lifecycle event history)..."
 	-docker compose -f $(COMPOSE_FILE) --profile dev --profile prod down --volumes --remove-orphans
 	@echo "removing any orphaned project volumes..."
-	-docker volume rm api_lifecycle-data api_ollama-models 2>/dev/null || true
+	-docker volume rm api_lifecycle-data api_ollama-models api_arc-guardrail-flow-modules 2>/dev/null || true
 	@echo "removing project images..."
-	-docker image rm $(DOCKER_IMAGE) arc-guard-api:dev api-api:latest 2>/dev/null || true
+	-docker image rm $(DOCKER_IMAGE) arc-guardrail-flow:dev 2>/dev/null || true
 	@echo "done. next 'make docker-up' will rebuild from scratch and re-pull llama3.2 (~2GB)."
 
 # ---------- Tests ----------
@@ -274,40 +337,57 @@ docker-nuke:
 
 test: test-core test-pip test-api
 
+test-fast:
+	@$(MAKE) -j$(TEST_JOBS) test-core test-pip test-api
+
 test-core:
-	cd $(PACKAGES_DIR)/core && uv run pytest tests/
+	cd $(PACKAGES_DIR)/core && $(UV) run pytest tests/
 
 test-pip:
-	cd $(PACKAGES_DIR)/pip && uv run pytest tests/
+	cd $(PACKAGES_DIR)/pip && $(UV) run pytest tests/
 
 test-api:
-	cd $(PACKAGES_DIR)/api && uv run pytest tests/
+	cd $(PACKAGES_DIR)/api && $(UV) run --extra fastapi pytest tests/
 
 # ---------- Lint ----------
 
+format: format-core format-pip format-api
+
+format-core:
+	cd $(PACKAGES_DIR)/core && $(UV) run ruff format src tests
+
+format-pip:
+	cd $(PACKAGES_DIR)/pip && $(UV) run ruff format src tests
+
+format-api:
+	cd $(PACKAGES_DIR)/api && $(UV) run ruff format src tests
+
 lint: lint-core lint-pip lint-api
 
+lint-fix:
+	@$(MAKE) lint FIX=1
+
 lint-core:
-	cd $(PACKAGES_DIR)/core && uv run ruff check src tests
+	cd $(PACKAGES_DIR)/core && $(UV) run ruff check $(RUFF_CHECK_FLAGS) src tests
 
 lint-pip:
-	cd $(PACKAGES_DIR)/pip && uv run ruff check src tests
+	cd $(PACKAGES_DIR)/pip && $(UV) run ruff check $(RUFF_CHECK_FLAGS) src tests
 
 lint-api:
-	cd $(PACKAGES_DIR)/api && uv run ruff check src tests
+	cd $(PACKAGES_DIR)/api && $(UV) run ruff check $(RUFF_CHECK_FLAGS) src tests
 
 # ---------- Typecheck ----------
 
 typecheck: typecheck-core typecheck-pip typecheck-api
 
 typecheck-core:
-	cd $(PACKAGES_DIR)/core && uv run mypy src
+	cd $(PACKAGES_DIR)/core && $(UV) run mypy src
 
 typecheck-pip:
-	cd $(PACKAGES_DIR)/pip && uv run mypy src
+	cd $(PACKAGES_DIR)/pip && $(UV) run mypy src
 
 typecheck-api:
-	cd $(PACKAGES_DIR)/api && uv run mypy src
+	cd $(PACKAGES_DIR)/api && $(UV) run mypy src
 
 # ---------- Boundary / docs ----------
 #
@@ -315,19 +395,56 @@ typecheck-api:
 # transitively pulls it in (arc-guard depends on arc-guard-core).
 
 boundary:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python ../$(TOOLS_DIR)/check_import_graph.py
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python ../$(TOOLS_DIR)/check_dependency_tree.py
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python ../$(TOOLS_DIR)/check_async_blocking.py
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python ../$(TOOLS_DIR)/check_adopt_vs_build.py
+	cd $(PACKAGES_DIR) && $(UV) run --package arc-guard python ../$(TOOLS_DIR)/check_import_graph.py
+	cd $(PACKAGES_DIR) && $(UV) run --package arc-guard python ../$(TOOLS_DIR)/check_dependency_tree.py
+	cd $(PACKAGES_DIR) && $(UV) run --package arc-guard python ../$(TOOLS_DIR)/check_async_blocking.py
+	cd $(PACKAGES_DIR) && $(UV) run --package arc-guard python ../$(TOOLS_DIR)/check_adopt_vs_build.py
 
 docs-links:
-	cd $(PACKAGES_DIR) && uv run --package arc-guard python ../$(TOOLS_DIR)/check_docs_links.py
+	cd $(PACKAGES_DIR) && $(UV) run --package arc-guard python ../$(TOOLS_DIR)/check_docs_links.py
+
+# ---------- Dashboard (apps/guardrail-flow) ----------
+
+DASHBOARD_DIR := apps/guardrail-flow
+
+dashboard-install:
+	cd $(DASHBOARD_DIR) && pnpm install
+
+dashboard-dev:
+	cd $(DASHBOARD_DIR) && pnpm dev
+
+dashboard-build:
+	cd $(DASHBOARD_DIR) && pnpm build
+
+dashboard-check:
+	cd $(DASHBOARD_DIR) && pnpm typecheck && pnpm $(DASHBOARD_LINT_SCRIPT) && pnpm $(DASHBOARD_FORMAT_SCRIPT) && pnpm test
+
+dashboard-fix:
+	@$(MAKE) dashboard-check FIX=1
 
 # ---------- Aggregate ----------
 
-all: lint typecheck test boundary
+all: $(AUTO_FIX_TARGETS) lint typecheck test boundary dashboard-check
+
+all-fix: fix
+
+all-fast:
+	@if [ "$(FIX)" = "1" ]; then $(MAKE) format; fi
+	@$(MAKE) -j$(ALL_JOBS) lint typecheck test boundary dashboard-check
+
+all-fast-fix:
+	@$(MAKE) all-fast FIX=1
 
 ci: all
+
+ci-fast: all-fast
+
+ci-fast-fix: all-fast-fix
+
+fix:
+	@$(MAKE) all FIX=1
+
+ci-fix: fix
 
 # ---------- Cleanup ----------
 

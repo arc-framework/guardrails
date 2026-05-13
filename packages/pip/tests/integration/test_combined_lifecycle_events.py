@@ -91,6 +91,7 @@ def test_content_policy_finding_metadata_carries_policy_name_and_exemplar_id() -
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires_code_injection
 async def test_code_injection_finding_metadata_carries_fingerprint() -> None:
     inspector = SqlInjectionInspector()
     attack = "SELECT * FROM users; DROP TABLE users; --"

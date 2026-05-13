@@ -26,8 +26,7 @@ def validate_strategies_registered(ruleset: PolicyRuleSet) -> None:
         if rule.strategy is not None:
             if not strategy_is_registered(rule.strategy):
                 raise ConfigCrossFieldError(
-                    f"PolicyRuleSet rule {rule.id!r} references unknown "
-                    f"strategy {rule.strategy!r}",
+                    f"PolicyRuleSet rule {rule.id!r} references unknown strategy {rule.strategy!r}",
                     code="config.cross_field_violation",
                     details={"rule_id": rule.id, "strategy": rule.strategy},
                 )
@@ -35,8 +34,7 @@ def validate_strategies_registered(ruleset: PolicyRuleSet) -> None:
             assert rule.selector is not None  # mutex validator guarantees this
             if not selector_is_registered(rule.selector):
                 raise ConfigCrossFieldError(
-                    f"PolicyRuleSet rule {rule.id!r} references unknown "
-                    f"selector {rule.selector!r}",
+                    f"PolicyRuleSet rule {rule.id!r} references unknown selector {rule.selector!r}",
                     code="config.cross_field_violation",
                     details={"rule_id": rule.id, "selector": rule.selector},
                 )

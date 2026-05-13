@@ -78,9 +78,7 @@ class RuleBasedPolicyRouter:
                 transformed_text=result.text,
                 decisions=(),
                 aggregate_action=(
-                    "pass"
-                    if ruleset.default_action_when_no_rules_fire == "pass"
-                    else "block"
+                    "pass" if ruleset.default_action_when_no_rules_fire == "pass" else "block"
                 ),
                 aggregate_band=RiskBand.LOW,
                 refusal=None,
@@ -98,8 +96,7 @@ class RuleBasedPolicyRouter:
             candidates = [
                 rule
                 for rule in ruleset.rules
-                if rule.match == finding.entity_type
-                and finding.risk_level >= rule.severity_floor
+                if rule.match == finding.entity_type and finding.risk_level >= rule.severity_floor
             ]
             if not candidates:
                 continue
@@ -109,13 +106,8 @@ class RuleBasedPolicyRouter:
             strategy_name = self._resolve_strategy_name(winner, finding, result)
             rationale = winner.rationale_template or f"applied {strategy_name}"
             if losers:
-                loser_ids = ", ".join(
-                    f"{lr.id}({lr.strategy or lr.selector})" for lr in losers
-                )
-                rationale = (
-                    f"{rationale} | rule {winner.id}({strategy_name}) "
-                    f"overrode {loser_ids}"
-                )
+                loser_ids = ", ".join(f"{lr.id}({lr.strategy or lr.selector})" for lr in losers)
+                rationale = f"{rationale} | rule {winner.id}({strategy_name}) overrode {loser_ids}"
             decision_metadata: dict[str, object] = {"firing_rule_id": winner.id}
             if winner.selector is not None:
                 decision_metadata["selector"] = winner.selector
@@ -146,7 +138,7 @@ class RuleBasedPolicyRouter:
             )
 
         # Apply strategies to produce transformed text + transform summaries.
-        transformed_text, transforms = self._apply_strategies(
+        transformed_text, routed_decisions, transforms = self._apply_strategies(
             result.text, findings, decisions, per_finding_winning_rule
         )
 
@@ -182,7 +174,7 @@ class RuleBasedPolicyRouter:
 
         return RoutedOutcome(
             transformed_text=transformed_text,
-            decisions=tuple(decisions),
+            decisions=routed_decisions,
             aggregate_action=aggregate_action,
             aggregate_band=band,
             refusal=refusal,
@@ -224,8 +216,7 @@ class RuleBasedPolicyRouter:
 
         if not _selector_is_registered(rule.selector):
             raise ConfigCrossFieldError(
-                f"PolicyRule {rule.id!r} references unknown selector "
-                f"{rule.selector!r}",
+                f"PolicyRule {rule.id!r} references unknown selector {rule.selector!r}",
                 code="config.cross_field_violation",
                 details={"rule_id": rule.id, "selector": rule.selector},
             )
@@ -239,8 +230,7 @@ class RuleBasedPolicyRouter:
                 exc,
             )
             raise StrategyError(
-                f"selector {rule.selector!r} raised during select for "
-                f"rule {rule.id!r}: {exc}",
+                f"selector {rule.selector!r} raised during select for rule {rule.id!r}: {exc}",
                 code="strategy.failed",
                 details={
                     "rule_id": rule.id,
@@ -281,7 +271,7 @@ class RuleBasedPolicyRouter:
         findings: Sequence[Finding],
         decisions: Sequence[PolicyDecision],
         per_finding_rule: dict[int, PolicyRule],
-    ) -> tuple[str, tuple[TransformSummary, ...]]:
+    ) -> tuple[str, tuple[PolicyDecision, ...], tuple[TransformSummary, ...]]:
         """Apply each finding's chosen strategy in span order.
 
         Strategies that operate on individual spans (redact, hash, tokenize)
@@ -297,6 +287,7 @@ class RuleBasedPolicyRouter:
 
         # Build replacements list: (start, end, replacement, finding_idx, strategy)
         replacements: list[tuple[int, int, str, int, str]] = []
+        strategy_metadata_by_finding: dict[int, dict[str, object]] = {}
 
         for strategy_name, finding_indices in per_strategy.items():
             if strategy_name in ("block", "warn", "pass"):
@@ -331,21 +322,18 @@ class RuleBasedPolicyRouter:
                 # strategy's output order.
                 if idx < len(_sub_decisions):
                     sub_dec = _sub_decisions[idx]
+                    strategy_metadata_by_finding[fi] = dict(sub_dec.metadata)
                     placeholder = sub_dec.metadata.get(
                         "placeholder",
                         sub_dec.metadata.get("replacement", sub_dec.metadata.get("token", "")),
                     )
                 else:
                     placeholder = ""
-                replacements.append(
-                    (f.start, f.end, str(placeholder), fi, strategy_name)
-                )
+                replacements.append((f.start, f.end, str(placeholder), fi, strategy_name))
 
         # Apply right-to-left so offsets stay stable
         out = text
-        for start, end, replacement, _fi, _sname in sorted(
-            replacements, key=lambda r: -r[0]
-        ):
+        for start, end, replacement, _fi, _sname in sorted(replacements, key=lambda r: -r[0]):
             out = out[:start] + replacement + out[end:]
 
         # Build TransformSummary tuple in finding-index order
@@ -381,7 +369,23 @@ class RuleBasedPolicyRouter:
                         metadata={},
                     )
                 )
+        enriched_decisions: list[PolicyDecision] = []
+        for decision in decisions:
+            merged_metadata = dict(decision.metadata)
+            for finding_idx in decision.finding_ids:
+                if finding_idx in strategy_metadata_by_finding:
+                    merged_metadata.update(strategy_metadata_by_finding[finding_idx])
+            enriched_decisions.append(
+                PolicyDecision(
+                    finding_ids=decision.finding_ids,
+                    strategy=decision.strategy,
+                    severity=decision.severity,
+                    rationale=decision.rationale,
+                    metadata=merged_metadata,
+                )
+            )
 
+        return out, tuple(enriched_decisions), tuple(transforms)
         return out, tuple(transforms)
 
     def _highest_severity_rule(
@@ -398,6 +402,13 @@ class RuleBasedPolicyRouter:
 
     def _select_refusal_code(self, findings: Sequence[Finding]) -> RefusalCode:
         types = {f.entity_type.upper() for f in findings}
+        # JailbreakDetector emits subtypes like JAILBREAK_DIRECT_OVERRIDE,
+        # JAILBREAK_ROLE_PLAY, etc. Treat any JAILBREAK_ prefix as a strong-
+        # class detection so the router's refusal code matches what the
+        # legacy detector intercept produces (jailbreak_strong). Plain
+        # "JAILBREAK" or "INJECTION" alone (no subtype) stays at JAILBREAK.
+        if any(t.startswith("JAILBREAK_") for t in types):
+            return RefusalCode.JAILBREAK_STRONG
         if "INJECTION" in types or "JAILBREAK" in types:
             return RefusalCode.JAILBREAK
         if any(t in types for t in ("US_SSN", "CREDIT_CARD", "PHONE_NUMBER")):

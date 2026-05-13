@@ -28,11 +28,13 @@ def test_transport_error_failure_mode_is_closed() -> None:
 
 
 def test_transport_error_valid_codes() -> None:
-    assert TransportError.__valid_codes__ == frozenset({
-        "transport.timeout",
-        "transport.payload_too_large",
-        "transport.invalid_state",
-    })
+    assert TransportError.__valid_codes__ == frozenset(
+        {
+            "transport.timeout",
+            "transport.payload_too_large",
+            "transport.invalid_state",
+        }
+    )
 
 
 def test_transport_error_rejects_unknown_code() -> None:

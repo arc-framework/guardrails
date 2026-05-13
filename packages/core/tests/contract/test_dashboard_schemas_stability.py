@@ -37,9 +37,7 @@ _ALL_MODELS = (
 
 @pytest.mark.parametrize("model_cls", _ALL_MODELS)
 def test_all_models_are_frozen(model_cls: type[BaseModel]) -> None:
-    assert model_cls.model_config.get("frozen") is True, (
-        f"{model_cls.__name__} must be frozen=True"
-    )
+    assert model_cls.model_config.get("frozen") is True, f"{model_cls.__name__} must be frozen=True"
 
 
 @pytest.mark.parametrize("model_cls", _ALL_MODELS)
@@ -74,17 +72,13 @@ def test_request_summary_roundtrip() -> None:
 
 def test_request_summary_rejects_unknown_field() -> None:
     with pytest.raises(ValidationError):
-        RequestSummary.model_validate(
-            {**_sample_summary().model_dump(), "ghost_field": True}
-        )
+        RequestSummary.model_validate({**_sample_summary().model_dump(), "ghost_field": True})
 
 
 def test_request_summary_rejects_unknown_stage() -> None:
     """The stage field is a Literal; arbitrary strings must be rejected."""
     with pytest.raises(ValidationError):
-        RequestSummary.model_validate(
-            {**_sample_summary().model_dump(), "stage": "telekinesis"}
-        )
+        RequestSummary.model_validate({**_sample_summary().model_dump(), "stage": "telekinesis"})
 
 
 def test_request_workspace_manifest_roundtrip() -> None:

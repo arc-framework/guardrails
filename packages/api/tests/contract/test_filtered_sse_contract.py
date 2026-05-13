@@ -21,9 +21,7 @@ from arc_guard_service.transport.http import create_app
 async def app_and_sink(tmp_path: Path):
     db = tmp_path / "arc_guardrail.db"
     SqliteLifecycleSink(str(db))
-    settings = ServiceSettings(
-        enable_chat_completions=False, lifecycle_sqlite_path=str(db)
-    )
+    settings = ServiceSettings(enable_chat_completions=False, lifecycle_sqlite_path=str(db))
     app = create_app(settings)
     yield app, str(db)
 
@@ -32,9 +30,7 @@ async def app_and_sink(tmp_path: Path):
 async def test_malformed_rid_returns_400(app_and_sink) -> None:
     app, _ = app_and_sink
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         resp = await c.get("/events?rid=has spaces")
     assert resp.status_code == 400
     assert resp.json()["error"]["code"] == "rid_malformed"
@@ -50,11 +46,7 @@ async def test_terminated_rid_immediate_sentinel(app_and_sink) -> None:
     sink = SqliteLifecycleSink(db_path)
     try:
         ts = datetime(2026, 5, 9, 14, 0, 0, tzinfo=UTC)
-        await sink.emit(
-            RequestStarted(
-                id="ev-1", parent_id=None, seq=1, ts=ts, rid="rid-done"
-            )
-        )
+        await sink.emit(RequestStarted(id="ev-1", parent_id=None, seq=1, ts=ts, rid="rid-done"))
         await sink.emit(
             RequestCompleted(
                 id="ev-2",
@@ -71,9 +63,7 @@ async def test_terminated_rid_immediate_sentinel(app_and_sink) -> None:
         await sink.close()
 
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         async with c.stream("GET", "/events?rid=rid-done") as resp:
             assert resp.status_code == 200
             body_chunks = []

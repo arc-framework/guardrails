@@ -26,9 +26,7 @@ DEFAULT_REFUSAL_TEMPLATES: dict[RefusalCode, RefusalTemplate] = {
         human_message=(
             "This request was blocked because it appeared to attempt jailbreaking the system."
         ),
-        next_steps=(
-            "Rephrase without language that asks the assistant to ignore its rules.",
-        ),
+        next_steps=("Rephrase without language that asks the assistant to ignore its rules.",),
     ),
     RefusalCode.JAILBREAK_STRONG: RefusalTemplate(
         human_message=(
@@ -93,9 +91,7 @@ DEFAULT_REFUSAL_TEMPLATES: dict[RefusalCode, RefusalTemplate] = {
         ),
     ),
     RefusalCode.API_TRANSPORT_TIMEOUT: RefusalTemplate(
-        human_message=(
-            "The request took longer than the configured maximum and was cancelled."
-        ),
+        human_message=("The request took longer than the configured maximum and was cancelled."),
         next_steps=(
             "Retry with a smaller payload.",
             "Increase the service's request_timeout_seconds setting.",
@@ -125,9 +121,7 @@ DEFAULT_REFUSAL_TEMPLATES: dict[RefusalCode, RefusalTemplate] = {
             "The refusal envelope could not be constructed; "
             "the request was blocked as a safety measure."
         ),
-        next_steps=(
-            "Contact support; reference the correlation_id.",
-        ),
+        next_steps=("Contact support; reference the correlation_id.",),
     ),
     RefusalCode.INTERNAL_ENTITY_PROVIDER_ERROR: RefusalTemplate(
         human_message=(

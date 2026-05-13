@@ -27,8 +27,7 @@ class Tracer(Protocol):
 
     def start_span(
         self, name: str, *, attributes: Mapping[str, Any] | None = None
-    ) -> AbstractContextManager[Any]:
-        ...
+    ) -> AbstractContextManager[Any]: ...
 
 
 @runtime_checkable
@@ -39,11 +38,9 @@ class Logger(Protocol):
     Failure mode: implementations must not raise.
     """
 
-    def bind(self, **fields: Any) -> Logger:
-        ...
+    def bind(self, **fields: Any) -> Logger: ...
 
-    def event(self, name: str, *, level: str = "info", **fields: Any) -> None:
-        ...
+    def event(self, name: str, *, level: str = "info", **fields: Any) -> None: ...
 
 
 @runtime_checkable
@@ -60,8 +57,7 @@ class MetricSink(Protocol):
         value: int = 1,
         *,
         attributes: Mapping[str, Any] | None = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def histogram(
         self,
@@ -69,8 +65,7 @@ class MetricSink(Protocol):
         value: float,
         *,
         attributes: Mapping[str, Any] | None = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 # ---------------------------------------------------------------------------

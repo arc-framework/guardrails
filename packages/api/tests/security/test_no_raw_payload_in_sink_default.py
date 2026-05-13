@@ -26,7 +26,7 @@ _PHONE_FMT = "555-867-{i:04d}"
 
 @pytest.fixture(name="client")
 def _client() -> TestClient:
-    """Default settings — capture flags both off."""
+    """Default settings — sanitized capture on, raw-input capture off."""
     app = create_app(ServiceSettings(backend="echo"))
     return TestClient(app)
 
@@ -59,12 +59,8 @@ def _no_raw_pii_in_lifecycle(client: TestClient, rid: str, i: int) -> None:
     body_text = json.dumps(r.json())
     email = _EMAIL_FMT.format(i=i)
     phone = _PHONE_FMT.format(i=i)
-    assert email not in body_text, (
-        f"raw email leaked into rid={rid} envelope (request {i})"
-    )
-    assert phone not in body_text, (
-        f"raw phone leaked into rid={rid} envelope (request {i})"
-    )
+    assert email not in body_text, f"raw email leaked into rid={rid} envelope (request {i})"
+    assert phone not in body_text, f"raw phone leaked into rid={rid} envelope (request {i})"
 
 
 def test_smoke_200_pii_requests_under_default_settings(client: TestClient) -> None:
@@ -87,10 +83,9 @@ def test_soak_10k_pii_requests_under_default_settings(client: TestClient) -> Non
         _no_raw_pii_in_lifecycle(client, rid, i)
 
 
-def test_default_capture_flags_are_both_false() -> None:
-    """Sanity guard — if a future change accidentally flips the default,
-    the security guarantee above silently breaks. Make the default
-    explicit and tested."""
+def test_default_capture_flags_enable_sanitized_payloads_only() -> None:
+    """Sanity guard — keep sanitized capture on by default while raw-input
+    capture stays opt-in and security-sensitive."""
     s = ServiceSettings()
-    assert s.lifecycle_capture_payloads is False
+    assert s.lifecycle_capture_payloads is True
     assert s.lifecycle_capture_raw_input is False

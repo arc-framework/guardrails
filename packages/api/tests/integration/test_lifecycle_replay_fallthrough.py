@@ -63,9 +63,7 @@ def test_evicted_request_falls_through_to_sqlite(tmp_path: Path) -> None:
 
 def test_lookup_404_when_no_tier_has_the_rid(tmp_path: Path) -> None:
     db = tmp_path / "lc.db"
-    settings = ServiceSettings(
-        backend="echo", lifecycle_sqlite_path=str(db)
-    )
+    settings = ServiceSettings(backend="echo", lifecycle_sqlite_path=str(db))
     with TestClient(create_app(settings)) as client:
         r = client.get("/lifecycle/never-existed")
         assert r.status_code == 404
@@ -77,9 +75,7 @@ def test_lookup_survives_app_restart(tmp_path: Path) -> None:
     boot a NEW app pointing at the same SQLite file (ring is empty), look
     up the rid → must return 200 from `sqlite` tier."""
     db = tmp_path / "lc.db"
-    settings = ServiceSettings(
-        backend="echo", lifecycle_sqlite_path=str(db)
-    )
+    settings = ServiceSettings(backend="echo", lifecycle_sqlite_path=str(db))
 
     # First app: send a request.
     with TestClient(create_app(settings)) as client1:
@@ -100,9 +96,7 @@ def test_app_works_when_sqlite_disabled(tmp_path: Path) -> None:
     """Setting `lifecycle_sqlite_path=None` falls back to ring-only;
     the app boots, the lookup endpoint works for recent rids, and there's
     no SQLite file involvement."""
-    settings = ServiceSettings(
-        backend="echo", lifecycle_sqlite_path=None
-    )
+    settings = ServiceSettings(backend="echo", lifecycle_sqlite_path=None)
     with TestClient(create_app(settings)) as client:
         _post(client, "ring-only-rid")
         r = client.get("/lifecycle/ring-only-rid")

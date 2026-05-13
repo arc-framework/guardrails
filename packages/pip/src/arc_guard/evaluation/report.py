@@ -68,10 +68,7 @@ def write_markdown(report: EvaluationReport, path: Path) -> None:
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     lines: list[str] = []
-    lines.append(
-        f"# Evaluation Report (seed={report.seed}, "
-        f"corpus_size={report.corpus_size})"
-    )
+    lines.append(f"# Evaluation Report (seed={report.seed}, corpus_size={report.corpus_size})")
     lines.append("")
     headers = [header for header, _ in _COLUMNS]
     lines.append("| " + " | ".join(headers) + " |")

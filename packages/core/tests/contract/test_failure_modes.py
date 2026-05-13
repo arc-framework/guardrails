@@ -38,8 +38,7 @@ def test_every_leaf_declares_failure_mode() -> None:
     leaves = [
         entry
         for entry in live
-        if entry["parent"] not in {"Exception", "BaseException", "object"}
-        and entry["parent"] != ""
+        if entry["parent"] not in {"Exception", "BaseException", "object"} and entry["parent"] != ""
     ]
     missing = [entry["name"] for entry in leaves if entry.get("failure_mode") is None]
     # Second-level group classes (ConfigError, ValidationError, ...) inherit
@@ -53,26 +52,24 @@ def test_every_leaf_declares_failure_mode() -> None:
         "AdapterError",
     }
     missing = [name for name in missing if name not in group_classes]
-    assert missing == [], (
-        f"Leaf exceptions missing __failure_mode__: {missing}"
-    )
+    assert missing == [], f"Leaf exceptions missing __failure_mode__: {missing}"
 
 
 def test_every_leaf_declares_valid_codes() -> None:
     leaves = [
-            exc.ConfigSchemaError,
-            exc.ConfigCrossFieldError,
-            exc.ApiBoundaryValidationError,
-            exc.PipelineContractValidationError,
-            exc.AdapterBoundaryValidationError,
-            exc.InspectorError,
-            exc.StrategyError,
-            exc.PolicyRouterError,
-            exc.ReporterError,
-            exc.FlagProviderError,
-            exc.EntityProviderError,
-            exc.RefusalEnvelopeError,
-        ]
+        exc.ConfigSchemaError,
+        exc.ConfigCrossFieldError,
+        exc.ApiBoundaryValidationError,
+        exc.PipelineContractValidationError,
+        exc.AdapterBoundaryValidationError,
+        exc.InspectorError,
+        exc.StrategyError,
+        exc.PolicyRouterError,
+        exc.ReporterError,
+        exc.FlagProviderError,
+        exc.EntityProviderError,
+        exc.RefusalEnvelopeError,
+    ]
     for cls in leaves:
         codes = getattr(cls, "__valid_codes__", frozenset())
         assert codes, f"{cls.__qualname__} must declare non-empty __valid_codes__"

@@ -111,14 +111,18 @@ IMMUTABLE_TYPES = [
 ]
 
 
-@pytest.mark.parametrize("name, builder, attr, value", IMMUTABLE_TYPES, ids=lambda v: v if isinstance(v, str) else "")
+@pytest.mark.parametrize(
+    "name, builder, attr, value", IMMUTABLE_TYPES, ids=lambda v: v if isinstance(v, str) else ""
+)
 def test_instance_is_frozen(name: str, builder, attr: str, value) -> None:  # type: ignore[no-untyped-def]
     instance = builder()
     is_pydantic = isinstance(instance, BaseModel)
     is_dataclass = dataclasses.is_dataclass(instance) and not isinstance(instance, type)
     assert is_pydantic or is_dataclass, f"{name} is neither pydantic nor dataclass"
 
-    with pytest.raises((PydanticValidationError, dataclasses.FrozenInstanceError, TypeError, AttributeError)):
+    with pytest.raises(
+        (PydanticValidationError, dataclasses.FrozenInstanceError, TypeError, AttributeError)
+    ):
         setattr(instance, attr, value)
 
 

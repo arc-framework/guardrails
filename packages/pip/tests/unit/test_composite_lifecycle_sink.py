@@ -140,10 +140,12 @@ def test_query_records_served_from_ring_buffer_when_ring_has_data() -> None:
 
 
 def test_query_returns_none_when_no_child_has_data() -> None:
-    composite = CompositeLifecycleSink([
-        RingBufferLifecycleSink(capacity=10),
-        SqliteLifecycleSink(":memory:"),
-    ])
+    composite = CompositeLifecycleSink(
+        [
+            RingBufferLifecycleSink(capacity=10),
+            SqliteLifecycleSink(":memory:"),
+        ]
+    )
     assert asyncio.run(composite.query("never-emitted")) is None
     assert composite.last_served_from == "composite-fallthrough"
 

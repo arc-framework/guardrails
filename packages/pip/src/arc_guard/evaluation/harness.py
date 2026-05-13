@@ -100,7 +100,9 @@ class HarnessImpl:
                 pipeline_or_stub = self._build_pipeline(config, seed=seed)
                 metrics.append(
                     self._evaluate_one_configuration(
-                        config, pipeline_or_stub, corpus_list,
+                        config,
+                        pipeline_or_stub,
+                        corpus_list,
                     ),
                 )
             return EvaluationReport(
@@ -118,7 +120,10 @@ class HarnessImpl:
             ) from exc
 
     def _build_pipeline(
-        self, configuration: Configuration, *, seed: int,
+        self,
+        configuration: Configuration,
+        *,
+        seed: int,
     ) -> GuardPipeline | _RawPassThrough:
         """Construct the pipeline (or stub) for a configuration."""
         del seed  # reserved for ML detector reproducibility
@@ -143,9 +148,7 @@ class HarnessImpl:
             def detector_id(self) -> str:
                 return "harness-noop-jb:1"
 
-            def detect(
-                self, text: str, *, conversation_state: object = None
-            ) -> tuple[object, ...]:
+            def detect(self, text: str, *, conversation_state: object = None) -> tuple[object, ...]:
                 return ()
 
         return GuardPipeline(

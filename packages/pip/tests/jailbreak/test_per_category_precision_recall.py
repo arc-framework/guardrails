@@ -110,16 +110,12 @@ def test_per_category_precision_and_recall_floors() -> None:
             # direct_override on the inner phrase). Floor of 0.5 is
             # conservative since single-prompt cross-category matches
             # are expected by design.
-            assert precision >= 0.5, (
-                f"{category} precision {precision:.2f} below 0.50 floor"
-            )
+            assert precision >= 0.5, f"{category} precision {precision:.2f} below 0.50 floor"
 
 
 def test_benign_control_false_positive_rate_below_5_percent() -> None:
     detector = RuleBasedJailbreakDetector()
-    false_positives = sum(
-        1 for prompt in _BENIGN_CONTROLS if detector.detect(prompt)
-    )
+    false_positives = sum(1 for prompt in _BENIGN_CONTROLS if detector.detect(prompt))
     fpr = false_positives / len(_BENIGN_CONTROLS)
     assert fpr <= 0.05, (
         f"benign control false-positive rate {fpr:.2%} exceeds 5% "

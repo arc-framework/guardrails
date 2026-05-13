@@ -76,7 +76,9 @@ def pipeline_error_to_http(exc: ArcGuardError) -> tuple[int, RefusalEnvelope]:
 
 
 def envelope_for_invalid_request(
-    *, trigger: str, policy: str = "api_validation",
+    *,
+    trigger: str,
+    policy: str = "api_validation",
 ) -> RefusalEnvelope:
     """Build a 400-equivalent envelope for malformed-request paths."""
     return _envelope_for_code(

@@ -67,14 +67,17 @@ async def test_all_three_resources_survive_restart(tmp_path: Path) -> None:
     ts = datetime(2026, 5, 9, 14, 0, 0, tzinfo=UTC)
     try:
         await sink_a.emit(
-            RequestStarted(
-                id="ev-1", parent_id=None, seq=1, ts=ts, rid="rid-restart"
-            )
+            RequestStarted(id="ev-1", parent_id=None, seq=1, ts=ts, rid="rid-restart")
         )
         await sink_a.emit(
             RequestCompleted(
-                id="ev-2", parent_id="ev-1", seq=2, ts=ts,
-                rid="rid-restart", blocked=False, pre_action="pass",
+                id="ev-2",
+                parent_id="ev-1",
+                seq=2,
+                ts=ts,
+                rid="rid-restart",
+                blocked=False,
+                pre_action="pass",
                 total_duration_ms=50.0,
             )
         )
@@ -83,14 +86,10 @@ async def test_all_three_resources_survive_restart(tmp_path: Path) -> None:
     _seed_rid(str(db), "rid-restart")
 
     # Second service lifecycle: open a fresh app against the same DB file.
-    settings = ServiceSettings(
-        enable_chat_completions=False, lifecycle_sqlite_path=str(db)
-    )
+    settings = ServiceSettings(enable_chat_completions=False, lifecycle_sqlite_path=str(db))
     app = create_app(settings)
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         # All four endpoints resolve.
         summary_resp = await c.get("/requests/rid-restart")
         assert summary_resp.status_code == 200

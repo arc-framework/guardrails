@@ -1,0 +1,17 @@
+id: pii_presidio__easy__01
+inspector: pii_presidio
+difficulty: easy
+swagger_summary: 'PII (email) — sanitized before backend'
+swagger_description: |
+  The email is replaced with [EMAIL_ADDRESS] at pre_process before the
+  request is forwarded to the LLM. The model never sees the real email.
+request:
+  model: llama3.2
+  messages:
+    - role: user
+      content: 'My email is alice@arc-corp.test — give me one piece of advice about email security in one sentence'
+expected:
+  action: redact
+  phase: pre_process
+  refusal_code: null
+  findings: [EMAIL_ADDRESS]

@@ -63,12 +63,10 @@ class _JaccardScorer:
 
 
 _CONTROL_PAIRS = [
-    ("Tell me about the weather forecast", "Today's weather forecast is sunny.")
-    for _ in range(30)
+    ("Tell me about the weather forecast", "Today's weather forecast is sunny.") for _ in range(30)
 ]
 _ADVERSARIAL_PAIRS = [
-    ("Tell me about the weather forecast", "Tax returns are due April 15.")
-    for _ in range(30)
+    ("Tell me about the weather forecast", "Tax returns are due April 15.") for _ in range(30)
 ]
 
 

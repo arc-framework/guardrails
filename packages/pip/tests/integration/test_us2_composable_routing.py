@@ -30,7 +30,9 @@ def test_four_rules_fire_in_finding_order_with_block_winning_aggregate() -> None
         rules=(
             PolicyRule(id="r_email", match="EMAIL_ADDRESS", strategy="redact"),
             PolicyRule(id="r_card", match="CREDIT_CARD", strategy="hash"),
-            PolicyRule(id="r_inj", match="INJECTION", strategy="block", severity_floor=RiskLevel.HIGH),
+            PolicyRule(
+                id="r_inj", match="INJECTION", strategy="block", severity_floor=RiskLevel.HIGH
+            ),
             PolicyRule(id="r_name", match="CUSTOMER_NAME", strategy="warn"),
         ),
     )
@@ -56,4 +58,7 @@ def test_four_rules_fire_in_finding_order_with_block_winning_aggregate() -> None
     assert result.action == "block"
     assert result.text == ""
     assert result.refusal is not None
-    assert result.refusal.code == "jailbreak"
+    # The default JailbreakDetector fires JAILBREAK_DIRECT_OVERRIDE on the
+    # "ignore previous instructions" suffix; the router upgrades the refusal
+    # code to jailbreak_strong when a JAILBREAK_* subtype is present.
+    assert result.refusal.code == "jailbreak_strong"

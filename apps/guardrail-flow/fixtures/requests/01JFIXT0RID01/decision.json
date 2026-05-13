@@ -1,0 +1,14 @@
+{
+  "rid": "01JFIXT0RID01",
+  "decision_id": "dec_01JFIXT",
+  "recorded_at": "2026-05-09T12:00:00.842Z",
+  "decision": {
+    "action": "block",
+    "max_risk": 0.91,
+    "decision_id": "dec_01JFIXT",
+    "rules_evaluated": [
+      { "id": "PII_LEAK", "matched": true, "action": "block" }
+    ]
+  },
+  "payload_size_bytes": 142
+}

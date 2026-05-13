@@ -15,9 +15,7 @@ from arc_guard_service.settings import ServiceSettings
 from arc_guard_service.transport.http import create_app
 
 
-def _seed_debug_entry(
-    path: str, rid: str, seq: int, *, severity: str = "DEBUG"
-) -> None:
+def _seed_debug_entry(path: str, rid: str, seq: int, *, severity: str = "DEBUG") -> None:
     import json
 
     conn = sqlite3.connect(path)
@@ -45,14 +43,10 @@ def _seed_debug_entry(
 async def client(tmp_path: Path):
     db = tmp_path / "arc_guardrail.db"
     SqliteLifecycleSink(str(db))
-    settings = ServiceSettings(
-        enable_chat_completions=False, lifecycle_sqlite_path=str(db)
-    )
+    settings = ServiceSettings(enable_chat_completions=False, lifecycle_sqlite_path=str(db))
     app = create_app(settings)
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         yield c, str(db)
 
 

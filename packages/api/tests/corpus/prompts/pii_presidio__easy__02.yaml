@@ -1,0 +1,19 @@
+id: pii_presidio__easy__02
+inspector: pii_presidio
+difficulty: easy
+swagger_summary: PII (phone number) — redacted at pre_process
+swagger_description: 'US phone number in the request body.
+
+  Presidia identifies PHONE_NUMBER and masks it before the model sees it.'
+request:
+  model: llama3.2
+  messages:
+  - role: user
+    content: Call me at 555-0187 to discuss the ARC Corp contract renewal.
+expected:
+  action: redact
+  phase: pre_process
+  refusal_code: null
+  findings:
+  - PHONE_NUMBER
+  false_positive: false

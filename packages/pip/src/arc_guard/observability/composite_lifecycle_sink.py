@@ -83,9 +83,7 @@ class CompositeLifecycleSink:
             try:
                 await child.close()
             except Exception as exc:  # pragma: no cover
-                _LOG.warning(
-                    "composite child %s.close() raised: %s", type(child).__name__, exc
-                )
+                _LOG.warning("composite child %s.close() raised: %s", type(child).__name__, exc)
 
 
 def _tier_label_for(sink: Any) -> str:

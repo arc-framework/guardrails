@@ -41,23 +41,25 @@ _DEFAULT_PHASES = frozenset({"post_process"})
 # intentionally excludes ``UNION`` (subordinate clause, not a leading
 # statement keyword) and includes the common DML / DDL set the inspector
 # must guard.
-_LEADING_SQL_KEYWORDS = frozenset({
-    "select",
-    "insert",
-    "update",
-    "delete",
-    "drop",
-    "create",
-    "alter",
-    "truncate",
-    "merge",
-    "replace",
-    "grant",
-    "revoke",
-    "exec",
-    "execute",
-    "call",
-})
+_LEADING_SQL_KEYWORDS = frozenset(
+    {
+        "select",
+        "insert",
+        "update",
+        "delete",
+        "drop",
+        "create",
+        "alter",
+        "truncate",
+        "merge",
+        "replace",
+        "grant",
+        "revoke",
+        "exec",
+        "execute",
+        "call",
+    }
+)
 
 _COMMENT_TERMINATOR_RE = re.compile(
     r"(?P<keyword>\b(?:select|insert|update|delete|drop|create|alter|truncate|"
@@ -70,6 +72,28 @@ _COMMENT_TERMINATOR_RE = re.compile(
 _UNION_INJECTION_RE = re.compile(
     r"\bselect\b.+?\b(?P<union>union(?:\s+all)?\s+select)\b",
     re.IGNORECASE | re.DOTALL,
+)
+
+# Classic boolean-tautology SQL injection — what attackers paste into
+# vulnerable login forms or query parameters to bypass authentication. The
+# patterns match the standard ``' OR '1'='1'``, ``" OR 1=1``, and numeric
+# tautology forms; any of them in a user prompt is almost certainly an
+# attempt to exploit downstream SQL, not legitimate prose.
+_TAUTOLOGY_RE = re.compile(
+    r"(?P<tautology>"
+    r"['\"]?\s*(?:or|and)\s+['\"]?\d+['\"]?\s*=\s*['\"]?\d+['\"]?"  # OR 1=1
+    r"|['\"]?\s*(?:or|and)\s+['\"][^'\"]+['\"]?\s*=\s*['\"][^'\"]+['\"]?"  # OR 'a'='a'
+    r")",
+    re.IGNORECASE,
+)
+
+# Comment-terminator pattern keyed off a quoted identifier rather than a
+# SQL leading keyword. Catches the ``admin'--`` / ``user'/*…*/`` shapes that
+# slip past the keyword-anchored ``_COMMENT_TERMINATOR_RE`` when the prompt
+# is mostly prose.
+_QUOTED_COMMENT_TERMINATOR_RE = re.compile(
+    r"(?P<quoted_comment>['\"]\s*(?:--[^\n]*|/\*.*?\*/))",
+    re.DOTALL,
 )
 
 
@@ -134,6 +158,8 @@ class SqlInjectionInspector:
         new_findings.extend(self._detect_stacked(text, statements))
         new_findings.extend(self._detect_comment_terminator(text))
         new_findings.extend(self._detect_union(text))
+        new_findings.extend(self._detect_tautology(text))
+        new_findings.extend(self._detect_quoted_comment(text))
 
         if len(new_findings) == len(result.findings):
             return result
@@ -150,16 +176,12 @@ class SqlInjectionInspector:
     # Detectors
     # ------------------------------------------------------------------
 
-    def _detect_stacked(
-        self, text: str, statements: tuple[object, ...]
-    ) -> list[Finding]:
+    def _detect_stacked(self, text: str, statements: tuple[object, ...]) -> list[Finding]:
         if len(statements) < 2:
             return []
 
         sql_like_count = sum(
-            1
-            for stmt in statements
-            if _leading_keyword(str(stmt)) in _LEADING_SQL_KEYWORDS
+            1 for stmt in statements if _leading_keyword(str(stmt)) in _LEADING_SQL_KEYWORDS
         )
         if sql_like_count < 2:
             return []
@@ -202,6 +224,38 @@ class SqlInjectionInspector:
                     subtype="sql.comment_terminator",
                     span=(comment_start, comment_end),
                     raw_text=raw,
+                    capture_raw_matches=self._capture_raw_matches,
+                )
+            )
+        return out
+
+    def _detect_tautology(self, text: str) -> list[Finding]:
+        out: list[Finding] = []
+        for match in _TAUTOLOGY_RE.finditer(text):
+            start = match.start("tautology")
+            end = match.end("tautology")
+            out.append(
+                build_code_injection_finding(
+                    inspector_name=self.name,
+                    subtype="sql.tautology",
+                    span=(start, end),
+                    raw_text=text[start:end],
+                    capture_raw_matches=self._capture_raw_matches,
+                )
+            )
+        return out
+
+    def _detect_quoted_comment(self, text: str) -> list[Finding]:
+        out: list[Finding] = []
+        for match in _QUOTED_COMMENT_TERMINATOR_RE.finditer(text):
+            start = match.start("quoted_comment")
+            end = match.end("quoted_comment")
+            out.append(
+                build_code_injection_finding(
+                    inspector_name=self.name,
+                    subtype="sql.comment_terminator",
+                    span=(start, end),
+                    raw_text=text[start:end],
                     capture_raw_matches=self._capture_raw_matches,
                 )
             )

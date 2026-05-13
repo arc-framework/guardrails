@@ -117,6 +117,35 @@ The canned semantic verifier from `arc-guard[semantic]` adds:
 
 When a verdict rejects (or partially rejects), the decision record records the reason; placeholders stay in place.
 
+### `RehydrationVerified` event emission
+
+The `RehydrationVerified` lifecycle event fires only when **both** conditions hold:
+
+1. The pipeline run produced an `entity_map` (sanitization actually fired and the policy router decisions surfaced placeholder → original mappings).
+2. A non-Null `RehydrationVerifier` is wired on the pipeline. The default `NullRehydrationVerifier` is silent — it accepts everything but records no event.
+
+The bundled semantic verifier ships behind the `arc-guard[semantic]` extra:
+
+```bash
+pip install 'arc-guard[semantic]'
+```
+
+```python
+from arc_guard.semantic.factory import from_sentence_transformers
+
+bundle = from_sentence_transformers()  # encoder + scorer + verifier triple
+pipeline = GuardPipeline(
+    intent_encoder=bundle.encoder,
+    fidelity_scorer=bundle.scorer,
+    rehydration_verifier=bundle.verifier,
+    # ...
+)
+```
+
+Operators who don't want the heavyweight `sentence-transformers` dependency can wire any other `RehydrationVerifier` Protocol implementation; the event fires regardless of which non-Null verifier ships. Without the extra (or any custom verifier), the rehydrate stage still runs — it just stays silent on the event-stream side.
+
+The dashboard's Diff/Replay tab surfaces `RehydrationVerified.text_before / text_after` only when the verifier is wired AND `lifecycle_capture_payloads=true`.
+
 ## Intent lock + audit binding
 
 Every run that runs the defend stage emits a `DecisionRecord` with a populated `intent_lock`:

@@ -4,15 +4,13 @@
 ``FastAPI`` instance. ``fastapi`` is lazy-imported inside the function
 body; importing this module without the ``[fastapi]`` extra succeeds.
 
-Two transports ship from the same app:
+The HTTP surface ships ``POST /v1/chat/completions`` — the OpenAI-compatible
+endpoint that runs every request through the full guard pipeline (inbound
+user message via ``pre_process``, assistant response via ``post_process``).
+Mounted only when ``ServiceSettings.enable_chat_completions`` is true.
 
-- ``POST /v1/guard`` — generic guard endpoint. Accepts a ``GuardInput``
-  JSON payload, returns a ``GuardResult`` JSON payload. This is the
-  transport-neutral surface for non-Python callers.
-- ``POST /v1/chat/completions`` — OpenAI-compatible chat-completions
-  endpoint. Drop-in for any OpenAI client; runs ``pre_process`` on the
-  inbound user message and ``post_process`` on the assistant response.
-  Mounted only when ``ServiceSettings.enable_chat_completions`` is true.
+Legacy: ``POST /v1/guard`` is a tombstone. Any request to it returns HTTP
+410 Gone with a JSON envelope pointing at ``/v1/chat/completions``.
 
 Default observability: when no ``pipeline`` is supplied, ``create_app``
 constructs a ``GuardPipeline`` wired with ``LogReporter`` (post-decision
@@ -28,35 +26,21 @@ Transport-layer errors map to HTTP statuses per
 This module deliberately does NOT use ``from __future__ import annotations``:
 FastAPI relies on runtime type-resolution for parameter annotations, and
 deferred evaluation breaks the route-parameter introspection for the
-lazily-imported ``fastapi.Request`` class.
+lazily-imported FastAPI request types.
 """
 
 import importlib
 import logging
-import time
-import uuid
-from collections.abc import Mapping
 from contextlib import asynccontextmanager
-from dataclasses import asdict
 from typing import Any
-
-from arc_guard_core.exceptions import (
-    ApiBoundaryValidationError,
-    ArcGuardError,
-)
 
 from arc_guard_service.observability import StdlibBridgeLogger
 from arc_guard_service.schemas import ServiceDescriptor
 from arc_guard_service.settings import ServiceSettings
-from arc_guard_service.transport.errors import (
-    envelope_for_invalid_request,
-    pipeline_error_to_http,
-)
 from arc_guard_service.transport.limits import (
     RequestSizeLimitMiddleware,
     RequestTimeoutMiddleware,
 )
-from arc_guard_service.validators import validate_request_payload
 
 _LOG = logging.getLogger("arc-guard.api")
 
@@ -144,13 +128,12 @@ def _start_sink_background_tasks(sink: Any) -> None:
             except Exception as exc:  # pragma: no cover
                 _LOG.warning(
                     "lifecycle sink %s.start_cleanup_task() raised: %s",
-                    type(s).__name__, exc,
+                    type(s).__name__,
+                    exc,
                 )
 
 
-def _build_default_lifecycle_sink(
-    settings: ServiceSettings, broadcaster: Any | None = None
-) -> Any:
+def _build_default_lifecycle_sink(settings: ServiceSettings, broadcaster: Any | None = None) -> Any:
     """Construct the recommended lifecycle sink composite for the api.
 
     Children, in order:
@@ -197,37 +180,45 @@ def _build_default_lifecycle_sink(
                 cleanup_interval_seconds=settings.lifecycle_sqlite_cleanup_interval_seconds,
             )
         )
-        children.append(
-            RequestSummaryProjector(path=settings.lifecycle_sqlite_path)
-        )
+        children.append(RequestSummaryProjector(path=settings.lifecycle_sqlite_path))
         children.append(
             DecisionRecordRecorder(
                 path=settings.lifecycle_sqlite_path,
                 queue_capacity=settings.dashboard_decision_record_queue_capacity,
             )
         )
+        # Stale-live sweeper rides alongside the other dashboard-tier sinks.
+        # It emits RequestErrored events for stuck rows; the projector +
+        # SQLite tier above handle the row update + persistence. When the
+        # sweep interval is non-positive the sweeper's start_cleanup_task
+        # is a no-op, so this child is inert.
+        if settings.request_summary_sweep_interval_seconds > 0:
+            from arc_guard.observability.stale_live_sweeper import (
+                StaleLiveSweeper,
+            )
+
+            children.append(
+                StaleLiveSweeper(
+                    path=settings.lifecycle_sqlite_path,
+                    lifecycle_sink=None,  # set below once composite is built
+                    stale_threshold_seconds=(settings.request_summary_stale_threshold_seconds),
+                    sweep_interval_seconds=(settings.request_summary_sweep_interval_seconds),
+                )
+            )
     if broadcaster is not None:
         children.append(broadcaster)
 
     if len(children) == 1:
         return children[0]
-    return CompositeLifecycleSink(children)
-
-
-def _result_to_dict(result: Any) -> dict[str, Any]:
-    """Convert a ``GuardResult`` dataclass to a JSON-friendly dict."""
-    return asdict(result)
-
-
-def _envelope_to_dict(envelope: Any) -> dict[str, Any]:
-    return {
-        "code": envelope.code,
-        "trigger": envelope.trigger,
-        "policy": envelope.policy,
-        "human_message": envelope.human_message,
-        "next_steps": list(envelope.next_steps),
-        "metadata": dict(envelope.metadata),
-    }
+    composite = CompositeLifecycleSink(children)
+    # The sweeper emits RequestErrored events back through the composite so
+    # the projector / SQLite tier / SSE broadcaster all see the transition.
+    # Bind the composite reference now that it's constructed; the sweeper's
+    # own emit() is a no-op so the back-edge does not infinite-loop.
+    for child in children:
+        if hasattr(child, "_sink") and child.__class__.__name__ == "StaleLiveSweeper":
+            child._sink = composite  # noqa: SLF001
+    return composite
 
 
 def create_app(
@@ -279,13 +270,10 @@ def create_app(
     )
 
     timeout_counter: list[int] = [0]
-    request_counter: list[int] = [0]
-    duration_samples: list[float] = []
 
     def _on_timeout() -> None:
         timeout_counter[0] += 1
 
-    Request = fastapi.Request  # noqa: N806
     JSONResponse = fastapi.responses.JSONResponse  # noqa: N806
 
     # Lifespan handles the shared httpx client used by the OpenAI transport
@@ -345,15 +333,15 @@ def create_app(
         title="arc-guard-service",
         version="0.3.0",
         summary=(
-            "arc-guardrails deployment surface — generic guard endpoint plus an "
-            "OpenAI-compatible chat-completions endpoint with pre/post intercept."
+            "arc-guardrails deployment surface — OpenAI-compatible chat-completions "
+            "endpoint with pre/post pipeline intercept."
         ),
         description=(
-            "Two transports:\n\n"
-            "- `POST /v1/guard` — generic guard. Send a `GuardInput`, get a `GuardResult`.\n"
             "- `POST /v1/chat/completions` — OpenAI-compatible. Every request runs through "
             "`GuardPipeline.pre_process` (inbound user message) and `GuardPipeline.post_process` "
             "(assistant response). Blocked verdicts return `finish_reason='content_filter'`.\n\n"
+            "- `POST /v1/guard` — **retired**. Returns HTTP 410 Gone with a pointer envelope to "
+            "`/v1/chat/completions`.\n\n"
             "Backend selection via `ARC_GUARD_SERVICE_BACKEND`: `echo` (default, no LLM), "
             "`ollama` (local Ollama), `openai` (real OpenAI with `ARC_GUARD_SERVICE_OPENAI_API_KEY`)."
         ),
@@ -370,9 +358,10 @@ def create_app(
         tags=["health"],
     )
     async def root() -> ServiceDescriptor:  # type: ignore[no-untyped-def]
-        endpoints = ["POST /v1/guard"]
+        endpoints: list[str] = []
         if settings.enable_chat_completions:
             endpoints.append("POST /v1/chat/completions")
+            endpoints.append("GET /chat/examples")
         if settings.enable_docs:
             endpoints.append("GET /docs")
             endpoints.append("GET /openapi.json")
@@ -382,61 +371,40 @@ def create_app(
             endpoints=endpoints,
         )
 
-    @app.post("/v1/guard", tags=["guard"])  # type: ignore[untyped-decorator]
-    async def guard_endpoint(request: Request) -> Any:  # type: ignore[valid-type]
-        request_counter[0] += 1
-        request_id = str(uuid.uuid4())
-        start = time.perf_counter()
+    @app.api_route(
+        "/v1/guard",
+        methods=["POST", "GET", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        tags=["guard"],
+        summary="Removed — use /v1/chat/completions",
+        deprecated=True,
+        include_in_schema=False,
+    )  # type: ignore[untyped-decorator]
+    async def guard_endpoint_removed() -> Any:  # type: ignore[valid-type]
+        """Tombstone for the retired ``/v1/guard`` endpoint.
 
-        try:
-            payload = await request.json()  # type: ignore[attr-defined]
-        except Exception:
-            envelope = envelope_for_invalid_request(trigger="api.malformed_payload")
-            return JSONResponse(
-                status_code=400,
-                content=_envelope_to_dict(envelope),
-                headers={"x-request-id": request_id},
-            )
-
-        if not isinstance(payload, Mapping):
-            envelope = envelope_for_invalid_request(trigger="api.malformed_payload")
-            return JSONResponse(
-                status_code=400,
-                content=_envelope_to_dict(envelope),
-                headers={"x-request-id": request_id},
-            )
-
-        try:
-            guard_input = validate_request_payload(payload)
-        except ApiBoundaryValidationError as exc:
-            status, envelope = pipeline_error_to_http(exc)
-            return JSONResponse(
-                status_code=status,
-                content=_envelope_to_dict(envelope),
-                headers={"x-request-id": request_id},
-            )
-
-        try:
-            result = await pipeline.pre_process(guard_input)
-        except ArcGuardError as exc:
-            status, envelope = pipeline_error_to_http(exc)
-            return JSONResponse(
-                status_code=status,
-                content=_envelope_to_dict(envelope),
-                headers={"x-request-id": request_id},
-            )
-
-        duration_samples.append(time.perf_counter() - start)
-        return fastapi.responses.JSONResponse(
-            status_code=200,
-            content=_result_to_dict(result),
-            headers={"x-request-id": request_id},
+        Always returns HTTP 410 Gone with a stable, machine-readable
+        envelope pointing at the replacement endpoint.
+        """
+        return JSONResponse(
+            status_code=410,
+            content={
+                "error": {
+                    "code": "endpoint_removed",
+                    "message": (
+                        "POST /v1/guard was retired. "
+                        "Use POST /v1/chat/completions for full-pipeline behavior."
+                    ),
+                    "replacement": "/v1/chat/completions",
+                    "retired_in_spec": "014-pipeline-instrumentation-completion",
+                }
+            },
         )
 
     if settings.enable_chat_completions:
         from arc_guard_service.observability import (
             SettingsBackedPayloadCapturePolicy,
         )
+        from arc_guard_service.transport.chat_examples import build_chat_examples_router
         from arc_guard_service.transport.openai import build_router
 
         # The OpenAI router needs the shared httpx client; we wrap it in a
@@ -446,9 +414,7 @@ def create_app(
             async def post(self, *args: Any, **kwargs: Any) -> Any:
                 client = http_client_holder.get("client")
                 if client is None:
-                    raise RuntimeError(
-                        "http client not initialized — lifespan startup did not run"
-                    )
+                    raise RuntimeError("http client not initialized — lifespan startup did not run")
                 return await client.post(*args, **kwargs)
 
         capture_policy = SettingsBackedPayloadCapturePolicy(
@@ -463,6 +429,8 @@ def create_app(
             payload_capture_policy=capture_policy,
         )
         app.include_router(openai_router)
+        chat_examples_router = build_chat_examples_router()
+        app.include_router(chat_examples_router)
 
     if settings.lifecycle_enabled and sse_registry is not None:
         from arc_guard_service.transport.events import build_events_router
@@ -474,9 +442,7 @@ def create_app(
             lifecycle_sink=lifecycle_sink,
         )
         app.include_router(events_router)
-        lifecycle_router = build_lifecycle_router(
-            settings=settings, lifecycle_sink=lifecycle_sink
-        )
+        lifecycle_router = build_lifecycle_router(settings=settings, lifecycle_sink=lifecycle_sink)
         app.include_router(lifecycle_router)
         requests_router = build_requests_router(settings=settings)
         app.include_router(requests_router)
@@ -511,30 +477,34 @@ def create_app(
         max_bytes=settings.max_request_bytes,
     )
 
-    # CORS for the dashboard data plane. Only installed when the operator
+    # CORS for the operator surfaces. Only installed when the operator
     # configured an explicit allow-list — empty list (default) means no
     # cross-origin requests are permitted at the browser layer. The
     # ``ServiceSettings.dashboard_origins`` validator already rejects
     # wildcards, non-http(s) schemes, and path/query/fragment components
-    # at startup; we just consume the validated list here.
+    # at startup; we just consume the validated list here. The dashboard
+    # needs GET for the read-only data plane plus POST to drive the chat
+    # workspace through ``/v1/chat/completions`` with a client-supplied rid.
     if settings.dashboard_origins:
-        from fastapi.middleware.cors import CORSMiddleware
+        try:
+            cors_module = importlib.import_module("starlette.middleware.cors")
+        except ImportError as exc:
+            raise ImportError(_FASTAPI_INSTALL_HINT) from exc
+        cors_middleware = cors_module.CORSMiddleware
 
         app.add_middleware(
-            CORSMiddleware,
+            cors_middleware,
             allow_origins=list(settings.dashboard_origins),
             allow_origin_regex=None,
             allow_credentials=False,
-            allow_methods=["GET", "OPTIONS"],
-            allow_headers=["Content-Type", "Cache-Control", "Last-Event-ID"],
+            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_headers=["Content-Type", "Cache-Control", "Last-Event-ID", "X-Request-Id"],
             expose_headers=["X-Lifecycle-Tier", "X-Request-Id"],
             max_age=600,
         )
 
     app.state.arc_guard_metrics = {
-        "requests_total": request_counter,
         "timeout": timeout_counter,
-        "duration": duration_samples,
     }
     app.state.arc_guard_pipeline = pipeline
     app.state.arc_guard_settings = settings

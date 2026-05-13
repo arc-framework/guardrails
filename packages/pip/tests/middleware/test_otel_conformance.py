@@ -66,7 +66,9 @@ def test_logger_event_accepts_all_documented_levels(adapters: OtelObservability)
 def test_metric_sink_counter_and_histogram(adapters: OtelObservability) -> None:
     adapters.metric_sink.counter("conformance.counter", attributes={"stage": "test"})
     adapters.metric_sink.histogram(
-        "conformance.histogram", 1.23, attributes={"stage": "test"},
+        "conformance.histogram",
+        1.23,
+        attributes={"stage": "test"},
     )
 
 

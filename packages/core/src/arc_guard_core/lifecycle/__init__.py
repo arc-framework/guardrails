@@ -1,7 +1,7 @@
 """Per-request lifecycle observability surface for arc-guardrails.
 
 Public Protocol (`LifecycleSink`), null default (`NullLifecycleSink`), the
-twenty-eight typed event dataclasses (`LifecycleEvent` union), and the
+twenty-nine typed event dataclasses (`LifecycleEvent` union), and the
 ULID generator for event ids.
 
 Concrete sinks (`RingBufferLifecycleSink`, `SqliteLifecycleSink`,
@@ -42,6 +42,7 @@ from arc_guard_core.lifecycle.events import (
     RehydrationVerified,
     ReportFlushed,
     RequestCompleted,
+    RequestErrored,
     RequestStarted,
     ResponseAssembled,
     SanitizationApplied,
@@ -65,7 +66,7 @@ __all__ = [
     "ALL_EVENT_TYPES",
     # Helpers
     "new_event_id",
-    # Base events (23)
+    # Base events (24)
     "RequestStarted",
     "PreProcessStarted",
     "PostProcessStarted",
@@ -89,6 +90,7 @@ __all__ = [
     "ResponseAssembled",
     "RequestCompleted",
     "ReportFlushed",
+    "RequestErrored",
     # Conditional events (5)
     "PolicyRuleEvaluated",
     "InspectorFailed",

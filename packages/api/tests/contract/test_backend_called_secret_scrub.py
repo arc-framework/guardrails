@@ -81,9 +81,7 @@ def test_scrubber_strips_credential_substrings() -> None:
 
 
 def test_scrubber_is_case_insensitive() -> None:
-    out = _scrub_forbidden_keys(
-        {"API_KEY": "leak", "Auth_Header": "x", "normal": 1}
-    )
+    out = _scrub_forbidden_keys({"API_KEY": "leak", "Auth_Header": "x", "normal": 1})
     assert out == {"normal": 1}
 
 

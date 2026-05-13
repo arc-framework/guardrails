@@ -23,7 +23,8 @@ class _StubVerifier:
     ) -> RehydrationVerdict:
         if "[INVENTED]" in rehydration_candidate:
             return RehydrationVerdict(
-                decision="reject", reason="invented_placeholder",
+                decision="reject",
+                reason="invented_placeholder",
             )
         return RehydrationVerdict(decision="accept", reason="all_checks_passed")
 

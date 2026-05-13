@@ -26,9 +26,7 @@ class _TokenizeWithTenantSalt:
     ) -> tuple[str, tuple[PolicyDecision, ...]]:
         out = text
         decisions: list[PolicyDecision] = []
-        for finding_idx, f in sorted(
-            enumerate(findings), key=lambda pair: -pair[1].start
-        ):
+        for finding_idx, f in sorted(enumerate(findings), key=lambda pair: -pair[1].start):
             entity = text[f.start : f.end]
             digest = hashlib.sha256(entity.encode() + self._secret).hexdigest()[:8]
             token = f"[{f.entity_type}_TOK_{digest}]"

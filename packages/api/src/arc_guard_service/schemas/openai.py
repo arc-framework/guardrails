@@ -91,9 +91,7 @@ class ChatCompletionUsage(BaseModel):
 class ArcGuardPhase(BaseModel):
     """Per-phase metadata describing what arc-guard did at one boundary."""
 
-    action: str = Field(
-        description="One of `pass`, `block`, `redact`, `hash`, `tokenize`, `warn`."
-    )
+    action: str = Field(description="One of `pass`, `block`, `redact`, `hash`, `tokenize`, `warn`.")
     findings: list[str] = Field(
         default_factory=list,
         description=(
@@ -161,6 +159,36 @@ class ChatCompletionResponse(BaseModel):
     )
 
 
+class ChatExamplePreset(BaseModel):
+    """Validated corpus-backed prompt preset for dashboard chat surfaces."""
+
+    id: str = Field(description="Stable corpus id used by Swagger and dashboard presets.")
+    inspector: str = Field(description="Inspector family or `_baseline` source group.")
+    difficulty: Literal["easy", "medium", "super_hard"] = Field(
+        description="Corpus difficulty bucket."
+    )
+    summary: str = Field(description="Short preset title shown in pickers and Swagger examples.")
+    description: str = Field(description="Longer operator-facing explanation for the preset.")
+    model: str = Field(description="Model carried by the source corpus request.")
+    messages: list[ChatMessage] = Field(
+        default_factory=list,
+        description="Full source message array from the corpus request.",
+    )
+    user_prompt: str = Field(
+        description="The last user-message content inserted into the chat composer by default."
+    )
+    message_count: int = Field(description="Count of source messages in the preset request.")
+    tags: list[str] = Field(default_factory=list, description="Optional corpus tags.")
+    expected_action: str = Field(description="Expected guard action for the documented outcome.")
+    expected_phase: Literal["pre_process", "post_process"] = Field(
+        description="Pipeline phase where the expected action should occur."
+    )
+    refusal_code: str | None = Field(
+        default=None,
+        description="Expected refusal code when the preset is expected to block.",
+    )
+
+
 class RefusalEnvelopeBody(BaseModel):
     """Shape of a 4xx/5xx error body returned when arc-guard or the transport blocks."""
 
@@ -188,6 +216,7 @@ __all__ = [
     "ChatCompletionChoice",
     "ChatCompletionUsage",
     "ChatCompletionResponse",
+    "ChatExamplePreset",
     "ArcGuardPhase",
     "ArcGuardEnvelope",
     "RefusalEnvelopeBody",

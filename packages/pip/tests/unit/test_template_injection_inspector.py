@@ -27,9 +27,7 @@ def _post_result(text: str) -> GuardResult:
     return GuardResult(text=text, action="pass", findings=(), phase="post_process")
 
 
-async def _inspect(
-    inspector: TemplateInjectionInspector, text: str
-) -> GuardResult:
+async def _inspect(inspector: TemplateInjectionInspector, text: str) -> GuardResult:
     return await inspector.inspect(_post_result(text))
 
 

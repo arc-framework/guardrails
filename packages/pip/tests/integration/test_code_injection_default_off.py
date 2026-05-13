@@ -37,9 +37,7 @@ async def test_no_code_injection_findings_when_inspectors_absent() -> None:
             GuardInput(text=payload, context=GuardContext(source="output"))
         )
         code_injection_findings = [
-            f
-            for f in result.findings
-            if f.entity_type.startswith(("sql.", "shell.", "template."))
+            f for f in result.findings if f.entity_type.startswith(("sql.", "shell.", "template."))
         ]
         assert code_injection_findings == []
         assert result.refusal is None
@@ -54,9 +52,7 @@ async def test_pre_process_phase_no_implicit_activation() -> None:
             GuardInput(text=payload, context=GuardContext(source="input"))
         )
         code_injection_findings = [
-            f
-            for f in result.findings
-            if f.entity_type.startswith(("sql.", "shell.", "template."))
+            f for f in result.findings if f.entity_type.startswith(("sql.", "shell.", "template."))
         ]
         assert code_injection_findings == []
         assert result.refusal is None

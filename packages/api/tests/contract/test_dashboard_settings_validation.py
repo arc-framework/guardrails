@@ -23,9 +23,7 @@ def test_valid_http_origin_accepted() -> None:
 
 
 def test_valid_https_origin_accepted() -> None:
-    settings = ServiceSettings(
-        dashboard_origins=["https://dashboard.example.com"]
-    )
+    settings = ServiceSettings(dashboard_origins=["https://dashboard.example.com"])
     assert settings.dashboard_origins == ["https://dashboard.example.com"]
 
 
@@ -80,23 +78,17 @@ def test_trailing_slash_rejected() -> None:
 
 def test_path_component_rejected() -> None:
     with pytest.raises(ValidationError, match="path component not allowed"):
-        ServiceSettings(
-            dashboard_origins=["https://dashboard.example.com/admin"]
-        )
+        ServiceSettings(dashboard_origins=["https://dashboard.example.com/admin"])
 
 
 def test_query_component_rejected() -> None:
     with pytest.raises(ValidationError, match="query component not allowed"):
-        ServiceSettings(
-            dashboard_origins=["https://dashboard.example.com?foo=bar"]
-        )
+        ServiceSettings(dashboard_origins=["https://dashboard.example.com?foo=bar"])
 
 
 def test_fragment_component_rejected() -> None:
     with pytest.raises(ValidationError, match="fragment component not allowed"):
-        ServiceSettings(
-            dashboard_origins=["https://dashboard.example.com#section"]
-        )
+        ServiceSettings(dashboard_origins=["https://dashboard.example.com#section"])
 
 
 def test_missing_host_rejected() -> None:

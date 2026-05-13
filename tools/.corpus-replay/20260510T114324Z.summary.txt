@@ -1,0 +1,20 @@
+========================================================================
+Corpus replay summary
+========================================================================
+Total prompts        : 1
+Matched expected     : 0  (0%)
+Mismatched           : 1
+Errored (HTTP/raise) : 0
+Skipped (extra dep)  : 0
+Elapsed              : 4.03 s
+Records written      : /Users/dgtalbug/Workspace/arc/sdk/tools/.corpus-replay/20260510T114324Z.jsonl
+
+By inspector:
+  semantic_policy             1
+
+Mismatches:
+  - semantic_policy__easy__01
+      action: expected=block actual=pass
+      findings: expected=['POLICY_VIOLATION'] actual=[] (unmatched: ['POLICY_VIOLATION'])
+      refusal_code: expected=policy_violation actual=None
+========================================================================

@@ -1,0 +1,163 @@
+{
+  "rid": "01JFIXT0RID01",
+  "captured_at": "2026-05-09T12:00:00.842Z",
+  "served_from": "fixture",
+  "phases": ["pre_process", "post_process"],
+  "events": [
+    {
+      "id": "evt_01",
+      "parent_id": null,
+      "seq": 1,
+      "ts": "2026-05-09T12:00:00.012Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "StageRan",
+      "stage": "validate",
+      "status": "ok",
+      "duration_ms": 6
+    },
+    {
+      "id": "evt_02",
+      "parent_id": "evt_01",
+      "seq": 2,
+      "ts": "2026-05-09T12:00:00.060Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "StageRan",
+      "stage": "defend",
+      "status": "ok",
+      "duration_ms": 42
+    },
+    {
+      "id": "evt_03",
+      "parent_id": "evt_02",
+      "seq": 3,
+      "ts": "2026-05-09T12:00:00.180Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "FindingProduced",
+      "stage": "classify",
+      "detector_id": "presidio.email",
+      "category": "PII"
+    },
+    {
+      "id": "evt_04",
+      "parent_id": "evt_02",
+      "seq": 4,
+      "ts": "2026-05-09T12:00:00.190Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "FindingProduced",
+      "stage": "classify",
+      "detector_id": "presidio.phone",
+      "category": "PII"
+    },
+    {
+      "id": "evt_05",
+      "parent_id": "evt_02",
+      "seq": 5,
+      "ts": "2026-05-09T12:00:00.220Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "StageRan",
+      "stage": "classify",
+      "status": "ok",
+      "duration_ms": 168
+    },
+    {
+      "id": "evt_06",
+      "parent_id": "evt_05",
+      "seq": 6,
+      "ts": "2026-05-09T12:00:00.270Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "DeceptionScored",
+      "stage": "deception_inspect",
+      "score_value": 0.21,
+      "score_sentinel": null,
+      "band": "low",
+      "marker_counts": { "evasion": 0, "redirection": 1 }
+    },
+    {
+      "id": "evt_07",
+      "parent_id": "evt_05",
+      "seq": 7,
+      "ts": "2026-05-09T12:00:00.280Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "StageRan",
+      "stage": "deception_inspect",
+      "status": "ok",
+      "duration_ms": 58
+    },
+    {
+      "id": "evt_08",
+      "parent_id": "evt_05",
+      "seq": 8,
+      "ts": "2026-05-09T12:00:00.310Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "StageRan",
+      "stage": "sanitize",
+      "status": "ok",
+      "duration_ms": 28
+    },
+    {
+      "id": "evt_09",
+      "parent_id": "evt_08",
+      "seq": 9,
+      "ts": "2026-05-09T12:00:00.380Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "StageRan",
+      "stage": "route",
+      "status": "ok",
+      "duration_ms": 64,
+      "resolved_action": "block"
+    },
+    {
+      "id": "evt_10",
+      "parent_id": "evt_09",
+      "seq": 10,
+      "ts": "2026-05-09T12:00:00.450Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "RefusalProduced",
+      "stage": "refusal",
+      "refusal_code": "PII_LEAK"
+    },
+    {
+      "id": "evt_11",
+      "parent_id": "evt_09",
+      "seq": 11,
+      "ts": "2026-05-09T12:00:00.470Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "StageRan",
+      "stage": "refusal",
+      "status": "ok",
+      "duration_ms": 22
+    },
+    {
+      "id": "evt_12",
+      "parent_id": "evt_11",
+      "seq": 12,
+      "ts": "2026-05-09T12:00:00.510Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "StageRan",
+      "stage": "decision_emit",
+      "status": "ok",
+      "duration_ms": 38
+    },
+    {
+      "id": "evt_13",
+      "parent_id": "evt_12",
+      "seq": 13,
+      "ts": "2026-05-09T12:00:00.560Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "DecisionEmitted",
+      "stage": "decision_emit",
+      "decision_id": "dec_01JFIXT"
+    },
+    {
+      "id": "evt_14",
+      "parent_id": "evt_12",
+      "seq": 14,
+      "ts": "2026-05-09T12:00:00.840Z",
+      "rid": "01JFIXT0RID01",
+      "event_type": "StageRan",
+      "stage": "report",
+      "status": "ok",
+      "duration_ms": 280
+    }
+  ]
+}

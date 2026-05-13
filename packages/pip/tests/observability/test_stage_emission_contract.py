@@ -103,8 +103,7 @@ async def test_every_executed_stage_emits_span_event_metric() -> None:
             duration_samples = [
                 m
                 for m in metric_sink.captured_metrics
-                if m.name == "arc_guardrails.stage.duration"
-                and m.attributes.get("stage") == stage
+                if m.name == "arc_guardrails.stage.duration" and m.attributes.get("stage") == stage
             ]
             assert len(duration_samples) >= 1, f"no duration sample for stage {stage}"
 
@@ -126,7 +125,8 @@ async def test_correlation_and_decision_ids_match_across_emissions() -> None:
 
     await pipeline.pre_process(
         GuardInput(
-            text="Hello.", context=GuardContext(correlation_id="join-test-corr"),
+            text="Hello.",
+            context=GuardContext(correlation_id="join-test-corr"),
         )
     )
 

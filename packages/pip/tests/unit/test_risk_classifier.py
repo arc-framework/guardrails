@@ -29,31 +29,55 @@ _CLF = RiskClassifier()
 MATRIX = [
     # LOW band
     ("low_single", [_f("EMAIL_ADDRESS", RiskLevel.LOW)], RiskBand.LOW),
-    ("low_two", [_f("EMAIL_ADDRESS", RiskLevel.LOW), _f("PHONE_NUMBER", RiskLevel.LOW)], RiskBand.LOW),
+    (
+        "low_two",
+        [_f("EMAIL_ADDRESS", RiskLevel.LOW), _f("PHONE_NUMBER", RiskLevel.LOW)],
+        RiskBand.LOW,
+    ),
     ("low_empty", [], RiskBand.LOW),
-    ("low_only_low_findings_under_aggregation_threshold",
-        [_f("EMAIL_ADDRESS", RiskLevel.LOW), _f("PHONE_NUMBER", RiskLevel.LOW)], RiskBand.LOW),
-
+    (
+        "low_only_low_findings_under_aggregation_threshold",
+        [_f("EMAIL_ADDRESS", RiskLevel.LOW), _f("PHONE_NUMBER", RiskLevel.LOW)],
+        RiskBand.LOW,
+    ),
     # MEDIUM band
     ("medium_single", [_f("CREDIT_CARD", RiskLevel.MEDIUM)], RiskBand.MEDIUM),
-    ("medium_two", [_f("CREDIT_CARD", RiskLevel.MEDIUM), _f("PHONE_NUMBER", RiskLevel.MEDIUM)], RiskBand.MEDIUM),
-    ("medium_via_soft_pii_aggregation",
-        [_f("EMAIL_ADDRESS", RiskLevel.LOW)] * 3, RiskBand.MEDIUM),
-    ("medium_via_low_count_overflow",
-        [_f("EMAIL_ADDRESS", RiskLevel.LOW)] * 4, RiskBand.MEDIUM),  # >= soft_pii_aggregation triggers
-
+    (
+        "medium_two",
+        [_f("CREDIT_CARD", RiskLevel.MEDIUM), _f("PHONE_NUMBER", RiskLevel.MEDIUM)],
+        RiskBand.MEDIUM,
+    ),
+    ("medium_via_soft_pii_aggregation", [_f("EMAIL_ADDRESS", RiskLevel.LOW)] * 3, RiskBand.MEDIUM),
+    (
+        "medium_via_low_count_overflow",
+        [_f("EMAIL_ADDRESS", RiskLevel.LOW)] * 4,
+        RiskBand.MEDIUM,
+    ),  # >= soft_pii_aggregation triggers
     # HIGH band
     ("high_single", [_f("US_SSN", RiskLevel.HIGH)], RiskBand.HIGH),
-    ("high_with_low", [_f("US_SSN", RiskLevel.HIGH), _f("EMAIL_ADDRESS", RiskLevel.LOW)], RiskBand.HIGH),
-    ("high_via_medium_count_overflow",
-        [_f("CREDIT_CARD", RiskLevel.MEDIUM)] * 5, RiskBand.HIGH),
-    ("high_two_high_findings",
-        [_f("US_SSN", RiskLevel.HIGH), _f("US_SSN", RiskLevel.HIGH)], RiskBand.HIGH),
-
+    (
+        "high_with_low",
+        [_f("US_SSN", RiskLevel.HIGH), _f("EMAIL_ADDRESS", RiskLevel.LOW)],
+        RiskBand.HIGH,
+    ),
+    ("high_via_medium_count_overflow", [_f("CREDIT_CARD", RiskLevel.MEDIUM)] * 5, RiskBand.HIGH),
+    (
+        "high_two_high_findings",
+        [_f("US_SSN", RiskLevel.HIGH), _f("US_SSN", RiskLevel.HIGH)],
+        RiskBand.HIGH,
+    ),
     # CRITICAL band
     ("critical_single", [_f("INJECTION", RiskLevel.CRITICAL)], RiskBand.CRITICAL),
-    ("critical_with_low", [_f("INJECTION", RiskLevel.CRITICAL), _f("EMAIL_ADDRESS", RiskLevel.LOW)], RiskBand.CRITICAL),
-    ("critical_with_high", [_f("INJECTION", RiskLevel.CRITICAL), _f("US_SSN", RiskLevel.HIGH)], RiskBand.CRITICAL),
+    (
+        "critical_with_low",
+        [_f("INJECTION", RiskLevel.CRITICAL), _f("EMAIL_ADDRESS", RiskLevel.LOW)],
+        RiskBand.CRITICAL,
+    ),
+    (
+        "critical_with_high",
+        [_f("INJECTION", RiskLevel.CRITICAL), _f("US_SSN", RiskLevel.HIGH)],
+        RiskBand.CRITICAL,
+    ),
     ("critical_two_critical", [_f("INJECTION", RiskLevel.CRITICAL)] * 2, RiskBand.CRITICAL),
 ]
 
@@ -67,9 +91,7 @@ def test_classification_matrix(
     case_id: str, findings: list[Finding], expected_band: RiskBand
 ) -> None:
     band, _marker = _CLF.classify(findings, _THRESHOLDS)
-    assert band == expected_band, (
-        f"{case_id}: expected {expected_band}, got {band}"
-    )
+    assert band == expected_band, f"{case_id}: expected {expected_band}, got {band}"
 
 
 def test_soft_pii_aggregation_reports_marker() -> None:
@@ -95,6 +117,49 @@ class _StubInspector:
         )
 
 
+def _f_named(et: str, risk: RiskLevel, inspector: str) -> Finding:
+    return Finding(et, 0, 1, risk, inspector)
+
+
+def test_min_inspectors_for_critical_default_keeps_single_inspector_critical() -> None:
+    """Default threshold (1) preserves single-inspector CRITICAL escalation."""
+    findings = [_f_named("JAILBREAK_DIRECT_OVERRIDE", RiskLevel.CRITICAL, "jailbreak")]
+    band, marker = _CLF.classify(findings, RiskThresholds())
+    assert band == RiskBand.CRITICAL
+    assert marker is None
+
+
+def test_min_inspectors_for_critical_two_demotes_single_inspector_critical() -> None:
+    """Threshold=2 with one inspector at CRITICAL demotes to HIGH and emits a marker."""
+    thresholds = RiskThresholds(min_inspectors_for_critical=2)
+    findings = [
+        _f_named("JAILBREAK_DIRECT_OVERRIDE", RiskLevel.CRITICAL, "jailbreak"),
+        _f_named("JAILBREAK_ROLE_PLAY", RiskLevel.CRITICAL, "jailbreak"),
+    ]
+    band, marker = _CLF.classify(findings, thresholds)
+    assert band == RiskBand.HIGH
+    assert marker is not None
+    assert "vote_downgrade:critical→high" in marker
+
+
+def test_min_inspectors_for_critical_two_keeps_critical_when_two_inspectors_agree() -> None:
+    """Threshold=2 with CRITICAL findings from two distinct inspectors stays CRITICAL."""
+    thresholds = RiskThresholds(min_inspectors_for_critical=2)
+    findings = [
+        _f_named("JAILBREAK_DIRECT_OVERRIDE", RiskLevel.CRITICAL, "jailbreak"),
+        _f_named("DECEPTION_DETECTED", RiskLevel.CRITICAL, "SemanticIntentInspector"),
+    ]
+    band, marker = _CLF.classify(findings, thresholds)
+    assert band == RiskBand.CRITICAL
+    assert marker is None
+
+
+def test_min_inspectors_for_critical_below_one_rejected() -> None:
+    """Threshold values below 1 must be rejected at construction time."""
+    with pytest.raises(ValueError):
+        RiskThresholds(min_inspectors_for_critical=0)
+
+
 def test_aggregation_marker_recorded_in_decision_rationale() -> None:
     """The aggregation marker MUST appear in the rationale when it changes the band."""
     policy = PolicyRuleSet(
@@ -103,14 +168,13 @@ def test_aggregation_marker_recorded_in_decision_rationale() -> None:
     findings = tuple(_f("EMAIL_ADDRESS", RiskLevel.LOW) for _ in range(3))
     # Findings need distinct spans for the redact strategy to operate.
     findings = tuple(
-        Finding("EMAIL_ADDRESS", i * 5, i * 5 + 4, RiskLevel.LOW, "stub")
-        for i in range(3)
+        Finding("EMAIL_ADDRESS", i * 5, i * 5 + 4, RiskLevel.LOW, "stub") for i in range(3)
     )
     pipeline = GuardPipeline(
         policy_ruleset=policy,
         inspectors=[_StubInspector(findings)],
     )
     result = asyncio.run(pipeline.pre_process(GuardInput(text="aaaaaaaaaaaaaaaaa")))
-    assert any(
-        "aggregation:soft_pii" in d.rationale for d in result.decisions
-    ), "leading PolicyDecision rationale must record the aggregation marker"
+    assert any("aggregation:soft_pii" in d.rationale for d in result.decisions), (
+        "leading PolicyDecision rationale must record the aggregation marker"
+    )

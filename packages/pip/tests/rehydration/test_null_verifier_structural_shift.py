@@ -11,9 +11,7 @@ def test_value_to_literal_example_position_is_rejected() -> None:
     verifier = NullRehydrationVerifier()
     verdict = verifier.verify(
         sanitized_prompt="Send the report to [EMAIL] tomorrow.",
-        rehydration_candidate=(
-            "Use a placeholder like `[EMAIL]` to mark recipient slots."
-        ),
+        rehydration_candidate=("Use a placeholder like `[EMAIL]` to mark recipient slots."),
         entity_map={"[EMAIL]": "alice@acme.com"},
     )
     assert verdict.decision == "reject"

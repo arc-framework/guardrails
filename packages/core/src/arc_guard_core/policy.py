@@ -45,6 +45,7 @@ class RiskThresholds(BaseModel):
     high_escalates_at: int = 1
     critical_escalates_at: int = 1
     soft_pii_aggregation: int = 3
+    min_inspectors_for_critical: int = 1
 
     @field_validator(
         "low_max_count",
@@ -57,6 +58,13 @@ class RiskThresholds(BaseModel):
     def _non_negative(cls, value: int) -> int:
         if value < 0:
             raise ValueError("threshold counts must be >= 0")
+        return value
+
+    @field_validator("min_inspectors_for_critical")
+    @classmethod
+    def _at_least_one(cls, value: int) -> int:
+        if value < 1:
+            raise ValueError("min_inspectors_for_critical must be >= 1")
         return value
 
     @model_validator(mode="after")
@@ -98,9 +106,7 @@ class PolicyRule(BaseModel):
     @classmethod
     def _non_empty_when_set(cls, value: str | None) -> str | None:
         if value is not None and not value:
-            raise ValueError(
-                "PolicyRule strategy / selector must be non-empty when set"
-            )
+            raise ValueError("PolicyRule strategy / selector must be non-empty when set")
         return value
 
     @model_validator(mode="after")
@@ -133,10 +139,7 @@ class PolicyRuleSet(BaseModel):
 
     @model_validator(mode="after")
     def _validate(self) -> PolicyRuleSet:
-        if (
-            not self.rules
-            and self.default_action_when_no_rules_fire == "block"
-        ):
+        if not self.rules and self.default_action_when_no_rules_fire == "block":
             raise ConfigCrossFieldError(
                 "PolicyRuleSet has no rules but default_action_when_no_rules_fire='block'",
                 code="config.cross_field_violation",
@@ -168,9 +171,7 @@ class TransformSummary:
     target_finding_index: int
     before_length: int
     after_length: int
-    replacement_kind: Literal[
-        "placeholder", "hash", "token", "removed", "warn", "passed"
-    ]
+    replacement_kind: Literal["placeholder", "hash", "token", "removed", "warn", "passed"]
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

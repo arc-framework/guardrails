@@ -36,9 +36,7 @@ def _row(path: str, rid: str) -> sqlite3.Row | None:
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     try:
-        return conn.execute(
-            "SELECT * FROM request_summaries WHERE rid = ?", (rid,)
-        ).fetchone()
+        return conn.execute("SELECT * FROM request_summaries WHERE rid = ?", (rid,)).fetchone()
     finally:
         conn.close()
 
@@ -58,11 +56,7 @@ def _ts(seconds: int = 0) -> datetime:
 async def test_request_started_inserts_live_row(db_path: str) -> None:
     p = RequestSummaryProjector(db_path)
     try:
-        await p.emit(
-            RequestStarted(
-                id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"
-            )
-        )
+        await p.emit(RequestStarted(id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"))
         row = _row(db_path, "rid-1")
         assert row is not None
         assert row["status"] == "live"
@@ -76,11 +70,7 @@ async def test_request_started_inserts_live_row(db_path: str) -> None:
 async def test_stage_ran_updates_stage(db_path: str) -> None:
     p = RequestSummaryProjector(db_path)
     try:
-        await p.emit(
-            RequestStarted(
-                id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"
-            )
-        )
+        await p.emit(RequestStarted(id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"))
         await p.emit(
             StageRan(
                 id="ev-002",
@@ -95,7 +85,6 @@ async def test_stage_ran_updates_stage(db_path: str) -> None:
         assert row is not None
         assert row["stage"] == "classify"
 
-
     finally:
         await p.close()
 
@@ -104,11 +93,7 @@ async def test_stage_ran_updates_stage(db_path: str) -> None:
 async def test_finding_produced_updates_max_risk(db_path: str) -> None:
     p = RequestSummaryProjector(db_path)
     try:
-        await p.emit(
-            RequestStarted(
-                id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"
-            )
-        )
+        await p.emit(RequestStarted(id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"))
         await p.emit(
             FindingProduced(
                 id="ev-002",
@@ -150,11 +135,7 @@ async def test_finding_produced_updates_max_risk(db_path: str) -> None:
 async def test_decision_emitted_populates_id_and_action(db_path: str) -> None:
     p = RequestSummaryProjector(db_path)
     try:
-        await p.emit(
-            RequestStarted(
-                id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"
-            )
-        )
+        await p.emit(RequestStarted(id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"))
         await p.emit(
             DecisionEmitted(
                 id="ev-002",
@@ -177,11 +158,7 @@ async def test_decision_emitted_populates_id_and_action(db_path: str) -> None:
 async def test_refusal_produced_sets_refusal_code(db_path: str) -> None:
     p = RequestSummaryProjector(db_path)
     try:
-        await p.emit(
-            RequestStarted(
-                id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"
-            )
-        )
+        await p.emit(RequestStarted(id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"))
         await p.emit(
             RefusalProduced(
                 id="ev-002",
@@ -205,11 +182,7 @@ async def test_request_completed_flips_live_and_sets_duration(
 ) -> None:
     p = RequestSummaryProjector(db_path)
     try:
-        await p.emit(
-            RequestStarted(
-                id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"
-            )
-        )
+        await p.emit(RequestStarted(id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"))
         await p.emit(
             RequestCompleted(
                 id="ev-002",
@@ -236,11 +209,7 @@ async def test_blocked_request_completed_sets_block_action(
 ) -> None:
     p = RequestSummaryProjector(db_path)
     try:
-        await p.emit(
-            RequestStarted(
-                id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"
-            )
-        )
+        await p.emit(RequestStarted(id="ev-001", parent_id=None, seq=1, ts=_ts(0), rid="rid-1"))
         await p.emit(
             RequestCompleted(
                 id="ev-002",

@@ -70,7 +70,5 @@ def test_policy_hints_default_empty_string_rejected() -> None:
 def test_disabled_skips_cross_field_checks() -> None:
     # When disabled, cross-field validation should be permissive — the pipeline
     # never reads those fields anyway.
-    cfg = GuardConfig.model_validate(
-        {"enabled": False, "inspector_order": ["a", "a"]}
-    )
+    cfg = GuardConfig.model_validate({"enabled": False, "inspector_order": ["a", "a"]})
     assert cfg.enabled is False

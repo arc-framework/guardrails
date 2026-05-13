@@ -80,9 +80,7 @@ def decode_debug_cursor(token: str, *, expected_rid: str) -> int:
     if not isinstance(rid, str):
         raise ValueError("cursor 'rid' must be a string")
     if rid != expected_rid:
-        raise ValueError(
-            f"cursor rid {rid!r} does not match requested rid {expected_rid!r}"
-        )
+        raise ValueError(f"cursor rid {rid!r} does not match requested rid {expected_rid!r}")
     return seq
 
 

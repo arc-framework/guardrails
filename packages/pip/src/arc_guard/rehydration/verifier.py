@@ -119,9 +119,21 @@ class NullRehydrationVerifier:
         )
 
 
-_STRUCTURAL_DELIMITERS: frozenset[str] = frozenset({
-    "`", "'", '"', "(", ")", "[", "]", "{", "}", "<", ">",
-})
+_STRUCTURAL_DELIMITERS: frozenset[str] = frozenset(
+    {
+        "`",
+        "'",
+        '"',
+        "(",
+        ")",
+        "[",
+        "]",
+        "{",
+        "}",
+        "<",
+        ">",
+    }
+)
 
 
 def _adjacent_class(window: str, *, side: str) -> str:

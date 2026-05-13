@@ -1,0 +1,19 @@
+========================================================================
+Corpus replay summary
+========================================================================
+Total prompts        : 1
+Matched expected     : 0  (0%)
+Mismatched           : 1
+Errored (HTTP/raise) : 0
+Skipped (extra dep)  : 0
+Elapsed              : 8.98 s
+Records written      : /Users/dgtalbug/Workspace/arc/sdk/tools/.corpus-replay/20260510T155819Z.jsonl
+
+By inspector:
+  _baseline                   1
+
+Mismatches:
+  - _baseline__multi_turn__01
+      action: expected=redact actual=pass
+      findings: expected=['PHONE_NUMBER'] actual=[] (unmatched: ['PHONE_NUMBER'])
+========================================================================

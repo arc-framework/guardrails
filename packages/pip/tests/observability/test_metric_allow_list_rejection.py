@@ -43,11 +43,13 @@ def test_span_path_does_not_enforce_allow_list() -> None:
 
 def test_extending_allow_list_admits_custom_key() -> None:
     config = ObservabilityConfig(
-        metric_attribute_allow_list=frozenset({
-            "correlation_id",
-            "stage",
-            "custom_widget",  # operator-added
-        }),
+        metric_attribute_allow_list=frozenset(
+            {
+                "correlation_id",
+                "stage",
+                "custom_widget",  # operator-added
+            }
+        ),
     )
     redactor = BoundedRedactor(config)
 

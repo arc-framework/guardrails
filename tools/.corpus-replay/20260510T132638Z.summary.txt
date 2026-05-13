@@ -1,0 +1,34 @@
+========================================================================
+Corpus replay summary
+========================================================================
+Total prompts        : 5
+Matched expected     : 0  (0%)
+Mismatched           : 5
+Errored (HTTP/raise) : 0
+Skipped (extra dep)  : 0
+Elapsed              : 6.87 s
+Records written      : /Users/dgtalbug/Workspace/arc/sdk/tools/.corpus-replay/20260510T132638Z.jsonl
+
+By inspector:
+  pii_presidio                5
+
+Mismatches:
+  - pii_presidio__easy__01
+      action: expected=redact actual=pass
+      findings: expected=['EMAIL_ADDRESS'] actual=[] (unmatched: ['EMAIL_ADDRESS'])
+  - pii_presidio__easy__02
+      action: expected=redact actual=pass
+      findings: expected=['PHONE_NUMBER'] actual=[] (unmatched: ['PHONE_NUMBER'])
+  - pii_presidio__easy__03
+      action: expected=redact actual=block
+      findings: expected=['US_SSN'] actual=['JAILBREAK_DIRECT_OVERRIDE', 'PHONE_NUMBER'] (unmatched: ['US_SSN'])
+      refusal_code: expected=None actual=jailbreak_strong
+  - pii_presidio__easy__04
+      action: expected=redact actual=block
+      findings: extra (strict mode) actual has ['JAILBREAK_DIRECT_OVERRIDE'] beyond expected ['CREDIT_CARD']
+      refusal_code: expected=None actual=jailbreak_strong
+  - pii_presidio__easy__05
+      action: expected=redact actual=block
+      findings: extra (strict mode) actual has ['JAILBREAK_DIRECT_OVERRIDE'] beyond expected ['IBAN_CODE']
+      refusal_code: expected=None actual=jailbreak_strong
+========================================================================

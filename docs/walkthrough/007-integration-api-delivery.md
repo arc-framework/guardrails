@@ -1,5 +1,7 @@
 # Walkthrough — Spec 007: Integration, API, and Documentation Completion
 
+> **Note (2026-05-09):** `POST /v1/guard` was retired in [Spec 014](../../specs/014-pipeline-instrumentation-completion/spec.md). The route is now a tombstone returning HTTP 410 Gone with a pointer envelope to `POST /v1/chat/completions`. Use the chat-completions endpoint for full-pipeline behavior; it runs the same `GuardPipeline.pre_process` + `post_process` semantics this walkthrough describes. Sections referencing `/v1/guard` below are kept for historical context.
+
 This page is the operator-facing summary of [Spec 007](../../specs/007-integration-api-delivery/spec.md). It documents the API package's first non-stub release, the public-surface manifest that downstream operators pin against, and the consolidated doc tree under `docs/architecture/`. (The four integration-mode examples originally shipped with this spec under `examples/` were retired in a later cleanup; integration patterns are documented in prose in `docs/architecture/` instead.)
 
 ## What changed

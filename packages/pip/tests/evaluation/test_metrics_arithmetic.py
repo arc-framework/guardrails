@@ -52,8 +52,8 @@ def test_category_precision_recall_partial() -> None:
     samples = [
         (_entry("single_turn_jailbreak"), "refuse", "refuse"),  # TP
         (_entry("single_turn_jailbreak"), "refuse", "refuse"),  # TP
-        (_entry("single_turn_jailbreak"), "refuse", "pass"),    # FP
-        (_entry("single_turn_jailbreak"), "pass", "refuse"),    # FN
+        (_entry("single_turn_jailbreak"), "refuse", "pass"),  # FP
+        (_entry("single_turn_jailbreak"), "pass", "refuse"),  # FN
     ]
     p, r = category_precision_recall(samples, "single_turn_jailbreak")
     assert p == pytest.approx(2 / 3)
@@ -115,7 +115,9 @@ def test_intelligibility_score_with_custom_hook() -> None:
     answers = ["yes", "no", "yes"]
     prompts = ["q1", "q2", "q3"]
     score = compute_intelligibility_score(
-        answers, prompts, hook=lambda p, a: a == "yes",
+        answers,
+        prompts,
+        hook=lambda p, a: a == "yes",
     )
     assert score == pytest.approx(2 / 3)
 

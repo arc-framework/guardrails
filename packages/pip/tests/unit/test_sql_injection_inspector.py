@@ -78,10 +78,7 @@ async def test_detects_block_comment_terminator() -> None:
 @pytest.mark.asyncio
 async def test_detects_union_injection() -> None:
     inspector = SqlInjectionInspector()
-    text = (
-        "SELECT id FROM users WHERE id = 1 "
-        "UNION SELECT username, password FROM admins"
-    )
+    text = "SELECT id FROM users WHERE id = 1 UNION SELECT username, password FROM admins"
     out = await _inspect(inspector, text)
     subtypes = {f.entity_type for f in out.findings}
     assert "sql.union_injection" in subtypes
@@ -98,10 +95,7 @@ async def test_benign_documentation_snippet_passes() -> None:
 @pytest.mark.asyncio
 async def test_prose_with_semicolon_does_not_false_positive() -> None:
     inspector = SqlInjectionInspector()
-    text = (
-        "In SQL you can use SELECT * FROM users to get all rows; "
-        "this is taught in databases."
-    )
+    text = "In SQL you can use SELECT * FROM users to get all rows; this is taught in databases."
     out = await _inspect(inspector, text)
     # The trailing prose is not a SQL statement; stacked-statement detection
     # must require both sides to look like SQL.

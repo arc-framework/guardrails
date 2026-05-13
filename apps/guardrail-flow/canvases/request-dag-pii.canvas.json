@@ -1,0 +1,463 @@
+{
+  "nodes": [
+    {
+      "id": "title",
+      "type": "text",
+      "text": "# UC2 · PII Redaction — Request DAG\nPresidio flags `EMAIL_ADDRESS HIGH`. Sanitize replaces the span. Backend receives redacted payload. `action = redact`, `blocked = false`.",
+      "x": -1200,
+      "y": -520,
+      "width": 2340,
+      "height": 80,
+      "color": "3"
+    },
+    {
+      "id": "legend",
+      "type": "text",
+      "text": "cyan = phase boundaries  ·  green = stage events  ·  purple = inspector / strategy  ·  orange = findings / decisions  ·  yellow = backend  ·  small gray = inert / no-op",
+      "x": -1200,
+      "y": -428,
+      "width": 2340,
+      "height": 38
+    },
+    {
+      "id": "input_msg",
+      "type": "text",
+      "text": "**Conversation · 3 turns**\n\n→  \"Hi, I’m locked out of my account — email is jcarter@acmecorp.com\"\n\n   ←  \"Happy to help. Can you confirm your billing card to verify your identity?\"\n\n→  \"Card 4111-1111-1111-1111, exp 09/26. Billing: 42 Elm St, Austin TX 78701.\"\n   ↑ 3 findings — CREDIT_CARD · DATE_TIME · LOCATION · action = redact",
+      "x": -150,
+      "y": -390,
+      "width": 430,
+      "height": 220,
+      "color": "4"
+    },
+    {
+      "id": "req_start",
+      "type": "text",
+      "text": "## RequestStarted\n`rid = 61709bdd`\n`route = /v1/chat/completions`\n`model = llama3.2  input = 72 bytes`",
+      "x": -150,
+      "y": -40,
+      "width": 300,
+      "height": 90,
+      "color": "5"
+    },
+    {
+      "id": "pre_start",
+      "type": "text",
+      "text": "**PreProcessStarted**\n`correlation_id = 6290bd50`\n`decision_id = 157e91c0`",
+      "x": -560,
+      "y": -40,
+      "width": 260,
+      "height": 75,
+      "color": "5"
+    },
+    {
+      "id": "stage_defend",
+      "type": "text",
+      "text": "*defend · 0.4 ms · no-op*",
+      "x": -860,
+      "y": -340,
+      "width": 220,
+      "height": 38
+    },
+    {
+      "id": "stage_classify",
+      "type": "text",
+      "text": "**CLASSIFY** · `27.9 ms`\n`InspectorRan × 3`",
+      "x": -860,
+      "y": -270,
+      "width": 220,
+      "height": 60,
+      "color": "4"
+    },
+    {
+      "id": "stage_deception",
+      "type": "text",
+      "text": "*deception · 0.2 ms · inert*",
+      "x": -860,
+      "y": -170,
+      "width": 220,
+      "height": 38
+    },
+    {
+      "id": "stage_sanitize",
+      "type": "text",
+      "text": "**SANITIZE** · `0.3 ms`",
+      "x": -860,
+      "y": -90,
+      "width": 220,
+      "height": 50,
+      "color": "4"
+    },
+    {
+      "id": "stage_route",
+      "type": "text",
+      "text": "**ROUTE** · `0.1 ms`",
+      "x": -860,
+      "y": 10,
+      "width": 220,
+      "height": 50,
+      "color": "4"
+    },
+    {
+      "id": "stage_execute",
+      "type": "text",
+      "text": "**EXECUTE** · `0.1 ms`",
+      "x": -860,
+      "y": 110,
+      "width": 220,
+      "height": 50,
+      "color": "4"
+    },
+    {
+      "id": "stage_verify",
+      "type": "text",
+      "text": "**VERIFY** · `0.6 ms`\n`fidelity = 1.0`",
+      "x": -860,
+      "y": 210,
+      "width": 220,
+      "height": 50,
+      "color": "4"
+    },
+    {
+      "id": "stage_rehydrate",
+      "type": "text",
+      "text": "**REHYDRATE** · `1.2 ms`\n`3 placeholders restored`",
+      "x": -860,
+      "y": 268,
+      "width": 220,
+      "height": 50,
+      "color": "4"
+    },
+    {
+      "id": "finding",
+      "type": "text",
+      "text": "### 3 × FindingProduced\n`CREDIT_CARD  span[5,24]   score=1.0`\n`DATE_TIME    span[31,36]  score=0.92`\n`LOCATION     span[47,71]  score=0.87`\n`max_risk = HIGH · inspector = presidio`",
+      "x": -1180,
+      "y": -300,
+      "width": 270,
+      "height": 125,
+      "color": "2"
+    },
+    {
+      "id": "sanit_applied",
+      "type": "text",
+      "text": "**SanitizationApplied × 3**\n`4111-…1111 → [CREDIT_CARD_1]`\n`09/26 → [DATE_1]`\n`42 Elm St, Austin TX → [LOCATION_1]`",
+      "x": -1180,
+      "y": -100,
+      "width": 270,
+      "height": 90,
+      "color": "6"
+    },
+    {
+      "id": "policy_res",
+      "type": "text",
+      "text": "**PolicyResolved**\n`max_risk = HIGH`\n`action = redact`",
+      "x": -1180,
+      "y": 0,
+      "width": 270,
+      "height": 75,
+      "color": "2"
+    },
+    {
+      "id": "strategy_exec",
+      "type": "text",
+      "text": "**StrategyExecuted**\n`RedactStrategy × 3 entities`\n`payload rewritten → placeholders`",
+      "x": -1180,
+      "y": 100,
+      "width": 270,
+      "height": 65,
+      "color": "6"
+    },
+    {
+      "id": "pre_done",
+      "type": "text",
+      "text": "**PreProcessCompleted**\n`action = redact  blocked = false`\n`total_ms = 30.8`",
+      "x": -560,
+      "y": 330,
+      "width": 260,
+      "height": 75,
+      "color": "5"
+    },
+    {
+      "id": "payload_rw",
+      "type": "text",
+      "text": "**PayloadRewritten**\n`3 spans replaced in message[0]`\n`before=72  after=95 bytes`",
+      "x": 260,
+      "y": -160,
+      "width": 260,
+      "height": 75,
+      "color": "3"
+    },
+    {
+      "id": "backend_called",
+      "type": "text",
+      "text": "**BackendCalled**\n`ollama  llama3.2`\n`payload_msg_count = 1`",
+      "x": 260,
+      "y": 0,
+      "width": 260,
+      "height": 75,
+      "color": "3"
+    },
+    {
+      "id": "backend_resp",
+      "type": "text",
+      "text": "### BackendResponded\n`3,442 ms`\n`http_status = 200`\n`183 chars  stop`\n`swap_origin_id → evt_024`",
+      "x": 600,
+      "y": 0,
+      "width": 260,
+      "height": 110,
+      "color": "3"
+    },
+    {
+      "id": "post_start",
+      "type": "text",
+      "text": "**PostProcessStarted**\n`correlation_id = 44194b47`",
+      "x": 260,
+      "y": 160,
+      "width": 260,
+      "height": 60,
+      "color": "5"
+    },
+    {
+      "id": "post_done",
+      "type": "text",
+      "text": "**PostProcessCompleted**\n`action = pass  total_ms = 8.9`",
+      "x": 260,
+      "y": 280,
+      "width": 260,
+      "height": 60,
+      "color": "5"
+    },
+    {
+      "id": "decision",
+      "type": "text",
+      "text": "**DecisionEmitted**\n`action = redact`\n`max_risk = HIGH`\n`decision_id = dec_xyz`",
+      "x": -150,
+      "y": 200,
+      "width": 260,
+      "height": 80,
+      "color": "2"
+    },
+    {
+      "id": "resp_assembled",
+      "type": "text",
+      "text": "**ResponseAssembled**\n`arc_guard.blocked = false`\n`finish_reason = stop`",
+      "x": -150,
+      "y": 340,
+      "width": 260,
+      "height": 75,
+      "color": "3"
+    },
+    {
+      "id": "req_complete",
+      "type": "text",
+      "text": "## RequestCompleted\n`blocked = false`\n`pre = redact  post = pass`\n`total_ms = 3,483`",
+      "x": -150,
+      "y": 480,
+      "width": 260,
+      "height": 90,
+      "color": "5"
+    },
+    {
+      "id": "report_flushed",
+      "type": "text",
+      "text": "*ReportFlushed  async*\n`LogReporter  fanout=1  failures=0`",
+      "x": -150,
+      "y": 630,
+      "width": 260,
+      "height": 55
+    },
+    {
+      "id": "rehydrate_applied",
+      "type": "text",
+      "text": "**RehydrationApplied**\n`[CREDIT_CARD_1] → 4111-…1111`\n`[DATE_1] → 09/26`\n`[LOCATION_1] → 42 Elm St…`\n`user sees original values`",
+      "x": -1180,
+      "y": 240,
+      "width": 270,
+      "height": 105,
+      "color": "4"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_input",
+      "fromNode": "input_msg",
+      "fromSide": "bottom",
+      "toNode": "req_start",
+      "toSide": "top",
+      "animated": true,
+      "color": "4",
+      "label": "①"
+    },
+    {
+      "id": "c1",
+      "fromNode": "req_start",
+      "fromSide": "left",
+      "toNode": "pre_start",
+      "toSide": "right",
+      "animated": true
+    },
+    {
+      "id": "c2",
+      "fromNode": "pre_start",
+      "fromSide": "left",
+      "toNode": "stage_classify",
+      "toSide": "right",
+      "animated": true,
+      "label": "② classify"
+    },
+    {
+      "id": "c3",
+      "fromNode": "pre_start",
+      "fromSide": "left",
+      "toNode": "stage_sanitize",
+      "toSide": "right"
+    },
+    {
+      "id": "c4",
+      "fromNode": "pre_start",
+      "fromSide": "left",
+      "toNode": "stage_route",
+      "toSide": "right"
+    },
+    {
+      "id": "c5",
+      "fromNode": "pre_start",
+      "fromSide": "left",
+      "toNode": "stage_execute",
+      "toSide": "right"
+    },
+    {
+      "id": "c6",
+      "fromNode": "stage_classify",
+      "fromSide": "left",
+      "toNode": "finding",
+      "toSide": "right",
+      "animated": true,
+      "label": "③ finding"
+    },
+    {
+      "id": "c7",
+      "fromNode": "stage_sanitize",
+      "fromSide": "left",
+      "toNode": "sanit_applied",
+      "toSide": "right",
+      "label": "④ sanitize"
+    },
+    {
+      "id": "c8",
+      "fromNode": "stage_route",
+      "fromSide": "left",
+      "toNode": "policy_res",
+      "toSide": "right"
+    },
+    {
+      "id": "c9",
+      "fromNode": "stage_execute",
+      "fromSide": "left",
+      "toNode": "strategy_exec",
+      "toSide": "right"
+    },
+    {
+      "id": "c10",
+      "fromNode": "pre_start",
+      "fromSide": "bottom",
+      "toNode": "pre_done",
+      "toSide": "top"
+    },
+    {
+      "id": "c11",
+      "fromNode": "req_start",
+      "fromSide": "right",
+      "toNode": "payload_rw",
+      "toSide": "left"
+    },
+    {
+      "id": "c12",
+      "fromNode": "req_start",
+      "fromSide": "right",
+      "toNode": "backend_called",
+      "toSide": "left",
+      "animated": true,
+      "label": "⑤ backend"
+    },
+    {
+      "id": "c13",
+      "fromNode": "backend_called",
+      "fromSide": "right",
+      "toNode": "backend_resp",
+      "toSide": "left",
+      "animated": true
+    },
+    {
+      "id": "c14",
+      "fromNode": "backend_called",
+      "fromSide": "bottom",
+      "toNode": "post_start",
+      "toSide": "top"
+    },
+    {
+      "id": "c15",
+      "fromNode": "post_start",
+      "fromSide": "bottom",
+      "toNode": "post_done",
+      "toSide": "top"
+    },
+    {
+      "id": "c16",
+      "fromNode": "req_start",
+      "fromSide": "bottom",
+      "toNode": "decision",
+      "toSide": "top",
+      "label": "⑥ decide"
+    },
+    {
+      "id": "c17",
+      "fromNode": "decision",
+      "fromSide": "bottom",
+      "toNode": "resp_assembled",
+      "toSide": "top"
+    },
+    {
+      "id": "c18",
+      "fromNode": "resp_assembled",
+      "fromSide": "bottom",
+      "toNode": "req_complete",
+      "toSide": "top",
+      "animated": true,
+      "label": "⑦ done"
+    },
+    {
+      "id": "c19",
+      "fromNode": "req_complete",
+      "fromSide": "bottom",
+      "toNode": "report_flushed",
+      "toSide": "top"
+    },
+    {
+      "id": "xref1",
+      "fromNode": "strategy_exec",
+      "fromSide": "bottom",
+      "toNode": "finding",
+      "toSide": "bottom",
+      "color": "6",
+      "label": "finding_id"
+    },
+    {
+      "id": "xref2",
+      "fromNode": "payload_rw",
+      "fromSide": "right",
+      "toNode": "backend_resp",
+      "toSide": "top",
+      "color": "3",
+      "label": "swap_origin_id"
+    },
+    {
+      "id": "xref3",
+      "fromNode": "stage_rehydrate",
+      "fromSide": "left",
+      "toNode": "rehydrate_applied",
+      "toSide": "right",
+      "color": "4"
+    }
+  ]
+}

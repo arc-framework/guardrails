@@ -50,9 +50,7 @@ def _top_level_imports(path: Path) -> set[str]:
 
 def test_schemas_subpackage_exists_and_has_modules() -> None:
     modules = _walk_modules()
-    assert len(modules) >= 4, (
-        f"expected at least 4 modules under schemas/; found {len(modules)}"
-    )
+    assert len(modules) >= 4, f"expected at least 4 modules under schemas/; found {len(modules)}"
 
 
 def test_every_schemas_module_imports_stdlib_or_pydantic_only() -> None:

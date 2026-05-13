@@ -1,0 +1,18 @@
+========================================================================
+Corpus replay summary
+========================================================================
+Total prompts        : 1
+Matched expected     : 0  (0%)
+Mismatched           : 1
+Errored (HTTP/raise) : 0
+Skipped (extra dep)  : 0
+Elapsed              : 0.94 s
+Records written      : /Users/dgtalbug/Workspace/arc/sdk/tools/.corpus-replay/20260510T114238Z.jsonl
+
+By inspector:
+  jailbreak_ml                1
+
+Mismatches:
+  - jailbreak_ml__easy__01
+      findings: expected=['JAILBREAK_ML_DETECTED'] actual=['JAILBREAK_DIRECT_OVERRIDE'] (unmatched: ['JAILBREAK_ML_DETECTED'])
+========================================================================

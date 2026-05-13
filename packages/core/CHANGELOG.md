@@ -2,6 +2,21 @@
 
 All notable changes to the `arc-guard-core` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [0.10.0] — 2026-05-10
+
+### Added
+- New `RequestErrored` lifecycle event (terminal, sister-class to `RequestCompleted`). Carries `reason: Literal["stale_live_sweep", "pipeline_exception", "manual_abort"]`, `terminated_by: str`, and `last_event_seq: int`. Subscribers that don't recognize the type SHOULD treat it as terminal — same handling as `RequestCompleted`.
+- Closed taxonomy size grows from 28 → 29 (24 base + 5 conditional). The tagged-union shape of `LifecycleEvent` is otherwise unchanged.
+- New optional payload-text fields on five event classes, all gated on the operator's `PayloadCapturePolicy.should_capture_sanitized()`:
+  - `SanitizationApplied.text_before` (sister to existing `text_after`)
+  - `StrategyExecuted.text_before` / `StrategyExecuted.text_after`
+  - `PayloadRewritten.text_before` / `PayloadRewritten.text_after`
+  - `RehydrationVerified.text_before` / `RehydrationVerified.text_after`
+  - `ResponseAssembled.response_text`
+
+### Migration notes
+- Additive only. Existing constructors continue to work; new fields default to `None`. The serialized wire format renders unset fields as `null`. Subscribers that ignore unknown fields degrade gracefully.
+
 ## [0.9.0] — 2026-05-08
 
 ### Added

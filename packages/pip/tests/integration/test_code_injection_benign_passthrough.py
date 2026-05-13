@@ -47,9 +47,7 @@ async def test_benign_responses_pass_through_unchanged() -> None:
             GuardInput(text=payload, context=GuardContext(source="output"))
         )
         code_injection_findings = [
-            f
-            for f in result.findings
-            if f.entity_type.startswith(("sql.", "shell.", "template."))
+            f for f in result.findings if f.entity_type.startswith(("sql.", "shell.", "template."))
         ]
         assert code_injection_findings == [], (
             f"benign payload triggered findings: {payload!r} -> {code_injection_findings}"

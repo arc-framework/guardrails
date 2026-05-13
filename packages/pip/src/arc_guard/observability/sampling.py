@@ -43,12 +43,14 @@ _LEVEL_ORDER: dict[str, int] = {
 
 # Failure events always pass through the level floor — they're the
 # whole point of having observability.
-_FAILURE_EVENT_NAMES = frozenset({
-    "guard.stage.failed",
-    "guard.request.rejected",
-    "guard.observability.export_failed",
-    "guard.observability.attribute_dropped",
-})
+_FAILURE_EVENT_NAMES = frozenset(
+    {
+        "guard.stage.failed",
+        "guard.request.rejected",
+        "guard.observability.export_failed",
+        "guard.observability.attribute_dropped",
+    }
+)
 
 # Counter name for runs whose buffered emissions were dropped by
 # sampling — operators can subtract this from total runs to detect

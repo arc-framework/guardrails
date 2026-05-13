@@ -1,0 +1,14 @@
+========================================================================
+Corpus replay summary
+========================================================================
+Total prompts        : 5
+Matched expected     : 3  (60%)
+Mismatched           : 0
+Errored (HTTP/raise) : 2
+Skipped (extra dep)  : 0
+Elapsed              : 536.42 s
+Records written      : /Users/dgtalbug/Workspace/arc/sdk/tools/.corpus-replay/20260510T111200Z.jsonl
+
+By inspector:
+  code_injection_shell        5
+========================================================================

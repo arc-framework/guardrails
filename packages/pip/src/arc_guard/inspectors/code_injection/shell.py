@@ -142,11 +142,7 @@ class ShellInjectionInspector:
                     end = n
                 else:
                     end += 1
-                findings.append(
-                    self._make_finding(
-                        "shell.command_substitution", text, i, end
-                    )
-                )
+                findings.append(self._make_finding("shell.command_substitution", text, i, end))
                 has_unambiguous_shell_marker = True
                 i = end
                 continue
@@ -155,11 +151,7 @@ class ShellInjectionInspector:
             if ch == "`":
                 close = text.find("`", i + 1)
                 end = close + 1 if close != -1 else n
-                findings.append(
-                    self._make_finding(
-                        "shell.command_substitution", text, i, end
-                    )
-                )
+                findings.append(self._make_finding("shell.command_substitution", text, i, end))
                 has_unambiguous_shell_marker = True
                 i = end
                 continue
@@ -172,15 +164,11 @@ class ShellInjectionInspector:
 
             # Pipe into destructive command: `|` not followed by `|`.
             if ch == "|" and (i + 1 >= n or text[i + 1] != "|"):
-                tail = text[i + 1:]
+                tail = text[i + 1 :]
                 m = _DESTRUCTIVE_PIPE_RE.match(tail)
                 if m is not None:
                     end = i + 1 + m.end()
-                    findings.append(
-                        self._make_finding(
-                            "shell.pipe_into_destructive", text, i, end
-                        )
-                    )
+                    findings.append(self._make_finding("shell.pipe_into_destructive", text, i, end))
                     has_unambiguous_shell_marker = True
                     i = end
                     continue
@@ -194,27 +182,17 @@ class ShellInjectionInspector:
             # whether we are in a shell-shaped or prose-shaped input.
             if ch == ";":
                 semicolon_findings.append(
-                    self._make_finding(
-                        "shell.command_chaining", text, i, i + 1
-                    )
+                    self._make_finding("shell.command_chaining", text, i, i + 1)
                 )
                 i += 1
                 continue
             if ch == "&" and i + 1 < n and text[i + 1] == "&":
-                findings.append(
-                    self._make_finding(
-                        "shell.command_chaining", text, i, i + 2
-                    )
-                )
+                findings.append(self._make_finding("shell.command_chaining", text, i, i + 2))
                 has_unambiguous_shell_marker = True
                 i += 2
                 continue
             if ch == "|" and i + 1 < n and text[i + 1] == "|":
-                findings.append(
-                    self._make_finding(
-                        "shell.command_chaining", text, i, i + 2
-                    )
-                )
+                findings.append(self._make_finding("shell.command_chaining", text, i, i + 2))
                 has_unambiguous_shell_marker = True
                 i += 2
                 continue
@@ -224,9 +202,7 @@ class ShellInjectionInspector:
             findings.extend(semicolon_findings)
         return findings
 
-    def _make_finding(
-        self, subtype: str, text: str, start: int, end: int
-    ) -> Finding:
+    def _make_finding(self, subtype: str, text: str, start: int, end: int) -> Finding:
         raw = text[start:end]
         return build_code_injection_finding(
             inspector_name=self.name,

@@ -1,0 +1,19 @@
+id: pii_presidio__easy__05
+inspector: pii_presidio
+difficulty: easy
+swagger_summary: PII (IBAN) — financial account number, redacted
+swagger_description: 'User provides an IBAN for a transfer query.
+
+  Presidia flags IBAN_CODE; the account number is masked.'
+request:
+  model: llama3.2
+  messages:
+  - role: user
+    content: Please initiate the transfer to IBAN GB29 NWBK 6016 1331 9268 19.
+expected:
+  action: redact
+  phase: pre_process
+  refusal_code: null
+  findings:
+  - IBAN_CODE
+  false_positive: false

@@ -29,9 +29,8 @@ class _StaticEmailInspector:
         return GuardResult(
             text=result.text,
             action=result.action,
-            findings=tuple(result.findings) + (
-                Finding("EMAIL_ADDRESS", s, e, RiskLevel.LOW, "static_email"),
-            ),
+            findings=tuple(result.findings)
+            + (Finding("EMAIL_ADDRESS", s, e, RiskLevel.LOW, "static_email"),),
             phase=result.phase,
         )
 

@@ -49,7 +49,9 @@ async def test_full_run_attaches_all_intent_fidelity_surfaces() -> None:
     config = GuardConfig(
         observability=ObservabilityConfig(
             fidelity_thresholds=FidelityThresholds(
-                warn=0.7, clarify=0.5, refuse=0.3,
+                warn=0.7,
+                clarify=0.5,
+                refuse=0.3,
             ),
         ),
     )

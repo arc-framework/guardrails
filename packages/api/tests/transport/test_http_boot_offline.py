@@ -34,9 +34,7 @@ def test_create_app_does_no_outbound_network_io(
     elapsed = time.perf_counter() - start
 
     assert app is not None
-    assert outbound_attempts == [], (
-        f"create_app made outbound connections: {outbound_attempts}"
-    )
+    assert outbound_attempts == [], f"create_app made outbound connections: {outbound_attempts}"
     assert elapsed < 2.0, f"create_app boot took {elapsed:.2f}s, expected < 2.0s"
 
 
@@ -56,6 +54,4 @@ def test_run_guard_default_path_no_outbound_io(monkeypatch: pytest.MonkeyPatch) 
 
     result = run_guard(GuardInput(text="hello"))
     assert result is not None
-    assert outbound_attempts == [], (
-        f"run_guard made outbound connections: {outbound_attempts}"
-    )
+    assert outbound_attempts == [], f"run_guard made outbound connections: {outbound_attempts}"

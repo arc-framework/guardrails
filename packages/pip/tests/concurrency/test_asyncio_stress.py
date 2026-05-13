@@ -86,9 +86,7 @@ async def test_asyncio_stress_no_cross_talk_and_event_loop_stays_responsive() ->
 
     # No cross-talk
     for marker, text in outcomes:
-        assert marker in text, (
-            f"cross-talk: marker {marker!r} missing from result {text!r}"
-        )
+        assert marker in text, f"cross-talk: marker {marker!r} missing from result {text!r}"
 
     # Event-loop canary: p99 jitter under the documented threshold.
     assert samples_ms, "canary collected no samples"

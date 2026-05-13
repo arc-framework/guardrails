@@ -27,7 +27,5 @@ def test_paraphrase_block_rate_at_least_90_percent() -> None:
     paraphrases = _load_paraphrases()
     benign = _load_benign()
     if not paraphrases or not benign:
-        pytest.skip(
-            "Semantic paraphrase corpora not assembled in this environment."
-        )
+        pytest.skip("Semantic paraphrase corpora not assembled in this environment.")
     raise NotImplementedError("corpus loader stub")

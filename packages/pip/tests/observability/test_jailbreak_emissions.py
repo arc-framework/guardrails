@@ -52,9 +52,7 @@ async def test_jailbreak_event_fires_with_documented_fields() -> None:
 
     await pipeline.pre_process(GuardInput(text="anything"))
 
-    detected_events = [
-        e for e in logger.captured_events if e.name == "guard.jailbreak.detected"
-    ]
+    detected_events = [e for e in logger.captured_events if e.name == "guard.jailbreak.detected"]
     assert len(detected_events) == 1
     fields = detected_events[0].fields
     assert fields["category"] == "role_play"
@@ -78,8 +76,7 @@ async def test_jailbreak_counter_increments_with_category_attribute() -> None:
     await pipeline.pre_process(GuardInput(text="anything"))
 
     counters = [
-        m for m in metric_sink.captured_metrics
-        if m.name == "arc_guardrails.jailbreak.detected"
+        m for m in metric_sink.captured_metrics if m.name == "arc_guardrails.jailbreak.detected"
     ]
     assert len(counters) == 1
     assert counters[0].attributes["category"] == "role_play"
@@ -108,12 +105,9 @@ async def test_no_emissions_when_detector_returns_empty() -> None:
 
     await pipeline.pre_process(GuardInput(text="benign"))
 
-    detected_events = [
-        e for e in logger.captured_events if e.name == "guard.jailbreak.detected"
-    ]
+    detected_events = [e for e in logger.captured_events if e.name == "guard.jailbreak.detected"]
     assert detected_events == []
     counters = [
-        m for m in metric_sink.captured_metrics
-        if m.name == "arc_guardrails.jailbreak.detected"
+        m for m in metric_sink.captured_metrics if m.name == "arc_guardrails.jailbreak.detected"
     ]
     assert counters == []

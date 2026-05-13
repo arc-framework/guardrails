@@ -13,9 +13,7 @@ from arc_guard.policy.conflict import _precedence_index
 ActionLiteral = Literal["pass", "redact", "hash", "block", "tokenize"]
 
 
-def aggregate_action_for_band(
-    band: RiskBand, decisions: Sequence[PolicyDecision]
-) -> ActionLiteral:
+def aggregate_action_for_band(band: RiskBand, decisions: Sequence[PolicyDecision]) -> ActionLiteral:
     """Choose the run-level aggregate action.
 
     - LOW / MEDIUM / HIGH → most restrictive non-block decision strategy.

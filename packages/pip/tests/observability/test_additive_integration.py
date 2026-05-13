@@ -72,10 +72,7 @@ async def test_new_stages_compose_with_observability_wrappers() -> None:
     await pipeline.pre_process(GuardInput(text="hello"))
 
     # All three new stages fired.
-    stage_attrs = {
-        s.attributes.get("stage")
-        for s in tracer.captured_spans
-    }
+    stage_attrs = {s.attributes.get("stage") for s in tracer.captured_spans}
     assert "defend" in stage_attrs
     assert "verify" in stage_attrs
     # rehydrate fires only when entity_map non-empty (not the case here).
@@ -84,7 +81,9 @@ async def test_new_stages_compose_with_observability_wrappers() -> None:
     for s in tracer.captured_spans:
         for value in s.attributes.values():
             if isinstance(value, str):
-                assert "hello" != value or value == "hello"  # value is allowed only if explicitly that string for stage; here we check it didn't sneak into other fields
+                assert (
+                    "hello" != value or value == "hello"
+                )  # value is allowed only if explicitly that string for stage; here we check it didn't sneak into other fields
     # Specifically the 'stage' attribute is one of the documented stage names.
     # Use STAGE_DESCRIPTORS as the source-of-truth so future additive
     # stage extensions don't break this test.
@@ -120,8 +119,7 @@ async def test_new_stage_metric_attributes_match_allow_list() -> None:
     # own attributes (band, sentinel, decision, reason) which are
     # documented and intentional. They surface here without raw text.
     fidelity_metrics = [
-        m for m in metric_sink.captured_metrics
-        if m.name.startswith("arc_guardrails.fidelity.")
+        m for m in metric_sink.captured_metrics if m.name.startswith("arc_guardrails.fidelity.")
     ]
     assert len(fidelity_metrics) >= 1
     for m in fidelity_metrics:

@@ -92,16 +92,14 @@ async def test_verify_stage_emits_span_event_and_metrics() -> None:
     assert fields["band"] == "above_warn"
 
     score_counters = [
-        m for m in metric_sink.captured_metrics
-        if m.name == "arc_guardrails.fidelity.score"
+        m for m in metric_sink.captured_metrics if m.name == "arc_guardrails.fidelity.score"
     ]
     assert len(score_counters) == 1
     assert score_counters[0].attributes["band"] == "above_warn"
     assert score_counters[0].attributes["sentinel"] == "measured"
 
     duration_hists = [
-        m for m in metric_sink.captured_metrics
-        if m.name == "arc_guardrails.fidelity.duration"
+        m for m in metric_sink.captured_metrics if m.name == "arc_guardrails.fidelity.duration"
     ]
     assert len(duration_hists) == 1
 

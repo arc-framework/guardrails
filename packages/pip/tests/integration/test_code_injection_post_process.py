@@ -30,9 +30,7 @@ def _post(text: str) -> GuardResult:
 @pytest.mark.requires_code_injection
 async def test_sql_inspector_post_process_blocking_payload() -> None:
     inspector = SqlInjectionInspector()
-    out = await inspector.inspect(
-        _post("SELECT * FROM users WHERE id = 1; DROP TABLE users; --")
-    )
+    out = await inspector.inspect(_post("SELECT * FROM users WHERE id = 1; DROP TABLE users; --"))
     assert out.findings, "SQL inspector must emit at least one finding"
     sql_subtypes = {f.entity_type for f in out.findings}
     assert sql_subtypes & {
@@ -54,9 +52,7 @@ async def test_sql_inspector_post_process_blocking_payload() -> None:
 @pytest.mark.asyncio
 async def test_shell_inspector_post_process_blocking_payload() -> None:
     inspector = ShellInjectionInspector()
-    out = await inspector.inspect(
-        _post("ls /tmp; cat /etc/passwd | rm -rf /tmp")
-    )
+    out = await inspector.inspect(_post("ls /tmp; cat /etc/passwd | rm -rf /tmp"))
     assert out.findings
     shell_subtypes = {f.entity_type for f in out.findings}
     assert shell_subtypes & {

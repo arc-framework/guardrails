@@ -49,14 +49,10 @@ class DeceptionScore:
             if self.value is None:
                 raise ValueError("DeceptionScore(sentinel='measured') requires a value")
             if not (0.0 <= self.value <= 1.0):
-                raise ValueError(
-                    f"DeceptionScore.value must be in [0.0, 1.0]; got {self.value}"
-                )
+                raise ValueError(f"DeceptionScore.value must be in [0.0, 1.0]; got {self.value}")
         else:
             if self.value is not None:
-                raise ValueError(
-                    "DeceptionScore(sentinel='not_measured') must have value=None"
-                )
+                raise ValueError("DeceptionScore(sentinel='not_measured') must have value=None")
 
     @classmethod
     def measured(cls, value: float) -> DeceptionScore:
@@ -68,7 +64,8 @@ class DeceptionScore:
 
 
 NOT_MEASURED: Final[DeceptionScore] = DeceptionScore(
-    value=None, sentinel="not_measured",
+    value=None,
+    sentinel="not_measured",
 )
 
 
@@ -93,18 +90,14 @@ class ConversationState:
         if not self.conversation_id:
             raise ValueError("ConversationState.conversation_id must be non-empty")
         if self.turn_count < 1:
-            raise ValueError(
-                f"ConversationState.turn_count must be >= 1; got {self.turn_count}"
-            )
+            raise ValueError(f"ConversationState.turn_count must be >= 1; got {self.turn_count}")
         if self.role_play_markers < 0:
             raise ValueError(
-                f"ConversationState.role_play_markers must be >= 0; "
-                f"got {self.role_play_markers}"
+                f"ConversationState.role_play_markers must be >= 0; got {self.role_play_markers}"
             )
         if self.escalation_signals < 0:
             raise ValueError(
-                f"ConversationState.escalation_signals must be >= 0; "
-                f"got {self.escalation_signals}"
+                f"ConversationState.escalation_signals must be >= 0; got {self.escalation_signals}"
             )
 
 

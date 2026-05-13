@@ -30,9 +30,7 @@ def build_clarification(
     else:
         rephrase = "Please rephrase the request more specifically."
 
-    next_steps: tuple[str, ...] = (
-        "Re-submit a rephrased version that omits the flagged details.",
-    )
+    next_steps: tuple[str, ...] = ("Re-submit a rephrased version that omits the flagged details.",)
 
     return ClarificationRequest(
         suggested_rephrase=rephrase,

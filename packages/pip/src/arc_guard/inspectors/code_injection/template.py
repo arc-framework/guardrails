@@ -46,6 +46,22 @@ _JINJA_SIGIL_RE = re.compile(
     re.DOTALL,
 )
 
+# Template-engine expression delimiters across the common stacks: Jinja2 /
+# Twig (``{{ ... }}``), JSP / EL / shell-style (``${ ... }``), ERB / ASP
+# (``<%= ... %>``). The inspector treats any delimiter whose body contains
+# an arithmetic operator or a function-call paren as an evaluated
+# expression — the safe shape (e.g. a literal variable reference like
+# ``{{ user.name }}``) is excluded so framework templates don't trip the
+# detector. Matches everything attackers reach for in SSTI proof-of-concept
+# probes (``{{ 7*7 }}``, ``${T(java.lang.Runtime)}``, ``<%= 1+1 %>``).
+_TEMPLATE_EXPRESSION_RE = re.compile(
+    r"(?P<expr>"
+    r"\{\{\s*[^}]*[+\-*/%(\[][^}]*\}\}"  # {{ ... arith/call ... }}
+    r"|\$\{\s*[^}]*[+\-*/%(\[][^}]*\}"  # ${ ... arith/call ... }
+    r"|<%=\s*[^%]+?%>"  # <%= ... %>
+    r")",
+)
+
 _ACTIVE_TAG_RE = re.compile(
     r"<\s*(?:script|iframe|svg)\b[^>]*>",
     re.IGNORECASE,
@@ -100,6 +116,7 @@ class TemplateInjectionInspector:
         new_findings: list[Finding] = list(result.findings)
         new_findings.extend(self._detect_sandbox_escape(text))
         new_findings.extend(self._detect_active_html(text))
+        new_findings.extend(self._detect_expression(text))
 
         if len(new_findings) == len(result.findings):
             return result
@@ -127,6 +144,25 @@ class TemplateInjectionInspector:
                     subtype="template.sandbox_escape",
                     span=(match.start(), match.end()),
                     raw_text=body,
+                    capture_raw_matches=self._capture_raw_matches,
+                )
+            )
+        return out
+
+    def _detect_expression(self, text: str) -> list[Finding]:
+        out: list[Finding] = []
+        seen_spans: set[tuple[int, int]] = set()
+        for match in _TEMPLATE_EXPRESSION_RE.finditer(text):
+            span = (match.start("expr"), match.end("expr"))
+            if span in seen_spans:
+                continue
+            seen_spans.add(span)
+            out.append(
+                build_code_injection_finding(
+                    inspector_name=self.name,
+                    subtype="template.expression",
+                    span=span,
+                    raw_text=match.group("expr"),
                     capture_raw_matches=self._capture_raw_matches,
                 )
             )

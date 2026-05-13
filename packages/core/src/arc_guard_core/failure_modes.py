@@ -91,69 +91,111 @@ class FailureRule(NamedTuple):
 
 FAIL_RULE: dict[type[Exception], FailureRule] = {
     ApiBoundaryValidationError: FailureRule(
-        FAILURE_API_VALIDATION, "warn", RefusalCode.API_INVALID_REQUEST,
+        FAILURE_API_VALIDATION,
+        "warn",
+        RefusalCode.API_INVALID_REQUEST,
     ),
     PipelineContractValidationError: FailureRule(
-        FAILURE_PIPELINE_CONTRACT, "error", RefusalCode.INTERNAL_PIPELINE_ERROR,
+        FAILURE_PIPELINE_CONTRACT,
+        "error",
+        RefusalCode.INTERNAL_PIPELINE_ERROR,
     ),
     AdapterBoundaryValidationError: FailureRule(
-        FAILURE_ADAPTER_VALIDATION, "error", RefusalCode.INTERNAL_ADAPTER_ERROR,
+        FAILURE_ADAPTER_VALIDATION,
+        "error",
+        RefusalCode.INTERNAL_ADAPTER_ERROR,
     ),
     ConfigSchemaError: FailureRule(
-        FAILURE_CONFIG, "critical", None,
+        FAILURE_CONFIG,
+        "critical",
+        None,
     ),
     ConfigCrossFieldError: FailureRule(
-        FAILURE_CONFIG, "critical", None,
+        FAILURE_CONFIG,
+        "critical",
+        None,
     ),
     InspectorError: FailureRule(
-        FAILURE_INSPECTOR, "warn", None,
+        FAILURE_INSPECTOR,
+        "warn",
+        None,
     ),
     StrategyError: FailureRule(
-        FAILURE_STRATEGY, "error", RefusalCode.STRATEGY_FAILED,
+        FAILURE_STRATEGY,
+        "error",
+        RefusalCode.STRATEGY_FAILED,
     ),
     PolicyRouterError: FailureRule(
-        FAILURE_POLICY_ROUTER, "error", RefusalCode.POLICY_BLOCK,
+        FAILURE_POLICY_ROUTER,
+        "error",
+        RefusalCode.POLICY_BLOCK,
     ),
     RefusalEnvelopeError: FailureRule(
-        FAILURE_REFUSAL_ENVELOPE, "critical", RefusalCode.INTERNAL_REFUSAL_BUILD_ERROR,
+        FAILURE_REFUSAL_ENVELOPE,
+        "critical",
+        RefusalCode.INTERNAL_REFUSAL_BUILD_ERROR,
     ),
     ReporterError: FailureRule(
-        FAILURE_REPORTER, "warn", None,
+        FAILURE_REPORTER,
+        "warn",
+        None,
     ),
     FlagProviderError: FailureRule(
-        FAILURE_FLAG_PROVIDER, "warn", None,
+        FAILURE_FLAG_PROVIDER,
+        "warn",
+        None,
     ),
     EntityProviderError: FailureRule(
-        FAILURE_ENTITY_PROVIDER, "error", RefusalCode.INTERNAL_ENTITY_PROVIDER_ERROR,
+        FAILURE_ENTITY_PROVIDER,
+        "error",
+        RefusalCode.INTERNAL_ENTITY_PROVIDER_ERROR,
     ),
     IntentEncoderError: FailureRule(
-        FAILURE_INTENT_ENCODER, "warn", None,
+        FAILURE_INTENT_ENCODER,
+        "warn",
+        None,
     ),
     FidelityScorerError: FailureRule(
-        FAILURE_FIDELITY_SCORER, "warn", None,
+        FAILURE_FIDELITY_SCORER,
+        "warn",
+        None,
     ),
     RehydrationVerifierError: FailureRule(
-        FAILURE_REHYDRATION_VERIFIER, "error", RefusalCode.FIDELITY_DROP,
+        FAILURE_REHYDRATION_VERIFIER,
+        "error",
+        RefusalCode.FIDELITY_DROP,
     ),
     JailbreakDetectorError: FailureRule(
-        FAILURE_JAILBREAK_DETECTOR, "warn", None,
+        FAILURE_JAILBREAK_DETECTOR,
+        "warn",
+        None,
     ),
     ConversationTurnInspectorError: FailureRule(
-        FAILURE_CONVERSATION_TURN_INSPECTOR, "warn", None,
+        FAILURE_CONVERSATION_TURN_INSPECTOR,
+        "warn",
+        None,
     ),
     EvaluationHarnessError: FailureRule(
-        FAILURE_EVALUATION_HARNESS, "error", RefusalCode.INTERNAL_PIPELINE_ERROR,
+        FAILURE_EVALUATION_HARNESS,
+        "error",
+        RefusalCode.INTERNAL_PIPELINE_ERROR,
     ),
     CorpusValidationError: FailureRule(
-        FAILURE_CORPUS_VALIDATION, "error", RefusalCode.API_INVALID_REQUEST,
+        FAILURE_CORPUS_VALIDATION,
+        "error",
+        RefusalCode.API_INVALID_REQUEST,
     ),
     TransportError: FailureRule(
-        FAILURE_API_TRANSPORT, "error", RefusalCode.API_TRANSPORT_TIMEOUT,
+        FAILURE_API_TRANSPORT,
+        "error",
+        RefusalCode.API_TRANSPORT_TIMEOUT,
     ),
 }
 
 UNKNOWN_RULE: Final[FailureRule] = FailureRule(
-    FAILURE_UNKNOWN, "critical", RefusalCode.INTERNAL_UNKNOWN_ERROR,
+    FAILURE_UNKNOWN,
+    "critical",
+    RefusalCode.INTERNAL_UNKNOWN_ERROR,
 )
 UNKNOWN_POSTURE: Final[FailureMode] = "closed"
 

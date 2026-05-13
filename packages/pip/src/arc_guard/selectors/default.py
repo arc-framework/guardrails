@@ -74,9 +74,7 @@ class DefaultStrategySelector:
         mapping: Mapping[str, str] | None = None,
         logger: Logger | None = None,
     ) -> None:
-        self._mapping: Mapping[str, str] = (
-            mapping if mapping is not None else self.DEFAULT_MAPPING
-        )
+        self._mapping: Mapping[str, str] = mapping if mapping is not None else self.DEFAULT_MAPPING
         self._logger: Logger = logger if logger is not None else NullLogger()
 
     def select(self, finding: Finding, guard_result: GuardResult) -> str:  # noqa: ARG002

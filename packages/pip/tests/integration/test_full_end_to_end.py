@@ -25,9 +25,7 @@ async def test_jailbreak_detection_produces_signals() -> None:
     assert result.action == "block"
     assert result.refusal is not None
     assert result.refusal.code == "jailbreak_strong"
-    jb_findings = [
-        f for f in result.findings if f.entity_type.startswith("JAILBREAK_")
-    ]
+    jb_findings = [f for f in result.findings if f.entity_type.startswith("JAILBREAK_")]
     assert len(jb_findings) >= 1
 
 
@@ -37,7 +35,9 @@ async def test_threshold_ladder_dispatches_per_band() -> None:
     config = GuardConfig(
         observability=ObservabilityConfig(
             jailbreak_thresholds=JailbreakThresholds(
-                refuse=0.95, clarify=0.7, warn=0.4,
+                refuse=0.95,
+                clarify=0.7,
+                warn=0.4,
             ),
         ),
     )

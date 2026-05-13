@@ -1,0 +1,14 @@
+========================================================================
+Corpus replay summary
+========================================================================
+Total prompts        : 5
+Matched expected     : 5  (100%)
+Mismatched           : 0
+Errored (HTTP/raise) : 0
+Skipped (extra dep)  : 0
+Elapsed              : 1.18 s
+Records written      : /Users/dgtalbug/Workspace/arc/sdk/tools/.corpus-replay/20260510T122429Z.jsonl
+
+By inspector:
+  jailbreak_heuristic         5
+========================================================================

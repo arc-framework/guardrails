@@ -15,9 +15,7 @@ from arc_guard_service.settings import ServiceSettings
 from arc_guard_service.transport.http import create_app
 
 
-def _seed_decision(
-    path: str, rid: str, decision_id: str, payload: dict
-) -> None:
+def _seed_decision(path: str, rid: str, decision_id: str, payload: dict) -> None:
     import json
 
     conn = sqlite3.connect(path)
@@ -39,14 +37,10 @@ def _seed_decision(
 async def client(tmp_path: Path):
     db = tmp_path / "arc_guardrail.db"
     SqliteLifecycleSink(str(db))
-    settings = ServiceSettings(
-        enable_chat_completions=False, lifecycle_sqlite_path=str(db)
-    )
+    settings = ServiceSettings(enable_chat_completions=False, lifecycle_sqlite_path=str(db))
     app = create_app(settings)
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         yield c, str(db)
 
 
@@ -73,14 +67,10 @@ async def test_404_when_decision_not_captured(client) -> None:
 
 @pytest.mark.asyncio
 async def test_503_when_sqlite_path_unset() -> None:
-    settings = ServiceSettings(
-        enable_chat_completions=False, lifecycle_sqlite_path=None
-    )
+    settings = ServiceSettings(enable_chat_completions=False, lifecycle_sqlite_path=None)
     app = create_app(settings)
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         resp = await c.get("/requests/rid-1/decision")
     assert resp.status_code == 503
     assert "retry-after" in {k.lower() for k in resp.headers.keys()}

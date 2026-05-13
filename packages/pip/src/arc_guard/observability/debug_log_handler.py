@@ -74,16 +74,11 @@ def _safe_metadata(record: logging.LogRecord) -> dict[str, Any]:
             extras[k] = v
         elif isinstance(v, (list, tuple)):
             extras[k] = [
-                x if isinstance(x, (str, int, float, bool, type(None))) else repr(x)
-                for x in v
+                x if isinstance(x, (str, int, float, bool, type(None))) else repr(x) for x in v
             ]
         elif isinstance(v, dict):
             extras[k] = {
-                str(kk): (
-                    vv
-                    if isinstance(vv, (str, int, float, bool, type(None)))
-                    else repr(vv)
-                )
+                str(kk): (vv if isinstance(vv, (str, int, float, bool, type(None))) else repr(vv))
                 for kk, vv in v.items()
             }
         else:

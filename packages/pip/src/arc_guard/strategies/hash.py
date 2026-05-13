@@ -47,13 +47,9 @@ class HashStrategy:
 
         decisions: list[PolicyDecision] = []
         # Apply right-to-left so earlier offsets stay stable.
-        for finding_idx, finding in sorted(
-            enumerate(findings), key=lambda pair: -pair[1].start
-        ):
+        for finding_idx, finding in sorted(enumerate(findings), key=lambda pair: -pair[1].start):
             span = text[finding.start : finding.end]
-            digest = hmac.new(
-                self._key, span.encode("utf-8"), hashlib.sha256
-            ).hexdigest()[:8]
+            digest = hmac.new(self._key, span.encode("utf-8"), hashlib.sha256).hexdigest()[:8]
             replacement = f"[HASH:{digest}]"
             text = text[: finding.start] + replacement + text[finding.end :]
             decisions.append(

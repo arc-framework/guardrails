@@ -32,8 +32,7 @@ class ExplainableInspector(Protocol):
 
     def explain_matches(
         self, text: str, new_findings: Sequence[Finding]
-    ) -> list[InspectorMatchExplanation]:
-        ...
+    ) -> list[InspectorMatchExplanation]: ...
 
 
 __all__ = ["ExplainableInspector", "InspectorMatchExplanation"]

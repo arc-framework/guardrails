@@ -1,0 +1,20 @@
+========================================================================
+Corpus replay summary
+========================================================================
+Total prompts        : 5
+Matched expected     : 4  (80%)
+Mismatched           : 1
+Errored (HTTP/raise) : 0
+Skipped (extra dep)  : 0
+Elapsed              : 4.17 s
+Records written      : /Users/dgtalbug/Workspace/arc/sdk/tools/.corpus-replay/20260510T161235Z.jsonl
+
+By inspector:
+  deception                   5
+
+Mismatches:
+  - deception__easy__03
+      action: expected=block actual=redact
+      findings: expected=['DECEPTION_DETECTED'] actual=['PERSON'] (unmatched: ['DECEPTION_DETECTED'])
+      refusal_code: expected=social_engineering_detected actual=None
+========================================================================

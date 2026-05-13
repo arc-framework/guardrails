@@ -64,16 +64,12 @@ class SubscriberRegistry:
         return self._dropped_per_subscriber
 
     async def register(self) -> "asyncio.Queue[LifecycleEvent | None]":
-        queue: asyncio.Queue[LifecycleEvent | None] = asyncio.Queue(
-            maxsize=self._queue_capacity
-        )
+        queue: asyncio.Queue[LifecycleEvent | None] = asyncio.Queue(maxsize=self._queue_capacity)
         async with self._lock:
             self._subscribers.add(queue)
         return queue
 
-    async def unregister(
-        self, queue: "asyncio.Queue[LifecycleEvent | None]"
-    ) -> None:
+    async def unregister(self, queue: "asyncio.Queue[LifecycleEvent | None]") -> None:
         async with self._lock:
             self._subscribers.discard(queue)
 
@@ -154,9 +150,12 @@ def build_events_router(
         body = json.dumps({"rid": rid, "reason": reason})
         return f"event: terminated\ndata: {body}\n\n"
 
+    terminal_events = ("RequestCompleted", "RequestErrored")
+
     async def _is_already_terminated(rid: str) -> bool:
         """Pre-subscription liveness check: return True iff the rid has a
-        ``RequestCompleted`` event in the configured lifecycle store."""
+        ``RequestCompleted`` or ``RequestErrored`` event in the configured
+        lifecycle store."""
         if lifecycle_sink is None:
             return False
         try:
@@ -165,9 +164,7 @@ def build_events_router(
             return False
         if not events:
             return False
-        return any(
-            type(ev).event_type == "RequestCompleted" for ev in events
-        )
+        return any(type(ev).event_type in terminal_events for ev in events)
 
     @router.get(
         "/events",
@@ -196,6 +193,7 @@ def build_events_router(
 
         # Pre-subscription liveness check for the rid-filter case.
         if rid is not None and await _is_already_terminated(rid):
+
             async def already_done() -> Any:
                 yield ": connected\n\n"
                 yield _terminal_sentinel(rid, "already_completed")
@@ -217,9 +215,7 @@ def build_events_router(
             last_heartbeat = time.monotonic()
             try:
                 while True:
-                    timeout = max(
-                        0.1, heartbeat_seconds - (time.monotonic() - last_heartbeat)
-                    )
+                    timeout = max(0.1, heartbeat_seconds - (time.monotonic() - last_heartbeat))
                     try:
                         event = await asyncio.wait_for(queue.get(), timeout=timeout)
                     except TimeoutError:
@@ -236,10 +232,16 @@ def build_events_router(
                     yield f"event: lifecycle\nid: {event.id}\ndata: {data}\n\n"
                     last_heartbeat = time.monotonic()
                     # Terminal-event detection in filtered mode: emit the
-                    # sentinel and close cleanly when this rid completes.
-                    if rid is not None and type(event).event_type == "RequestCompleted":
-                        yield _terminal_sentinel(rid, "completed")
-                        break
+                    # sentinel and close cleanly when this rid completes
+                    # OR errors (sweeper-promoted).
+                    if rid is not None:
+                        et = type(event).event_type
+                        if et == "RequestCompleted":
+                            yield _terminal_sentinel(rid, "completed")
+                            break
+                        if et == "RequestErrored":
+                            yield _terminal_sentinel(rid, "errored")
+                            break
             finally:
                 await registry.unregister(queue)
 
@@ -250,6 +252,31 @@ def build_events_router(
                 "Cache-Control": "no-cache",
                 "Connection": "keep-alive",
                 "X-Accel-Buffering": "no",
+            },
+        )
+
+    @router.post(
+        "/events/close-all",
+        summary="Close every active SSE subscriber",
+        tags=["lifecycle"],
+        responses={
+            200: {
+                "description": (
+                    "Number of subscribers signaled to close. Each receives a "
+                    "shutdown sentinel; their generators exit cleanly and "
+                    "unregister themselves on the next event-loop tick."
+                ),
+            }
+        },
+    )
+    async def close_all_events_subscribers() -> Any:
+        before = registry.subscriber_count
+        registry.shutdown()
+        return JSONResponse(
+            status_code=200,
+            content={
+                "closed": before,
+                "remaining_after_signal": registry.subscriber_count,
             },
         )
 

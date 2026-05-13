@@ -23,13 +23,15 @@ from arc_guard_core.failure_modes import FAIL_RULE, FAILURE_UNKNOWN, lookup_rule
 # Second-level group classes that organize the hierarchy but are never
 # raised directly. They have no ``__failure_mode__`` and no ``FAIL_RULE``
 # entry; their leaves do.
-GROUP_CLASSES: frozenset[str] = frozenset({
-    "ArcGuardError",
-    "ConfigError",
-    "ValidationError",
-    "PipelineError",
-    "AdapterError",
-})
+GROUP_CLASSES: frozenset[str] = frozenset(
+    {
+        "ArcGuardError",
+        "ConfigError",
+        "ValidationError",
+        "PipelineError",
+        "AdapterError",
+    }
+)
 
 
 def _concrete_leaves() -> list[type[exc.ArcGuardError]]:
@@ -58,9 +60,7 @@ def test_every_leaf_resolves_to_a_known_rule() -> None:
     """
     leaves = _concrete_leaves()
     unknown = [
-        cls.__name__
-        for cls in leaves
-        if lookup_rule(cls)[0].failure_class == FAILURE_UNKNOWN
+        cls.__name__ for cls in leaves if lookup_rule(cls)[0].failure_class == FAILURE_UNKNOWN
     ]
     assert unknown == [], (
         f"Leaf exceptions resolving to unknown rule: {unknown}. "
@@ -75,11 +75,5 @@ def test_every_fail_rule_key_declares_failure_mode() -> None:
     Posture is read from the ClassVar at lookup time; without it, the
     posture branch in ``stage_runner`` would have nothing to read.
     """
-    missing = [
-        cls.__name__
-        for cls in FAIL_RULE
-        if not hasattr(cls, "__failure_mode__")
-    ]
-    assert missing == [], (
-        f"FAIL_RULE keys missing __failure_mode__ ClassVar: {missing}"
-    )
+    missing = [cls.__name__ for cls in FAIL_RULE if not hasattr(cls, "__failure_mode__")]
+    assert missing == [], f"FAIL_RULE keys missing __failure_mode__ ClassVar: {missing}"

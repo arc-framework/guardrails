@@ -27,9 +27,8 @@ class _StaticPiiInspector:
         return GuardResult(
             text=result.text,
             action=result.action,
-            findings=tuple(result.findings) + (
-                Finding("EMAIL_ADDRESS", 0, 5, RiskLevel.MEDIUM, "static_pii"),
-            ),
+            findings=tuple(result.findings)
+            + (Finding("EMAIL_ADDRESS", 0, 5, RiskLevel.MEDIUM, "static_pii"),),
             phase=result.phase,
         )
 

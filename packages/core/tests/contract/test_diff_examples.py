@@ -52,8 +52,7 @@ def test_type_narrowing_is_breaking() -> None:
     new[0]["fields"][0]["type"] = "int"
     diffs = snap.diff_snapshots(old, new)
     assert any(
-        d.kind == "changed" and "x" in d.detail and "type changed" in d.detail
-        for d in diffs
+        d.kind == "changed" and "x" in d.detail and "type changed" in d.detail for d in diffs
     )
 
 
@@ -67,9 +66,7 @@ def test_optional_field_added_is_additive() -> None:
         }
     ]
     new = deepcopy(old)
-    new[0]["fields"].append(
-        {"name": "y", "type": "str", "required": False, "default": "'default'"}
-    )
+    new[0]["fields"].append({"name": "y", "type": "str", "required": False, "default": "'default'"})
     diffs = snap.diff_snapshots(old, new)
     assert any(d.kind == "added" and "y" in d.detail for d in diffs)
     assert all(not d.is_breaking() or "y" not in d.detail for d in diffs)
@@ -85,9 +82,7 @@ def test_required_field_added_is_breaking() -> None:
         }
     ]
     new = deepcopy(old)
-    new[0]["fields"].append(
-        {"name": "y", "type": "str", "required": True, "default": None}
-    )
+    new[0]["fields"].append({"name": "y", "type": "str", "required": True, "default": None})
     diffs = snap.diff_snapshots(old, new)
     assert any(d.kind == "changed" and "y" in d.detail for d in diffs)
 
@@ -103,9 +98,7 @@ def test_protocol_method_added_is_additive_but_signature_change_is_breaking() ->
         }
     ]
     new = deepcopy(old)
-    new[0]["methods"].append(
-        {"name": "m2", "is_async": False, "params": [], "return": "None"}
-    )
+    new[0]["methods"].append({"name": "m2", "is_async": False, "params": [], "return": "None"})
     diffs = snap.diff_snapshots(old, new)
     assert any(d.kind == "added" and "m2" in d.detail for d in diffs)
 

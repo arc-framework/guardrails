@@ -18,7 +18,9 @@ def test_default_observability_config_returns_default_thresholds() -> None:
 def test_custom_thresholds_round_trip_through_config() -> None:
     config = ObservabilityConfig(
         fidelity_thresholds=FidelityThresholds(
-            warn=0.8, clarify=0.4, refuse=0.2,
+            warn=0.8,
+            clarify=0.4,
+            refuse=0.2,
         ),
     )
     assert config.fidelity_thresholds.warn == 0.8

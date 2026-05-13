@@ -59,7 +59,9 @@ async def test_aggressive_thresholds_promote_low_score_to_refuse() -> None:
     config = GuardConfig(
         observability=ObservabilityConfig(
             deception_thresholds=DeceptionThresholds(
-                refuse=0.4, clarify=0.2, warn=0.1,
+                refuse=0.4,
+                clarify=0.2,
+                warn=0.1,
             ),
         ),
     )
@@ -87,7 +89,9 @@ async def test_conservative_thresholds_keep_moderate_score_passing() -> None:
     config = GuardConfig(
         observability=ObservabilityConfig(
             deception_thresholds=DeceptionThresholds(
-                refuse=0.9, clarify=0.7, warn=0.5,
+                refuse=0.9,
+                clarify=0.7,
+                warn=0.5,
             ),
         ),
     )
