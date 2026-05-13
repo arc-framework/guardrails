@@ -35,10 +35,10 @@ dist/
 *.egg-info/
 pip-wheel-metadata/
 
-# Public docs live in docs/; working and thesis material stay local.
+# Public docs sources live in docs/; local working material stays local.
 docs/.obsidian/
 docs/archive/
-docs/canvases/
+docs/canvases/_archive/
 docs/superpowers/
 docs/university/
 docs/knowledge-base/
@@ -50,3 +50,4 @@ arc-guard-agent-prompts.md
 .gitnexus
 
 node_modules/
+node_modules

@@ -1,0 +1,521 @@
+{
+  "nodes": [
+    {
+      "id": "title",
+      "type": "text",
+      "text": "# 12-Stage Pipeline \u00b7 Swimlane\nThree horizontal lanes: **OBSERVABILITY** (hooks emitted by every stage) \u00b7 **PIPELINE** (12 stages, branch at \u2466) \u00b7 **PLUGINS** (inspectors, strategies, reporters plug into their host stage). Read left-to-right.",
+      "x": -130,
+      "y": -340,
+      "width": 2350,
+      "height": 90,
+      "color": "3"
+    },
+    {
+      "id": "grp_obs",
+      "type": "group",
+      "x": -130,
+      "y": -230,
+      "width": 2350,
+      "height": 190,
+      "label": "OBSERVABILITY \u00b7 stage_runner emits on every stage"
+    },
+    {
+      "id": "grp_pipe",
+      "type": "group",
+      "x": -130,
+      "y": -20,
+      "width": 2350,
+      "height": 380,
+      "label": "PIPELINE"
+    },
+    {
+      "id": "grp_plugins",
+      "type": "group",
+      "x": -130,
+      "y": 390,
+      "width": 2350,
+      "height": 310,
+      "label": "PLUGINS"
+    },
+    {
+      "id": "obs_tracer",
+      "type": "text",
+      "text": "**Tracer**\nOTEL span\nname \u00b7 attrs \u00b7 duration_ms",
+      "x": 80,
+      "y": -178,
+      "width": 175,
+      "height": 75,
+      "color": "2"
+    },
+    {
+      "id": "obs_logger",
+      "type": "text",
+      "text": "**Logger**\nstructlog\nname \u00b7 level \u00b7 fields \u00b7 ts",
+      "x": 480,
+      "y": -178,
+      "width": 175,
+      "height": 75,
+      "color": "2"
+    },
+    {
+      "id": "obs_lifecycle",
+      "type": "text",
+      "text": "**LifecycleSink**\n29 typed events\nparent_id DAG",
+      "x": 900,
+      "y": -178,
+      "width": 195,
+      "height": 75,
+      "color": "2"
+    },
+    {
+      "id": "obs_metrics",
+      "type": "text",
+      "text": "**MetricSink**\nOTEL metrics\ncounter \u00b7 histogram",
+      "x": 1400,
+      "y": -178,
+      "width": 195,
+      "height": 75,
+      "color": "2"
+    },
+    {
+      "id": "guard_in",
+      "type": "text",
+      "text": "**GuardInput**",
+      "x": -125,
+      "y": 108,
+      "width": 120,
+      "height": 50,
+      "color": "5"
+    },
+    {
+      "id": "guard_out",
+      "type": "text",
+      "text": "**GuardResult**",
+      "x": 2110,
+      "y": 108,
+      "width": 130,
+      "height": 50,
+      "color": "5"
+    },
+    {
+      "id": "s1",
+      "type": "text",
+      "text": "**\u2460 validate**\nschema \u00b7 size\nboundaries",
+      "x": 0,
+      "y": 88,
+      "width": 163,
+      "height": 72,
+      "color": "5"
+    },
+    {
+      "id": "s2",
+      "type": "text",
+      "text": "**\u2461 defend**\nIntentLock\ncapture",
+      "x": 183,
+      "y": 88,
+      "width": 163,
+      "height": 72,
+      "color": "4"
+    },
+    {
+      "id": "s3",
+      "type": "text",
+      "text": "**\u2462 classify**\ninspectors\nin parallel",
+      "x": 366,
+      "y": 88,
+      "width": 163,
+      "height": 72,
+      "color": "4"
+    },
+    {
+      "id": "s4",
+      "type": "text",
+      "text": "**\u2463 deception**\nmulti-turn\ndrift score",
+      "x": 549,
+      "y": 88,
+      "width": 163,
+      "height": 72,
+      "color": "4"
+    },
+    {
+      "id": "s5",
+      "type": "text",
+      "text": "**\u2464 sanitize**\nplaceholder\nmap build",
+      "x": 732,
+      "y": 88,
+      "width": 163,
+      "height": 72,
+      "color": "4"
+    },
+    {
+      "id": "s6",
+      "type": "text",
+      "text": "**\u2465 route**\npolicy \u2192 action\nCRITICAL \u2192 \u2467",
+      "x": 915,
+      "y": 88,
+      "width": 163,
+      "height": 72,
+      "color": "4"
+    },
+    {
+      "id": "s7",
+      "type": "text",
+      "text": "**\u2466 execute**\napply strategy\ncall backend",
+      "x": 1098,
+      "y": 88,
+      "width": 163,
+      "height": 72,
+      "color": "4"
+    },
+    {
+      "id": "s8",
+      "type": "text",
+      "text": "**\u2467 refusal**\nRefusalEnvelope\nblocked",
+      "x": 1310,
+      "y": 18,
+      "width": 163,
+      "height": 72,
+      "color": "1"
+    },
+    {
+      "id": "s9",
+      "type": "text",
+      "text": "**\u2468 verify**\nfidelity score\npass",
+      "x": 1310,
+      "y": 178,
+      "width": 163,
+      "height": 72,
+      "color": "4"
+    },
+    {
+      "id": "s10",
+      "type": "text",
+      "text": "**\u2469 rehydrate**\nunmask\nplaceholders",
+      "x": 1493,
+      "y": 178,
+      "width": 163,
+      "height": 72,
+      "color": "4"
+    },
+    {
+      "id": "s11",
+      "type": "text",
+      "text": "**\u246a decision_emit**\nDecisionRecord\nSQLite",
+      "x": 1710,
+      "y": 88,
+      "width": 163,
+      "height": 72,
+      "color": "4"
+    },
+    {
+      "id": "s12",
+      "type": "text",
+      "text": "**\u246b report**\nReporters\nasync",
+      "x": 1893,
+      "y": 88,
+      "width": 163,
+      "height": 72,
+      "color": "4"
+    },
+    {
+      "id": "i_inj",
+      "type": "text",
+      "text": "InjectionInspector\nregex \u00b7 fastest",
+      "x": 282,
+      "y": 435,
+      "width": 193,
+      "height": 52
+    },
+    {
+      "id": "i_pres",
+      "type": "text",
+      "text": "PresidioInspector\nNER \u00b7 PII/PCI/PHI",
+      "x": 493,
+      "y": 435,
+      "width": 193,
+      "height": 52
+    },
+    {
+      "id": "i_sql",
+      "type": "text",
+      "text": "SqlInjectionInspector\nUNION \u00b7 stacked",
+      "x": 282,
+      "y": 503,
+      "width": 193,
+      "height": 52
+    },
+    {
+      "id": "i_shell",
+      "type": "text",
+      "text": "ShellInjectionInspector\n$() \u00b7 backticks",
+      "x": 493,
+      "y": 503,
+      "width": 193,
+      "height": 52
+    },
+    {
+      "id": "i_jb",
+      "type": "text",
+      "text": "JailbreakDetector\n6 categories \u00b7 rule + ML",
+      "x": 387,
+      "y": 573,
+      "width": 193,
+      "height": 55,
+      "color": "1"
+    },
+    {
+      "id": "st_redact",
+      "type": "text",
+      "text": "RedactStrategy\nnumbered placeholders",
+      "x": 1000,
+      "y": 435,
+      "width": 193,
+      "height": 52
+    },
+    {
+      "id": "st_block",
+      "type": "text",
+      "text": "BlockStrategy\nhard stop",
+      "x": 1210,
+      "y": 435,
+      "width": 193,
+      "height": 52
+    },
+    {
+      "id": "st_hash",
+      "type": "text",
+      "text": "HashStrategy",
+      "x": 1000,
+      "y": 503,
+      "width": 193,
+      "height": 52
+    },
+    {
+      "id": "st_warn",
+      "type": "text",
+      "text": "WarnStrategy *(NEW)*",
+      "x": 1210,
+      "y": 503,
+      "width": 193,
+      "height": 52
+    },
+    {
+      "id": "r_log",
+      "type": "text",
+      "text": "LogReporter",
+      "x": 1880,
+      "y": 435,
+      "width": 193,
+      "height": 52,
+      "color": "2"
+    },
+    {
+      "id": "i_semantic",
+      "type": "text",
+      "text": "SemanticIntentInspector\nembedding \u00b7 semantic intent",
+      "x": 282,
+      "y": 571,
+      "width": 193,
+      "height": 52
+    },
+    {
+      "id": "i_template",
+      "type": "text",
+      "text": "TemplateInjectionInspector\nJinja \u00b7 ${} \u00b7 sandbox",
+      "x": 493,
+      "y": 571,
+      "width": 193,
+      "height": 52
+    }
+  ],
+  "edges": [
+    {
+      "id": "ein",
+      "fromNode": "guard_in",
+      "fromSide": "right",
+      "toNode": "s1",
+      "toSide": "left",
+      "animated": true
+    },
+    {
+      "id": "e12",
+      "fromNode": "s1",
+      "fromSide": "right",
+      "toNode": "s2",
+      "toSide": "left",
+      "animated": true
+    },
+    {
+      "id": "e23",
+      "fromNode": "s2",
+      "fromSide": "right",
+      "toNode": "s3",
+      "toSide": "left",
+      "animated": true
+    },
+    {
+      "id": "e34",
+      "fromNode": "s3",
+      "fromSide": "right",
+      "toNode": "s4",
+      "toSide": "left",
+      "animated": true
+    },
+    {
+      "id": "e45",
+      "fromNode": "s4",
+      "fromSide": "right",
+      "toNode": "s5",
+      "toSide": "left",
+      "animated": true
+    },
+    {
+      "id": "e56",
+      "fromNode": "s5",
+      "fromSide": "right",
+      "toNode": "s6",
+      "toSide": "left",
+      "animated": true
+    },
+    {
+      "id": "e67",
+      "fromNode": "s6",
+      "fromSide": "right",
+      "toNode": "s7",
+      "toSide": "left",
+      "animated": true
+    },
+    {
+      "id": "e7b",
+      "fromNode": "s7",
+      "fromSide": "right",
+      "toNode": "s8",
+      "toSide": "left",
+      "animated": true,
+      "color": "1",
+      "label": "blocked"
+    },
+    {
+      "id": "e7p",
+      "fromNode": "s7",
+      "fromSide": "right",
+      "toNode": "s9",
+      "toSide": "left",
+      "animated": true,
+      "color": "4",
+      "label": "pass"
+    },
+    {
+      "id": "e910",
+      "fromNode": "s9",
+      "fromSide": "right",
+      "toNode": "s10",
+      "toSide": "left",
+      "color": "4"
+    },
+    {
+      "id": "e8_11",
+      "fromNode": "s8",
+      "fromSide": "right",
+      "toNode": "s11",
+      "toSide": "top",
+      "color": "1"
+    },
+    {
+      "id": "e10_11",
+      "fromNode": "s10",
+      "fromSide": "right",
+      "toNode": "s11",
+      "toSide": "bottom",
+      "color": "4"
+    },
+    {
+      "id": "e1112",
+      "fromNode": "s11",
+      "fromSide": "right",
+      "toNode": "s12",
+      "toSide": "left",
+      "animated": true
+    },
+    {
+      "id": "eout",
+      "fromNode": "s12",
+      "fromSide": "right",
+      "toNode": "guard_out",
+      "toSide": "left"
+    },
+    {
+      "id": "p_inj",
+      "fromNode": "s3",
+      "fromSide": "bottom",
+      "toNode": "i_inj",
+      "toSide": "top",
+      "label": "calls"
+    },
+    {
+      "id": "p_pres",
+      "fromNode": "s3",
+      "fromSide": "bottom",
+      "toNode": "i_pres",
+      "toSide": "top"
+    },
+    {
+      "id": "p_sql",
+      "fromNode": "s3",
+      "fromSide": "bottom",
+      "toNode": "i_sql",
+      "toSide": "top"
+    },
+    {
+      "id": "p_shell",
+      "fromNode": "s3",
+      "fromSide": "bottom",
+      "toNode": "i_shell",
+      "toSide": "top"
+    },
+    {
+      "id": "p_jb",
+      "fromNode": "s3",
+      "fromSide": "bottom",
+      "toNode": "i_jb",
+      "toSide": "top"
+    },
+    {
+      "id": "p_red",
+      "fromNode": "s7",
+      "fromSide": "bottom",
+      "toNode": "st_redact",
+      "toSide": "top",
+      "label": "applies"
+    },
+    {
+      "id": "p_blk",
+      "fromNode": "s7",
+      "fromSide": "bottom",
+      "toNode": "st_block",
+      "toSide": "top"
+    },
+    {
+      "id": "p_hsh",
+      "fromNode": "s7",
+      "fromSide": "bottom",
+      "toNode": "st_hash",
+      "toSide": "top"
+    },
+    {
+      "id": "p_wrn",
+      "fromNode": "s7",
+      "fromSide": "bottom",
+      "toNode": "st_warn",
+      "toSide": "top"
+    },
+    {
+      "id": "p_rep",
+      "fromNode": "s12",
+      "fromSide": "bottom",
+      "toNode": "r_log",
+      "toSide": "top",
+      "label": "fires"
+    }
+  ]
+}

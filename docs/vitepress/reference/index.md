@@ -1,6 +1,6 @@
 # Reference
 
-This section condenses the repository’s deeper knowledge-base material into a browsable technical reference for integrators and maintainers.
+This section collects the repository's core technical reference material for integrators and maintainers.
 
 ## What This Covers
 
