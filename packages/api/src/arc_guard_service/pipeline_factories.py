@@ -178,7 +178,7 @@ def _all_inspectors_policy() -> PolicyRuleSet:
                 match="JAILBREAK_INTENT",
                 strategy="block",
             ),
-        )
+        ),
     )
 
 

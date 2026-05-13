@@ -41,9 +41,7 @@ class RiskClassifier:
         # falls back to redact instead of a hard block.
         crit_count = per_level.get(RiskLevel.CRITICAL, 0)
         if crit_count >= thresholds.critical_escalates_at:
-            crit_inspectors = {
-                f.inspector for f in findings if f.risk_level == RiskLevel.CRITICAL
-            }
+            crit_inspectors = {f.inspector for f in findings if f.risk_level == RiskLevel.CRITICAL}
             if len(crit_inspectors) >= thresholds.min_inspectors_for_critical:
                 return RiskBand.CRITICAL, None
             return RiskBand.HIGH, (
