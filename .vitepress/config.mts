@@ -129,10 +129,17 @@ export default defineConfig({
 
   vite: {
     optimizeDeps: {
-      exclude: ['@nolebase/vitepress-plugin-breadcrumbs/client'],
+      exclude: [
+        '@nolebase/vitepress-plugin-breadcrumbs/client',
+        '@nolebase/vitepress-plugin-git-changelog/client',
+        '@nolebase/vitepress-plugin-git-changelog/client/composables/changelog',
+      ],
     },
     ssr: {
-      noExternal: ['@nolebase/vitepress-plugin-breadcrumbs'],
+      noExternal: [
+        '@nolebase/vitepress-plugin-breadcrumbs',
+        '@nolebase/vitepress-plugin-git-changelog',
+      ],
     },
     plugins: [
       GitChangelog({ repoURL: () => repoUrl }),
