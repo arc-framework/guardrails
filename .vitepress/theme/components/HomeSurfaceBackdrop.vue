@@ -1,19 +1,30 @@
 <script setup lang="ts">
+import {
+  mountSurfaceBackground,
+  type SurfaceBackgroundConfig,
+  type SurfaceBackgroundControls,
+} from '../../../shared/visuals/dottedSurface';
 import { useData } from 'vitepress';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const surfaceElement = ref<HTMLElement | null>(null);
+const surfaceCanvas = ref<HTMLCanvasElement | null>(null);
 const { isDark } = useData();
 
-const surfaceSrc = computed(
-  () =>
-    `https://cdn.21st.dev/sshahaider/dotted-surface/default/bundle.1757222194600.html?theme=${
-      isDark.value ? 'dark' : 'light'
-    }&dark=${isDark.value ? 'true' : 'false'}`,
-);
-
 let resizeObserver: ResizeObserver | undefined;
-let frameId = 0;
+let measureFrameId = 0;
+let resizeSurfaceCanvas = () => {};
+let surfaceControls: DottedSurfaceControls | undefined;
+
+function getDocsSurfaceConfig(): SurfaceBackgroundConfig {
+  return {
+    amplitude: 10,
+    density: 0.72,
+    opacity: 0.7,
+    style: 'mesh',
+    theme: isDark.value ? 'dark' : 'light',
+  };
+}
 
 function readCssPixels(variableName: string): number {
   if (typeof window === 'undefined') {
@@ -67,15 +78,38 @@ function scheduleMeasure() {
     return;
   }
 
-  window.cancelAnimationFrame(frameId);
-  frameId = window.requestAnimationFrame(() => {
+  window.cancelAnimationFrame(measureFrameId);
+  measureFrameId = window.requestAnimationFrame(() => {
     measureSurfaceHeight();
+    resizeSurfaceCanvas();
   });
 }
+
+function initializeSurfaceCanvas() {
+  const canvas = surfaceCanvas.value;
+
+  if (typeof window === 'undefined' || !canvas) {
+    return () => {};
+  }
+
+  surfaceControls = mountSurfaceBackground(canvas, getDocsSurfaceConfig);
+  resizeSurfaceCanvas = surfaceControls.resize;
+
+  return () => {
+    surfaceControls?.destroy();
+    surfaceControls = undefined;
+    resizeSurfaceCanvas = () => {};
+  };
+}
+
+watch(isDark, () => {
+  surfaceControls?.redraw();
+});
 
 onMounted(async () => {
   await nextTick();
   scheduleMeasure();
+  initializeSurfaceCanvas();
 
   window.addEventListener('resize', scheduleMeasure);
 
@@ -88,29 +122,25 @@ onMounted(async () => {
 
     if (home) {
       resizeObserver.observe(home);
+      resizeObserver.observe(surfaceElement.value!);
     }
   }
 });
 
 onBeforeUnmount(() => {
   if (typeof window !== 'undefined') {
-    window.cancelAnimationFrame(frameId);
+    window.cancelAnimationFrame(measureFrameId);
     window.removeEventListener('resize', scheduleMeasure);
   }
 
   resizeObserver?.disconnect();
+  surfaceControls?.destroy();
+  surfaceControls = undefined;
 });
 </script>
 
 <template>
   <div ref="surfaceElement" class="arc-home-surface" aria-hidden="true">
-    <iframe
-      class="arc-home-surface__frame"
-      :src="surfaceSrc"
-      title="Decorative dotted surface background"
-      loading="eager"
-      sandbox="allow-scripts allow-same-origin"
-      scrolling="no"
-      tabindex="-1" />
+    <canvas ref="surfaceCanvas" class="arc-home-surface__canvas" />
   </div>
 </template>

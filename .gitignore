@@ -32,6 +32,7 @@ build/
 dist/
 .vitepress/cache/
 .vitepress/dist/
+.vitepress/config.mts.timestamp-*
 *.egg-info/
 pip-wheel-metadata/
 
