@@ -28,6 +28,8 @@ const nodeTypes = {
   canvasGroup: CanvasGroupNode,
 };
 
+const DOCS_SPREAD_FACTOR = 1.18;
+
 const flowId = `arc-doc-canvas-${props.canvasId}`;
 const { fitView, zoomIn, zoomOut } = useVueFlow(flowId);
 
@@ -44,7 +46,11 @@ const parsedCanvas = computed(() =>
 );
 const spreadCanvas = computed(() =>
   parsedCanvas.value
-    ? spreadLayout(parsedCanvas.value.nodes, parsedCanvas.value.edges)
+    ? spreadLayout(
+        parsedCanvas.value.nodes,
+        parsedCanvas.value.edges,
+        DOCS_SPREAD_FACTOR,
+      )
     : null,
 );
 const activeCanvas = computed(() =>
