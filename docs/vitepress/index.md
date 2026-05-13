@@ -32,22 +32,22 @@ arc-guardrails is an open source guardrails project for teams that need to keep 
 ## Start Here
 
 <div class="arc-doc-grid">
-  <a class="arc-doc-card arc-doc-card--link" href="/guide/">
+  <a class="arc-doc-card arc-doc-card--link" href="./guide/">
     <h3>Guide</h3>
     <p>Understand the package split, the 12-stage execution model, and the local setup path that the Makefile already standardizes.</p>
     <span class="arc-doc-card__cta">Open section -></span>
   </a>
-  <a class="arc-doc-card arc-doc-card--link" href="/reference/">
+  <a class="arc-doc-card arc-doc-card--link" href="./reference/">
     <h3>Reference</h3>
     <p>Trace the pipeline, the API surface, observability hooks, and the detection coverage matrix from the existing knowledge base.</p>
     <span class="arc-doc-card__cta">Open section -></span>
   </a>
-  <a class="arc-doc-card arc-doc-card--link" href="/canvases/">
+  <a class="arc-doc-card arc-doc-card--link" href="./canvases/">
     <h3>Canvases</h3>
     <p>Use interactive request and pipeline flow views derived from the repository’s existing canvas documents.</p>
     <span class="arc-doc-card__cta">Open section -></span>
   </a>
-  <a class="arc-doc-card arc-doc-card--link" href="/guide/setup">
+  <a class="arc-doc-card arc-doc-card--link" href="./guide/setup">
     <h3>Run Locally</h3>
     <p>Use the repository Makefile to install packages, boot the API, start Docker services, and exercise the stack on any machine.</p>
     <span class="arc-doc-card__cta">Open section -></span>
