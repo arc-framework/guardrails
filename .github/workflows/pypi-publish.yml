@@ -1,0 +1,167 @@
+name: Publish to PyPI
+
+# Publishes packages to PyPI when a tag is pushed.
+#
+# Supported tags:
+#   core-v0.9.0  → publishes arc-guard-core v0.9.0
+#   pip-v0.10.0  → publishes arc-guard v0.10.0
+#
+# Tag format: {package-name}-v{version}
+#
+# Requires:
+#   - Trusted Publisher configured on PyPI (no API tokens needed)
+#   - https://pypi.org/project/{package}/publishing/
+#   - Add trusted publisher: GitHub repo, workflow: .github/workflows/pypi-publish.yml
+#
+# Manual approval:
+#   1. Push tag: git tag pip-v0.10.1 && git push --tags
+#   2. GitHub Actions triggers this workflow
+#   3. Validation runs (typecheck, build, version check)
+#   4. Workflow pauses at 'publish' step (environment: release)
+#   5. You review and click "Approve" in GitHub UI
+#   6. Publish to PyPI proceeds
+
+on:
+  push:
+    tags:
+      - "core-v*.*.*"
+      - "pip-v*.*.*"
+      - "service-v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g., core-v0.9.1)"
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate-tag:
+    name: Validate Tag
+    runs-on: ubuntu-latest
+    outputs:
+      package: ${{ steps.parse.outputs.package }}
+      version: ${{ steps.parse.outputs.version }}
+      valid: ${{ steps.parse.outputs.valid }}
+    steps:
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Parse tag
+        id: parse
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          if [[ $TAG =~ ^(core|pip|service)-v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            PACKAGE="${BASH_REMATCH[1]}"
+            VERSION="${BASH_REMATCH[2]}"
+            echo "package=$PACKAGE" >> "$GITHUB_OUTPUT"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "valid=true" >> "$GITHUB_OUTPUT"
+            echo "✓ Valid tag: $PACKAGE v$VERSION"
+          else
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+            echo "✗ Invalid tag format: $TAG"
+            echo "  Expected: {core|pip|service}-v{major}.{minor}.{patch}"
+            exit 1
+          fi
+
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    needs: validate-tag
+    if: needs.validate-tag.outputs.valid == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install Python workspace dependencies
+        run: cd packages && env -u VIRTUAL_ENV uv sync --all-extras --dev
+
+      - name: Verify tag matches pyproject.toml
+        run: |
+          PACKAGE="${{ needs.validate-tag.outputs.package }}"
+          VERSION="${{ needs.validate-tag.outputs.version }}"
+
+          if [ "$PACKAGE" = "core" ]; then
+            PYPROJECT="packages/core/pyproject.toml"
+            PKG_NAME="arc-guard-core"
+          elif [ "$PACKAGE" = "pip" ]; then
+            PYPROJECT="packages/pip/pyproject.toml"
+            PKG_NAME="arc-guard"
+          elif [ "$PACKAGE" = "service" ]; then
+            PYPROJECT="packages/api/pyproject.toml"
+            PKG_NAME="arc-guard-service"
+          fi
+
+          TOML_VERSION=$(grep '^version = ' "$PYPROJECT" | head -1 | sed 's/version = "\(.*\)"/\1/')
+
+          if [ "$TOML_VERSION" = "$VERSION" ]; then
+            echo "✓ Version match: $VERSION"
+          else
+            echo "✗ Version mismatch!"
+            echo "  Tag:       $VERSION"
+            echo "  pyproject: $TOML_VERSION"
+            exit 1
+          fi
+
+      - name: Run typecheck
+        run: make typecheck
+
+      - name: Run tests
+        run: make test
+
+      - name: Build ${{ needs.validate-tag.outputs.package }}
+        run: |
+          PACKAGE="${{ needs.validate-tag.outputs.package }}"
+          if [ "$PACKAGE" = "core" ]; then
+            cd packages/core && uv build
+          elif [ "$PACKAGE" = "pip" ]; then
+            cd packages/pip && uv build
+          elif [ "$PACKAGE" = "service" ]; then
+            cd packages/api && uv build
+          fi
+
+      - name: Upload distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ needs.validate-tag.outputs.package }}
+          path: packages/*/dist/
+          retention-days: 7
+
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    needs: [validate-tag, validate]
+    environment: release
+    if: needs.validate-tag.outputs.valid == 'true'
+    steps:
+      - name: Download distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ needs.validate-tag.outputs.package }}
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/packages/${{ needs.validate-tag.outputs.package }}/dist/
+          skip-existing: false
