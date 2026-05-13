@@ -15,7 +15,7 @@ UV           := env -u VIRTUAL_ENV uv
 	docs-install docs-dev docs-build docs-preview \
         api-up api-down api-logs demo sse \
         docker-build docker-up docker-up-prod docker-down docker-logs docker-nuke dashboard-logs \
-	test test-core test-pip test-api test-fast \
+	test test-core test-pip test-api test-all test-fast test-all-fast \
 	format format-core format-pip format-api \
 	dashboard-fix \
 	lint lint-core lint-pip lint-api lint-fix \
@@ -79,8 +79,10 @@ help:
 	@echo "  docker-nuke        DESTRUCTIVE: stop stack + remove volumes + remove project images (frees ~5-6GB)"
 	@echo
 	@echo "Per-package quality gates:"
-	@echo "  test               pytest for core + pip + api"
-	@echo "  test-fast          same tests, but runs core + pip + api in parallel"
+	@echo "  test               pytest for core + pip"
+	@echo "  test-all           pytest for core + pip + api"
+	@echo "  test-fast          same focused tests, but runs core + pip in parallel"
+	@echo "  test-all-fast      full workspace tests, but runs core + pip + api in parallel"
 	@echo "  format             ruff format for core + pip + api"
 	@echo "  lint               ruff check for core + pip + api"
 	@echo "  lint-fix           ruff check --fix for core + pip + api"
@@ -106,7 +108,8 @@ help:
 	@echo "  fix                run 'all' with auto-fix enabled where supported"
 	@echo "  ci-fix             alias for 'fix'"
 	@echo "  all FIX=1          same as 'fix' (GNU make cannot accept 'make all --fix')"
-	@echo "  TEST_JOBS=4 make test-fast   override parallelism for tests"
+	@echo "  TEST_JOBS=4 make test-fast   override parallelism for focused tests"
+	@echo "  TEST_JOBS=4 make test-all-fast   override parallelism for full-workspace tests"
 	@echo "  ALL_JOBS=6 make all-fast     override parallelism for the aggregate run"
 	@echo
 	@echo "Cleanup:"
@@ -335,9 +338,14 @@ docker-nuke:
 # Per-package: cd into the package and scope pytest to its own tests/. Running
 # from packages/ would discover tests across the whole workspace.
 
-test: test-core test-pip test-api
+test: test-core test-pip
+
+test-all: test-core test-pip test-api
 
 test-fast:
+	@$(MAKE) -j$(TEST_JOBS) test-core test-pip
+
+test-all-fast:
 	@$(MAKE) -j$(TEST_JOBS) test-core test-pip test-api
 
 test-core:

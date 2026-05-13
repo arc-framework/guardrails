@@ -2,9 +2,16 @@
 
 All notable changes to the `arc-guard-core` package are documented here. Format follows Keep a Changelog; this package adheres to Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+
+- `arc_guard_core.policy.RiskThresholds.min_inspectors_for_critical` public field with default `1`. This additive threshold lets downstream policy routers require corroboration from at least one inspector before escalating a run into the `critical` aggregate band.
+
 ## [0.10.0] — 2026-05-10
 
 ### Added
+
 - New `RequestErrored` lifecycle event (terminal, sister-class to `RequestCompleted`). Carries `reason: Literal["stale_live_sweep", "pipeline_exception", "manual_abort"]`, `terminated_by: str`, and `last_event_seq: int`. Subscribers that don't recognize the type SHOULD treat it as terminal — same handling as `RequestCompleted`.
 - Closed taxonomy size grows from 28 → 29 (24 base + 5 conditional). The tagged-union shape of `LifecycleEvent` is otherwise unchanged.
 - New optional payload-text fields on five event classes, all gated on the operator's `PayloadCapturePolicy.should_capture_sanitized()`:
@@ -15,11 +22,13 @@ All notable changes to the `arc-guard-core` package are documented here. Format 
   - `ResponseAssembled.response_text`
 
 ### Migration notes
+
 - Additive only. Existing constructors continue to work; new fields default to `None`. The serialized wire format renders unset fields as `null`. Subscribers that ignore unknown fields degrade gracefully.
 
 ## [0.9.0] — 2026-05-08
 
 ### Added
+
 - New `arc_guard_core.schemas` subpackage carrying the operator-dashboard read models (Provisional band):
   - `RequestSummary` — explorer-table row; `stage` field is a `Literal` bound to `STAGE_DESCRIPTORS` with a runtime drift check.
   - `RequestPage`, `RequestPageFilters` — paginated `GET /requests` envelope and effective-filter echo.
@@ -30,12 +39,14 @@ All notable changes to the `arc-guard-core` package are documented here. Format 
 - All eleven names re-export at the top-level `arc_guard_core` namespace per the public-surface manifest.
 
 ### Migration notes
+
 - Additive only. No breaking changes; no migration required.
 - The schema-version probe in `arc_guard.observability.sqlite_lifecycle_sink` (pip) now recognizes v2 and forward-applies migration on construction; pre-existing v1 databases gain three new tables (`request_summaries`, `decision_records`, `debug_entries`) without losing data.
 
 ## [0.8.0] — 2026-05-08
 
 ### Added
+
 - `arc_guard_core.protocols.StrategySelector` runtime-checkable Protocol — extension point that maps a detected `Finding` plus surrounding `GuardResult` context to a registered strategy name. Stateless contract; selectors choose among strategy names already registered, they do not own strategy implementations.
 - `arc_guard_core.protocols.ContentPolicy` runtime-checkable Protocol + `ContentPolicyDecision` frozen dataclass — predicate-shaped policy evaluation distinct from `Inspector`'s entity-level findings. `ContentPolicyDecision` carries `matched: bool`, `confidence: float | None`, `policy_name: str`, `refusal_code: RefusalCode | None`.
 - `PolicyRule.selector: str | None` field — name of a registered `StrategySelector`. Mutually exclusive with `strategy`; a `model_validator` enforces "exactly one of" at construction time with messages naming the rule id and conflicting fields.
@@ -43,15 +54,18 @@ All notable changes to the `arc-guard-core` package are documented here. Format 
 - Package-root re-exports for the three new public symbols (`StrategySelector`, `ContentPolicy`, `ContentPolicyDecision`) so they resolve via `from arc_guard_core import StrategySelector` per the public-surface manifest convention.
 
 ### Changed
+
 - `PolicyRule.strategy`: type relaxed from required `str` to optional `str | None = None`. Existing policy files using `strategy:` parse identically. Operators opt into selector-driven masking by replacing `strategy:` with `selector:` on a rule.
 
 ### Migration notes
+
 - Additive only on the public surface. No breaking changes; no migration required for operators staying on the legacy `strategy:` form.
 - Code reading `rule.strategy` and assuming non-None must now check `if rule.strategy is not None:`. The strategy-resolution helper in `arc_guard.policy.router` (pip package) handles the new selector path; consumers of `PolicyRule.strategy` outside `arc_guard.*` are unaffected when they continue to author rules with `strategy:` set.
 
 ## [0.7.0] — 2026-05-04
 
 ### Added
+
 - New `arc_guard_core.lifecycle` subpackage:
   - `LifecycleSink` runtime-checkable Protocol — the 4th observability hook (sibling to `Logger` / `Tracer` / `MetricSink`).
   - `LifecycleEventBase` frozen dataclass (`id`, `parent_id`, `seq`, `ts`, `rid`, `event_type`) and 28 typed event dataclasses forming the `LifecycleEvent` tagged union (23 base events: `RequestStarted`, `PreProcessStarted`, `PostProcessStarted`, `PreProcessCompleted`, `PostProcessCompleted`, `StageRan`, `IntentCaptured`, `InspectorRan`, `FindingProduced`, `JailbreakDetected`, `DeceptionScored`, `FidelityScored`, `SanitizationApplied`, `PolicyResolved`, `StrategyExecuted`, `DecisionEmitted`, `RefusalProduced`, `BackendCalled`, `BackendResponded`, `PayloadRewritten`, `ResponseAssembled`, `RequestCompleted`, `ReportFlushed`; 5 conditional events: `PolicyRuleEvaluated`, `InspectorFailed`, `PlaceholderMapBuilt`, `RehydrationVerified`, `InspectorMatchExplain`).
@@ -62,24 +76,28 @@ All notable changes to the `arc-guard-core` package are documented here. Format 
 - New optional Protocol `arc_guard_core.protocols.ExplainableInspector` — opt-in capability for inspectors to surface match metadata via `explain_matches(text, new_findings) -> list[InspectorMatchExplanation]`. Used by regex-based inspectors to populate `InspectorMatchExplain` events.
 
 ### Migration notes
+
 - Additive only on the public surface. No breaking changes; no migration required.
 - Existing inspectors that do not implement `ExplainableInspector` continue to work unchanged; pipelines silently skip the optional `InspectorMatchExplain` emission for them.
 
 ## [0.6.0] — 2026-05-03
 
 ### Added
+
 - `RefusalCode.API_TRANSPORT_TIMEOUT` enum member — sibling of `API_INVALID_REQUEST`; emitted by transport-layer timeouts. Default `RefusalTemplate` registered with operator-facing human message + next-steps guidance.
 - `TransportError(PipelineError)` leaf exception — `__failure_mode__='closed'`, `__valid_codes__={transport.timeout, transport.payload_too_large, transport.invalid_state}`. Used by the `arc-guard-service` HTTP transport for transport-layer failures distinct from pipeline-decision territory.
 - `FAIL_RULE` entry for `TransportError` mapping to severity `error` and refusal code `API_TRANSPORT_TIMEOUT`. Posture is read from the new leaf's `__failure_mode__` ClassVar at lookup time per the foundation discipline.
 - `FAILURE_API_TRANSPORT` string constant in `arc_guard_core.failure_modes`.
 
 ### Migration notes
+
 - Additive only on the public surface. No breaking changes; no migration required.
 - Callers handling specific refusal codes should add a branch for `API_TRANSPORT_TIMEOUT` if they want to distinguish transport-layer timeouts from other transport-layer rejections.
 
 ## [0.5.0] — 2026-05-02
 
 ### Added
+
 - New pipeline stage constant `STAGE_DECEPTION_INSPECT` in `arc_guard_core.stages`. Appended additively to `STAGE_DESCRIPTORS`; runs after `STAGE_CLASSIFY` and before `STAGE_SANITIZE`.
 - New Protocol modules: `protocols/jailbreak_detector.py` (`JailbreakDetector` runtime-checkable Protocol), `protocols/conversation_turn_inspector.py` (`ConversationTurnInspector`), `protocols/evaluation_harness.py` (`EvaluationHarness`).
 - `arc_guard_core.jailbreak`: `JailbreakSignal` frozen dataclass with runtime regex validation on `evidence_reference` (`[A-Z][A-Z0-9_]*`) and `JailbreakCategory` Literal alias (5 categories).
@@ -96,6 +114,7 @@ All notable changes to the `arc-guard-core` package are documented here. Format 
 ## [0.4.0] — 2026-05-02
 
 ### Added
+
 - Three new pipeline stage constants in `arc_guard_core.stages`: `STAGE_DEFEND` (intent capture pre-sanitization), `STAGE_VERIFY` (fidelity-score computation post-generation), `STAGE_REHYDRATE` (safety-checked reinsertion). Appended additively to `STAGE_DESCRIPTORS`; existing call sites unchanged.
 - New Protocol modules under `arc_guard_core.protocols/`: `intent_encoder.py` (`IntentEncoder` runtime-checkable Protocol + `IntentRepresentation` opaque type alias), `fidelity_scorer.py` (`FidelityScorer` Protocol with `compatible_with(encoder)` pairing check), `rehydration_verifier.py` (`RehydrationVerifier` Protocol + `RehydrationVerdict` frozen dataclass with three-way `accept` / `reject` / `partial` decision discriminator).
 - `arc_guard_core.fidelity` module: `FidelityScore` frozen dataclass with `value: float | None` + `sentinel: Literal["measured", "not_measured"]` discriminator, `measured(value)` / `not_measured()` classmethod constructors, module-level `NOT_MEASURED` singleton.
@@ -107,16 +126,19 @@ All notable changes to the `arc-guard-core` package are documented here. Format 
 - `DecisionRecord` gains two additive optional fields: `intent_lock: IntentLock | None = None` and `fidelity_score: FidelityScore | None = None`.
 
 ### Changed
+
 - Renamed `RefusalCode.FIDELITY_DROP_PLACEHOLDER` → `RefusalCode.FIDELITY_DROP` (placeholder reservation upgraded to live code). The placeholder member was a reservation, never a stable consumer-facing surface; the rename keeps the contract-snapshot delta minimal. The default `RefusalTemplate` for `FIDELITY_DROP` now contains real human-message + next-steps text instead of the previous "(reserved)" stub.
 - `ObservabilityConfig` gains `fidelity_thresholds: FidelityThresholds = Field(default_factory=FidelityThresholds)` (additive — existing constructors continue to work).
 
 ### Migration notes
+
 - Callers that referenced `RefusalCode.FIDELITY_DROP_PLACEHOLDER` (none expected per the 0.3.0 CHANGELOG which described it as a reservation) update to `RefusalCode.FIDELITY_DROP`.
 - All other surface changes are additive; no other public types break.
 
 ## [0.3.0] — 2026-05-02
 
 ### Added
+
 - `arc_guard_core.stages` module: `STAGE_VALIDATE`, `STAGE_CLASSIFY`, `STAGE_SANITIZE`, `STAGE_ROUTE`, `STAGE_EXECUTE`, `STAGE_REFUSAL`, `STAGE_DECISION_EMIT`, `STAGE_REPORT`, plus `STAGE_DESCRIPTORS` allow-list.
 - `arc_guard_core.failure_modes` module: `FailureRule` NamedTuple, `FAIL_RULE` table covering all 12 leaf exceptions, `lookup_rule(exc_type)` helper that walks MRO and reads posture from foundation `__failure_mode__` ClassVar.
 - `arc_guard_core.observability_config.ObservabilityConfig` frozen pydantic model: `sampling_rate`, `refusal_always_emits`, `log_level_floor`, `metric_attribute_allow_list`, `max_attribute_bytes`. Validates fully at construction time.
@@ -127,16 +149,19 @@ All notable changes to the `arc-guard-core` package are documented here. Format 
 - `EntityRegistry` adopts the frozen-after-construction discipline: `register()` raises `RegistryFrozenError` after `freeze()`; `entities()` returns a snapshot copy that does not require locking on the hot path.
 
 ### Changed
+
 - `GuardConfig` gains `observability: ObservabilityConfig` field with safe defaults (full sampling, full verbosity, conservative attribute allow-list). Additive — existing constructors continue to work.
 - Contract-snapshot machinery (`tests/contract/_snapshot.py`) canonicalizes `frozenset` / `set` / `dict` defaults via a stable repr so post-Python-3.7 hash randomization no longer produces flaky snapshot diffs.
 
 ### Migration notes
+
 - Additive only on the public surface. No breaking changes; no migration required.
 - Callers that mutated `EntityRegistry` after pipeline construction will now see `RegistryFrozenError`. Move registrations earlier (before pipeline construction) to keep working.
 
 ## [0.2.0] — 2026-05-01
 
 ### Added
+
 - (Spec 003) `ClarificationRequest` frozen dataclass in `arc_guard_core.types`.
 - (Spec 003) `RiskBand` (StrEnum), `RiskThresholds`, `PolicyRule`, `PolicyRuleSet`, `RoutedOutcome`, `TransformSummary` in `arc_guard_core.policy`.
 - (Spec 003) `DecisionRecord`, `FindingSummary` in `arc_guard_core.decision`.
@@ -145,12 +170,14 @@ All notable changes to the `arc-guard-core` package are documented here. Format 
 - (Spec 003) `PolicyRouter` Protocol in `arc_guard_core.protocols.policy_router` (sync, thread-safe, fail-closed).
 
 ### Changed
+
 - (Spec 003) `GuardResult` gains optional `clarification: ClarificationRequest | None` field per D1. Mutually exclusive with `action="block"`.
 - (Spec 003) `GuardConfig` gains optional `policy: PolicyRuleSet | None` field; `None` preserves Spec 001/002 behavior.
 
 ## [0.1.0] — 2026-05-01
 
 ### Added
+
 - Initial release. Zero-dep contract layer for arc-guardrails.
 - Typed models: `RiskLevel`, `GuardContext`, `GuardInput`, `Finding`, `PolicyDecision`, `RefusalEnvelope`, `GuardResult`, `EntityDefinition`.
 - Configuration schema: `GuardConfig` (pydantic v2, `frozen=True`, `extra='forbid'`).

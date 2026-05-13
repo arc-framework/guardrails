@@ -39,7 +39,10 @@ Python workspace checks:
 make format
 make lint
 make test
+make test-all
 ```
+
+`make test` is the fast default and exercises `core` + `pip`. Use `make test-all` when you also want the `api` package suite.
 
 GuardRailFlow dashboard checks:
 
@@ -54,12 +57,11 @@ pnpm test
 
 The repository now includes a GitHub Actions workflow at [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
-It runs four jobs on every pull request, every push to `main`, and on manual dispatch:
+It runs package-scoped checks for `core` and `pip` on pull requests, pushes to `main`, and manual dispatch.
 
-- `format`: verifies Python formatting through `make format` and dashboard formatting through `pnpm format`
-- `ruff`: runs the Python Ruff checks through `make lint`
-- `lint`: runs the dashboard ESLint checks through `pnpm lint`
-- `test`: runs the Python test suites through `make test` and the dashboard tests through `pnpm test`
+- The workflow only triggers for changes under `packages/core`, `packages/pip`, the Python workspace metadata, or the workflow file itself.
+- Each check fans out as a `core` / `pip` matrix with `fail-fast: false`, so one package lane does not cancel the other.
+- Each lane installs only its own package dependencies with `uv sync --package ... --dev`, instead of syncing the full workspace with all extras.
 
 ## Run with Docker
 

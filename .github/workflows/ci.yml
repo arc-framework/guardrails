@@ -2,21 +2,95 @@ name: CI
 
 on:
   pull_request:
+    paths:
+      - '.github/workflows/ci.yml'
+      - 'packages/pyproject.toml'
+      - 'packages/uv.lock'
+      - 'packages/core/**'
+      - 'packages/pip/**'
   push:
     branches: [main]
+    paths:
+      - '.github/workflows/ci.yml'
+      - 'packages/pyproject.toml'
+      - 'packages/uv.lock'
+      - 'packages/core/**'
+      - 'packages/pip/**'
   workflow_dispatch:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  format:
-    name: Format
+  changes:
+    name: Detect package changes
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      has_work: ${{ steps.matrix.outputs.has_work }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            shared:
+              - '.github/workflows/ci.yml'
+              - 'packages/pyproject.toml'
+              - 'packages/uv.lock'
+            core:
+              - 'packages/core/**'
+            pip:
+              - 'packages/pip/**'
+
+      - name: Build package matrix
+        id: matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          core_needed=false
+          pip_needed=false
+
+          if [[ "${{ steps.filter.outputs.shared }}" == 'true' || "${{ steps.filter.outputs.core }}" == 'true' ]]; then
+            core_needed=true
+          fi
+
+          if [[ "${{ steps.filter.outputs.shared }}" == 'true' || "${{ steps.filter.outputs.core }}" == 'true' || "${{ steps.filter.outputs.pip }}" == 'true' ]]; then
+            pip_needed=true
+          fi
+
+          if [[ "$core_needed" == 'true' && "$pip_needed" == 'true' ]]; then
+            echo 'matrix=[{"package":"core","workspace_package":"arc-guard-core","directory":"packages/core"},{"package":"pip","workspace_package":"arc-guard","directory":"packages/pip"}]' >> "$GITHUB_OUTPUT"
+            echo 'has_work=true' >> "$GITHUB_OUTPUT"
+          elif [[ "$core_needed" == 'true' ]]; then
+            echo 'matrix=[{"package":"core","workspace_package":"arc-guard-core","directory":"packages/core"}]' >> "$GITHUB_OUTPUT"
+            echo 'has_work=true' >> "$GITHUB_OUTPUT"
+          elif [[ "$pip_needed" == 'true' ]]; then
+            echo 'matrix=[{"package":"pip","workspace_package":"arc-guard","directory":"packages/pip"}]' >> "$GITHUB_OUTPUT"
+            echo 'has_work=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'matrix=[]' >> "$GITHUB_OUTPUT"
+            echo 'has_work=false' >> "$GITHUB_OUTPUT"
+          fi
+
+  format:
+    name: Format (${{ matrix.package }})
+    needs: changes
+    if: needs.changes.outputs.has_work == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.changes.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,17 +103,21 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Install Python workspace dependencies
-        run: cd packages && env -u VIRTUAL_ENV uv sync --all-extras --dev
+      - name: Install Python package dependencies
+        run: cd packages && env -u VIRTUAL_ENV uv sync --dev --package ${{ matrix.workspace_package }}
 
       - name: Verify Python formatting
-        run: |
-          make format
-          git diff --exit-code
+        run: cd ${{ matrix.directory }} && env -u VIRTUAL_ENV uv run ruff format --check src tests
 
   ruff:
-    name: Ruff
+    name: Ruff (${{ matrix.package }})
+    needs: changes
+    if: needs.changes.outputs.has_work == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.changes.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,15 +130,21 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Install Python workspace dependencies
-        run: cd packages && env -u VIRTUAL_ENV uv sync --all-extras --dev
+      - name: Install Python package dependencies
+        run: cd packages && env -u VIRTUAL_ENV uv sync --dev --package ${{ matrix.workspace_package }}
 
       - name: Run Ruff checks
-        run: make lint
+        run: cd ${{ matrix.directory }} && env -u VIRTUAL_ENV uv run ruff check src tests
 
   typecheck:
-    name: Type Check
+    name: Type Check (${{ matrix.package }})
+    needs: changes
+    if: needs.changes.outputs.has_work == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.changes.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -73,15 +157,21 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Install Python workspace dependencies
-        run: cd packages && env -u VIRTUAL_ENV uv sync --all-extras --dev
+      - name: Install Python package dependencies
+        run: cd packages && env -u VIRTUAL_ENV uv sync --dev --package ${{ matrix.workspace_package }}
 
       - name: Run type checks
-        run: make typecheck
+        run: cd ${{ matrix.directory }} && env -u VIRTUAL_ENV uv run mypy src
 
   test:
-    name: Test
+    name: Test (${{ matrix.package }})
+    needs: changes
+    if: needs.changes.outputs.has_work == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.changes.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -94,16 +184,21 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Install Python workspace dependencies
-        run: cd packages && env -u VIRTUAL_ENV uv sync --all-extras --dev
+      - name: Install Python package dependencies
+        run: cd packages && env -u VIRTUAL_ENV uv sync --dev --package ${{ matrix.workspace_package }}
 
-      - name: Run Python test suites
-        run: make test
+      - name: Run Python test suite
+        run: cd ${{ matrix.directory }} && env -u VIRTUAL_ENV uv run pytest tests/
 
   build:
-    name: Build
+    name: Build (${{ matrix.package }})
     runs-on: ubuntu-latest
-    needs: [format, ruff, typecheck, test]
+    needs: [changes, format, ruff, typecheck, test]
+    if: needs.changes.outputs.has_work == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.changes.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -116,18 +211,12 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Install Python workspace dependencies
-        run: cd packages && env -u VIRTUAL_ENV uv sync --all-extras --dev
+      - name: Build distribution
+        run: cd ${{ matrix.directory }} && env -u VIRTUAL_ENV uv build
 
-      - name: Build arc-guard-core
-        run: cd packages/core && uv build
-
-      - name: Build arc-guard
-        run: cd packages/pip && uv build
-
-      - name: Upload distributions
+      - name: Upload distribution
         uses: actions/upload-artifact@v4
         with:
-          name: distributions
-          path: packages/*/dist/
+          name: distributions-${{ matrix.package }}
+          path: ${{ matrix.directory }}/dist/
           retention-days: 30

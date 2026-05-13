@@ -24,13 +24,13 @@ name: Publish to PyPI
 on:
   push:
     tags:
-      - "core-v*.*.*"
-      - "pip-v*.*.*"
-      - "service-v*.*.*"
+      - 'core-v*.*.*'
+      - 'pip-v*.*.*'
+      - 'service-v*.*.*'
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to publish (e.g., core-v0.9.1)"
+        description: 'Tag to publish (e.g., core-v0.9.1)'
         required: true
 
 permissions:
@@ -93,9 +93,6 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Install Python workspace dependencies
-        run: cd packages && env -u VIRTUAL_ENV uv sync --all-extras --dev
-
       - name: Verify tag matches pyproject.toml
         run: |
           PACKAGE="${{ needs.validate-tag.outputs.package }}"
@@ -123,22 +120,57 @@ jobs:
             exit 1
           fi
 
-      - name: Run typecheck
-        run: make typecheck
-
-      - name: Run tests
-        run: make test
-
-      - name: Build ${{ needs.validate-tag.outputs.package }}
+      - name: Resolve package context
+        id: context
         run: |
           PACKAGE="${{ needs.validate-tag.outputs.package }}"
+
           if [ "$PACKAGE" = "core" ]; then
-            cd packages/core && uv build
+            echo "directory=packages/core" >> "$GITHUB_OUTPUT"
+            echo "workspace_package=arc-guard-core" >> "$GITHUB_OUTPUT"
+            echo "extra=" >> "$GITHUB_OUTPUT"
           elif [ "$PACKAGE" = "pip" ]; then
-            cd packages/pip && uv build
-          elif [ "$PACKAGE" = "service" ]; then
-            cd packages/api && uv build
+            echo "directory=packages/pip" >> "$GITHUB_OUTPUT"
+            echo "workspace_package=arc-guard" >> "$GITHUB_OUTPUT"
+            echo "extra=" >> "$GITHUB_OUTPUT"
+          else
+            echo "directory=packages/api" >> "$GITHUB_OUTPUT"
+            echo "workspace_package=arc-guard-service" >> "$GITHUB_OUTPUT"
+            echo "extra=fastapi" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Install Python package dependencies
+        run: |
+          cd packages
+
+          if [ -n "${{ steps.context.outputs.extra }}" ]; then
+            env -u VIRTUAL_ENV uv sync --dev --package "${{ steps.context.outputs.workspace_package }}" --extra "${{ steps.context.outputs.extra }}"
+          else
+            env -u VIRTUAL_ENV uv sync --dev --package "${{ steps.context.outputs.workspace_package }}"
+          fi
+
+      - name: Run typecheck
+        run: |
+          cd "${{ steps.context.outputs.directory }}"
+
+          if [ -n "${{ steps.context.outputs.extra }}" ]; then
+            env -u VIRTUAL_ENV uv run --extra "${{ steps.context.outputs.extra }}" mypy src
+          else
+            env -u VIRTUAL_ENV uv run mypy src
+          fi
+
+      - name: Run tests
+        run: |
+          cd "${{ steps.context.outputs.directory }}"
+
+          if [ -n "${{ steps.context.outputs.extra }}" ]; then
+            env -u VIRTUAL_ENV uv run --extra "${{ steps.context.outputs.extra }}" pytest tests/
+          else
+            env -u VIRTUAL_ENV uv run pytest tests/
+          fi
+
+      - name: Build ${{ needs.validate-tag.outputs.package }}
+        run: cd "${{ steps.context.outputs.directory }}" && env -u VIRTUAL_ENV uv build
 
       - name: Upload distribution
         uses: actions/upload-artifact@v4

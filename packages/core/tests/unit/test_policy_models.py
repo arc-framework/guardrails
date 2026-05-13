@@ -29,11 +29,17 @@ def test_risk_thresholds_defaults() -> None:
     assert rt.high_escalates_at == 1
     assert rt.critical_escalates_at == 1
     assert rt.soft_pii_aggregation == 3
+    assert rt.min_inspectors_for_critical == 1
 
 
 def test_risk_thresholds_negative_rejected() -> None:
     with pytest.raises(ValidationError):
         RiskThresholds(low_max_count=-1)
+
+
+def test_risk_thresholds_requires_at_least_one_inspector_for_critical() -> None:
+    with pytest.raises(ValidationError):
+        RiskThresholds(min_inspectors_for_critical=0)
 
 
 def test_risk_thresholds_low_must_not_exceed_medium() -> None:

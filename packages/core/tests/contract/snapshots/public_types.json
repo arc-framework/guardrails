@@ -1942,6 +1942,12 @@
         "name": "soft_pii_aggregation",
         "required": false,
         "type": "int"
+      },
+      {
+        "default": "1",
+        "name": "min_inspectors_for_critical",
+        "required": false,
+        "type": "int"
       }
     ],
     "frozen": true,
